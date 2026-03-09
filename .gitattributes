@@ -1,0 +1,16 @@
+# Keep GitHub language stats focused on source code.
+
+# Build outputs
+**/.next/** linguist-generated=true
+**/out/** linguist-generated=true
+**/dist/** linguist-generated=true
+**/build/** linguist-generated=true
+**/coverage/** linguist-generated=true
+
+# Package manager and lock artifacts
+**/node_modules/** linguist-generated=true
+**/*.lock linguist-generated=true
+
+# Minified bundles
+**/*.min.js linguist-generated=true
+**/*.min.css linguist-generated=true
