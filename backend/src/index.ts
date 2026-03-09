@@ -4,8 +4,8 @@ import express from "express";
 import { createHandler } from "graphql-http/lib/use/express";
 import mongoose from "mongoose";
 import { verifyJwt } from "./auth";
+import { graphQlDocsHtml } from "./graphql-docs";
 import { rootValue, schema } from "./schema";
-import { openApiSpec, swaggerHtml } from "./swagger";
 
 dotenv.config();
 
@@ -57,15 +57,11 @@ app.get("/healthcheck", async (_req, res) => {
   }
 });
 
-app.get("/openapi.json", (_req, res) => {
-  res.json(openApiSpec);
+app.get("/graphql", (_req, res) => {
+  res.type("html").send(graphQlDocsHtml);
 });
 
-app.get("/docs", (_req, res) => {
-  res.type("html").send(swaggerHtml);
-});
-
-app.all(
+app.post(
   "/graphql",
   createHandler({
     schema,
