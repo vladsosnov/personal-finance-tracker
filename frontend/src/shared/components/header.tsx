@@ -40,6 +40,11 @@ export const Header = () => {
               Dashboard
             </Button>
             {isAuthed && (
+              <Button component={Link} href={APP_ROUTES.profile} variant={pathname === APP_ROUTES.profile ? "light" : "subtle"}>
+                Profile
+              </Button>
+            )}
+            {isAuthed && (
               <Button onClick={handleLogout} color="red" variant="subtle">
                 Log Out
               </Button>

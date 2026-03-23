@@ -95,6 +95,11 @@ body {
     rgb(var(--background-start-rgb));
 }
 
+html[data-mantine-color-scheme="dark"] body {
+  color: #f3f4f6;
+  background: linear-gradient(to bottom, #111827, #030712);
+}
+
 .app-shell {
   min-height: 100vh;
   display: flex;
@@ -107,6 +112,11 @@ body {
   backdrop-filter: blur(8px);
 }
 
+html[data-mantine-color-scheme="dark"] .app-header {
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+  background: rgba(3, 7, 18, 0.82);
+}
+
 .app-main {
   flex: 1;
 }
@@ -114,6 +124,11 @@ body {
 .app-footer {
   border-top: 1px solid rgba(0, 0, 0, 0.08);
   background: rgba(255, 255, 255, 0.7);
+}
+
+html[data-mantine-color-scheme="dark"] .app-footer {
+  border-top-color: rgba(255, 255, 255, 0.08);
+  background: rgba(3, 7, 18, 0.78);
 }
 
 a {

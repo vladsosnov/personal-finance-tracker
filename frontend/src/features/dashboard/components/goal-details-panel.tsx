@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Badge, Button, Card, Group, Modal, NumberInput, ScrollArea, Select, Skeleton, Stack, Table, Text, TextInput, Tooltip, Title } from "@mantine/core";
+import { Badge, Button, Card, Group, Modal, NumberInput, Popover, ScrollArea, Skeleton, Stack, Table, Text, TextInput, Tooltip, Title } from "@mantine/core";
 import { GoalChart } from "@/features/dashboard/components/goal-chart";
 import type { GoalDetails } from "@/features/dashboard/types";
 import type { OperationType } from "@/shared/gql/__generated__/schema-types";
@@ -34,6 +34,12 @@ const ExpandIcon = () => (
     <path d="M14 10 20 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
     <path d="M9 20H4v-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
     <path d="m4 20 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
+const ChevronDownIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <path d="m6 9 6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 );
 
@@ -89,6 +95,8 @@ export const GoalDetailsPanel = ({
   const [pendingDeleteOperationId, setPendingDeleteOperationId] = useState<string | null>(null);
   const [isOperationModalOpen, setIsOperationModalOpen] = useState(false);
   const [isChartModalOpen, setIsChartModalOpen] = useState(false);
+  const [isRangePickerOpen, setIsRangePickerOpen] = useState(false);
+  const [isExpandedRangePickerOpen, setIsExpandedRangePickerOpen] = useState(false);
   const [chartRange, setChartRange] = useState<"all" | "7d" | "1m" | "6m" | "12m">("all");
   const pendingDeleteOperation = useMemo(
     () => selectedGoal?.operations.find((operation) => operation.id === pendingDeleteOperationId) ?? null,
@@ -152,26 +160,40 @@ export const GoalDetailsPanel = ({
       ) : (
         <ScrollArea h={610} offsetScrollbars scrollbarSize={8}>
           <Stack gap="md" pr={4}>
-          <Title order={4}>{selectedGoal.title}</Title>
-
-          <Stack gap="xs">
-            <Group gap="xs" wrap="nowrap" justify="flex-end">
-              <Select
-                value={chartRange}
-                data={CHART_RANGE_OPTIONS}
-                allowDeselect={false}
-                aria-label="Select chart time range"
-                onChange={(value) => {
-                  if (value) {
-                    setChartRange(value as "all" | "7d" | "1m" | "6m" | "12m");
-                  }
-                }}
-                w={120}
-              />
+          <Group justify="space-between" align="flex-start">
+            <Title order={4}>{selectedGoal.title}</Title>
+            <Group gap="xs" wrap="nowrap">
+              <Popover opened={isRangePickerOpen} onChange={setIsRangePickerOpen} position="bottom-end" withArrow shadow="md">
+                <Popover.Target>
+                  <Button variant="subtle" rightSection={<ChevronDownIcon />} onClick={() => setIsRangePickerOpen((current) => !current)}>
+                    {CHART_RANGE_OPTIONS.find((option) => option.value === chartRange)?.label ?? "All time"}
+                  </Button>
+                </Popover.Target>
+                <Popover.Dropdown p="xs">
+                  <Stack gap={4}>
+                    {CHART_RANGE_OPTIONS.map((option) => (
+                      <Button
+                        key={option.value}
+                        variant={chartRange === option.value ? "light" : "subtle"}
+                        justify="flex-start"
+                        onClick={() => {
+                          setChartRange(option.value);
+                          setIsRangePickerOpen(false);
+                        }}
+                      >
+                        {option.label}
+                      </Button>
+                    ))}
+                  </Stack>
+                </Popover.Dropdown>
+              </Popover>
               <Button variant="light" px={10} aria-label="Expand chart" onClick={() => setIsChartModalOpen(true)}>
                 <ExpandIcon />
               </Button>
             </Group>
+          </Group>
+
+          <Stack gap="xs">
             <GoalChart operations={selectedGoal.operations} color={selectedGoal.color} range={chartRange} />
           </Stack>
 
@@ -361,18 +383,34 @@ export const GoalDetailsPanel = ({
             <Stack gap="md">
               <Group justify="space-between" align="center">
                 <div />
-                <Select
-                  value={chartRange}
-                  data={CHART_RANGE_OPTIONS}
-                  allowDeselect={false}
-                  aria-label="Select chart time range"
-                  onChange={(value) => {
-                    if (value) {
-                      setChartRange(value as "all" | "7d" | "1m" | "6m" | "12m");
-                    }
-                  }}
-                  w={120}
-                />
+                <Popover opened={isExpandedRangePickerOpen} onChange={setIsExpandedRangePickerOpen} position="bottom-end" withArrow shadow="md">
+                  <Popover.Target>
+                    <Button
+                      variant="subtle"
+                      rightSection={<ChevronDownIcon />}
+                      onClick={() => setIsExpandedRangePickerOpen((current) => !current)}
+                    >
+                      {CHART_RANGE_OPTIONS.find((option) => option.value === chartRange)?.label ?? "All time"}
+                    </Button>
+                  </Popover.Target>
+                  <Popover.Dropdown p="xs">
+                    <Stack gap={4}>
+                      {CHART_RANGE_OPTIONS.map((option) => (
+                        <Button
+                          key={option.value}
+                          variant={chartRange === option.value ? "light" : "subtle"}
+                          justify="flex-start"
+                          onClick={() => {
+                            setChartRange(option.value);
+                            setIsExpandedRangePickerOpen(false);
+                          }}
+                        >
+                          {option.label}
+                        </Button>
+                      ))}
+                    </Stack>
+                  </Popover.Dropdown>
+                </Popover>
               </Group>
               <GoalChart operations={selectedGoal.operations} color={selectedGoal.color} range={chartRange} height={520} />
             </Stack>

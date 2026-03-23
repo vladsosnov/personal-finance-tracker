@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
-import { ColorSchemeScript, MantineProvider } from "@mantine/core";
+import { ColorSchemeScript } from "@mantine/core";
 import { Footer } from "@/shared/components/footer";
+import { AppThemeProvider } from "@/shared/components/app-theme-provider";
 import { Header } from "@/shared/components/header";
 import { Providers } from "@/shared/components/providers";
 import "./globals.css";
@@ -25,7 +26,7 @@ const RootLayout = ({
         <ColorSchemeScript />
       </head>
       <body className={inter.className}>
-        <MantineProvider defaultColorScheme="light">
+        <AppThemeProvider>
           <Providers>
             <div className="app-shell">
               <Header />
@@ -33,7 +34,7 @@ const RootLayout = ({
               <Footer />
             </div>
           </Providers>
-        </MantineProvider>
+        </AppThemeProvider>
       </body>
     </html>
   );
