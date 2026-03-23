@@ -144,6 +144,11 @@ export const deleteGoal = async (userId: string, goalId: string): Promise<Goal |
     : undefined;
 };
 
+export const deleteAllGoalsByUser = async (userId: string): Promise<number> => {
+  const result = await GoalModel.deleteMany({ userId });
+  return result.deletedCount ?? 0;
+};
+
 export const reorderGoals = async (userId: string, orderedGoalIds: string[]): Promise<void> => {
   const goals = await GoalModel.find({ userId }).select("_id").lean();
   if (goals.length !== orderedGoalIds.length) {

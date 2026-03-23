@@ -167,3 +167,12 @@ export const IMPORT_GOALS = gql`
     }
   }
 `;
+
+export const RESET_ALL_DATA = gql`
+  mutation ResetAllData {
+    resetAllData {
+      deletedGoalsCount
+      deletedOperationsCount
+    }
+  }
+`;

@@ -1,8 +1,8 @@
 import { buildSchema } from "graphql";
 import { hashPassword, signJwt, verifyPassword } from "./auth";
 import { createUser, findUserByEmail, findUserById } from "./modules/auth/user.repository";
-import { bulkCreateGoals, createGoal, deleteGoal, getGoalById, listGoalsByUser, reorderGoals, updateGoal, updateGoalColor } from "./modules/goals/goal.repository";
-import { bulkCreateGoalOperations, createGoalOperation, deleteGoalOperation, deleteOperationsByGoal, getGoalOperationById, updateGoalOperation } from "./modules/goals/operation.repository";
+import { bulkCreateGoals, createGoal, deleteAllGoalsByUser, deleteGoal, getGoalById, listGoalsByUser, reorderGoals, updateGoal, updateGoalColor } from "./modules/goals/goal.repository";
+import { bulkCreateGoalOperations, createGoalOperation, deleteAllOperationsByUser, deleteGoalOperation, deleteOperationsByGoal, getGoalOperationById, updateGoalOperation } from "./modules/goals/operation.repository";
 import { buildGoalView } from "./modules/goals/goal.service";
 import type { OperationType } from "./modules/goals/types";
 
@@ -134,6 +134,11 @@ export const schema = buildSchema(`
     importedOperationsCount: Int!
   }
 
+  type ResetAllDataPayload {
+    deletedGoalsCount: Int!
+    deletedOperationsCount: Int!
+  }
+
   type GoalOperation {
     id: ID!
     type: OperationType!
@@ -171,6 +176,7 @@ export const schema = buildSchema(`
     deleteGoal(goalId: ID!): Goal!
     reorderGoals(goalIds: [ID!]!): [Goal!]!
     importGoals(goals: [ImportGoalInput!]!): ImportGoalsPayload!
+    resetAllData: ResetAllDataPayload!
     updateGoalProgress(goalId: ID!, type: OperationType!, amount: Float!, note: String, operationDate: String): Goal!
     editGoalOperation(operationId: ID!, type: OperationType!, amount: Float!, note: String, operationDate: String): Goal!
     deleteGoalOperation(operationId: ID!): Goal!
@@ -361,6 +367,16 @@ export const rootValue = {
     return {
       importedGoalsCount: createdGoals.length,
       importedOperationsCount: operations.length,
+    };
+  },
+  resetAllData: async (_args: unknown, context: Context) => {
+    const userId = ensureAuthed(context);
+    const deletedOperationsCount = await deleteAllOperationsByUser(userId);
+    const deletedGoalsCount = await deleteAllGoalsByUser(userId);
+
+    return {
+      deletedGoalsCount,
+      deletedOperationsCount,
     };
   },
   updateGoalProgress: async ({ goalId, type, amount, note, operationDate }: GoalOperationArgs, context: Context) => {

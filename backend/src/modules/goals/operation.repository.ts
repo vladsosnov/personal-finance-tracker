@@ -175,6 +175,11 @@ export const deleteOperationsByGoal = async (userId: string, goalId: string): Pr
   await GoalOperationModel.deleteMany({ userId, goalId });
 };
 
+export const deleteAllOperationsByUser = async (userId: string): Promise<number> => {
+  const result = await GoalOperationModel.deleteMany({ userId });
+  return result.deletedCount ?? 0;
+};
+
 export const listOperationsByGoal = async (userId: string, goalId: string): Promise<GoalOperation[]> => {
   const operations = await GoalOperationModel.find({ userId, goalId }).sort({ operationDate: -1, createdAt: -1 }).lean();
 

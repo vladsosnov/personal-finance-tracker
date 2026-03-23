@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useMutation, useQuery } from "@apollo/client/react";
+import { useApolloClient, useMutation, useQuery } from "@apollo/client/react";
 import {
   Alert,
   Button,
@@ -11,6 +11,7 @@ import {
   Container,
   FileInput,
   Group,
+  Modal,
   Progress,
   SegmentedControl,
   Stack,
@@ -20,7 +21,7 @@ import {
   Title,
   useMantineColorScheme,
 } from "@mantine/core";
-import { GET_ME, IMPORT_GOALS } from "@/features/dashboard/gql/dashboard";
+import { GET_ME, IMPORT_GOALS, RESET_ALL_DATA } from "@/features/dashboard/gql/dashboard";
 import { DEFAULT_GOAL_COLOR } from "@/shared/constants/goal-colors";
 import { APP_ROUTES } from "@/shared/constants/routes";
 import { AUTH_TOKEN_KEY } from "@/shared/constants/storage";
@@ -242,6 +243,7 @@ const prepareImportGoals = (source: string, includedZeroTargetGoalIndexes: Set<n
 
 export const ProfileClient = () => {
   const router = useRouter();
+  const apolloClient = useApolloClient();
   const { colorScheme, setColorScheme } = useMantineColorScheme();
   const [isHydrated, setIsHydrated] = useState(false);
   const [isAuthed, setIsAuthed] = useState(false);
@@ -251,10 +253,13 @@ export const ProfileClient = () => {
   const [skippedGoals, setSkippedGoals] = useState<SkippedImportGoal[]>([]);
   const [importError, setImportError] = useState<string | null>(null);
   const [importSummary, setImportSummary] = useState<string | null>(null);
+  const [resetError, setResetError] = useState<string | null>(null);
+  const [resetSummary, setResetSummary] = useState<string | null>(null);
   const [isPreparingImport, setIsPreparingImport] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [importProgress, setImportProgress] = useState<ImportProgressState | null>(null);
   const [includedZeroTargetGoalIndexes, setIncludedZeroTargetGoalIndexes] = useState<number[]>([]);
+  const [isResetModalOpen, setIsResetModalOpen] = useState(false);
 
   useEffect(() => {
     const token = window.localStorage.getItem(AUTH_TOKEN_KEY);
@@ -277,6 +282,12 @@ export const ProfileClient = () => {
       importedOperationsCount: number;
     };
   }>(IMPORT_GOALS);
+  const [resetAllDataMutation, { loading: isResettingAllData }] = useMutation<{
+    resetAllData: {
+      deletedGoalsCount: number;
+      deletedOperationsCount: number;
+    };
+  }>(RESET_ALL_DATA);
 
   const importTotals = useMemo(
     () =>
@@ -313,6 +324,7 @@ export const ProfileClient = () => {
       setSkippedGoals([]);
       setIncludedZeroTargetGoalIndexes([]);
       setImportSummary(null);
+      setResetSummary(null);
       return;
     }
 
@@ -344,6 +356,8 @@ export const ProfileClient = () => {
     setIsImporting(true);
     setImportError(null);
     setImportSummary(null);
+    setResetError(null);
+    setResetSummary(null);
     setImportProgress({
       completedSteps: 0,
       totalSteps: 3,
@@ -392,6 +406,7 @@ export const ProfileClient = () => {
       setIncludedZeroTargetGoalIndexes([]);
       setImportSource(null);
       setFile(null);
+      await apolloClient.clearStore();
       router.push(APP_ROUTES.dashboard);
       router.refresh();
       setImportProgress((current) =>
@@ -407,6 +422,31 @@ export const ProfileClient = () => {
       setImportError(error instanceof Error ? error.message : "Import failed");
     } finally {
       setIsImporting(false);
+    }
+  };
+
+  const handleResetAllData = async () => {
+    setResetError(null);
+    setResetSummary(null);
+
+    try {
+      const result = await resetAllDataMutation();
+      const summary = result.data?.resetAllData;
+
+      setPreparedGoals([]);
+      setSkippedGoals([]);
+      setIncludedZeroTargetGoalIndexes([]);
+      setImportSource(null);
+      setFile(null);
+      setIsResetModalOpen(false);
+      setImportProgress(null);
+      await apolloClient.clearStore();
+      setResetSummary(
+        `Removed ${summary?.deletedGoalsCount ?? 0} goals and ${summary?.deletedOperationsCount ?? 0} operations.`
+      );
+      router.refresh();
+    } catch (error) {
+      setResetError(error instanceof Error ? error.message : "Failed to reset data");
     }
   };
 
@@ -587,7 +627,35 @@ export const ProfileClient = () => {
             )}
           </Stack>
         </Card>
+
+        <Card withBorder radius="md" p="lg">
+          <Stack gap="sm">
+            <Title order={4}>Reset all data</Title>
+            <Text c="dimmed">Remove all goals and operations from your account. This cannot be undone.</Text>
+            {resetError && <Alert color="red">{resetError}</Alert>}
+            {resetSummary && <Alert color="teal">{resetSummary}</Alert>}
+            <Group justify="flex-start">
+              <Button color="red" variant="light" onClick={() => setIsResetModalOpen(true)}>
+                Reset all data
+              </Button>
+            </Group>
+          </Stack>
+        </Card>
       </Stack>
+
+      <Modal opened={isResetModalOpen} onClose={() => !isResettingAllData && setIsResetModalOpen(false)} title="Reset all data?" centered>
+        <Stack gap="md">
+          <Text>This will permanently remove all goals and operations from your account.</Text>
+          <Group justify="flex-end">
+            <Button variant="default" onClick={() => setIsResetModalOpen(false)} disabled={isResettingAllData}>
+              Cancel
+            </Button>
+            <Button color="red" onClick={() => void handleResetAllData()} loading={isResettingAllData}>
+              Reset
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
     </Container>
   );
 };
