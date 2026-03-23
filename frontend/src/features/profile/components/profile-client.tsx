@@ -56,12 +56,14 @@ type PreparedImportOperation = {
 };
 
 type PreparedImportGoal = {
+  sourceIndex: number;
   title: string;
   targetAmount: number;
   initialAmount: number;
   color: string;
   operationCount: number;
   operations: PreparedImportOperation[];
+  canRemoveFromImport: boolean;
 };
 
 type SkippedImportGoal = {
@@ -103,6 +105,13 @@ const ThemeDarkIcon = () => (
       strokeLinecap="round"
       strokeLinejoin="round"
     />
+  </svg>
+);
+
+const ThemeSystemIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <rect x="3" y="4" width="18" height="12" rx="2" stroke="currentColor" strokeWidth="2" />
+    <path d="M8 20h8M12 16v4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
   </svg>
 );
 
@@ -226,12 +235,14 @@ const prepareImportGoals = (source: string, includedZeroTargetGoalIndexes: Set<n
     }
 
     goals.push({
+      sourceIndex: goalIndex,
       title,
       targetAmount,
       initialAmount,
       color: normalizeColor(goal.display?.bar?.colors?.primary),
       operationCount: operations.length,
       operations,
+      canRemoveFromImport: targetAmount === 0,
     });
   });
 
@@ -407,7 +418,6 @@ export const ProfileClient = () => {
       setImportSource(null);
       setFile(null);
       await apolloClient.clearStore();
-      router.push(APP_ROUTES.dashboard);
       router.refresh();
       setImportProgress((current) =>
         current
@@ -441,9 +451,9 @@ export const ProfileClient = () => {
       setIsResetModalOpen(false);
       setImportProgress(null);
       await apolloClient.clearStore();
-      setResetSummary(
-        `Removed ${summary?.deletedGoalsCount ?? 0} goals and ${summary?.deletedOperationsCount ?? 0} operations.`
-      );
+      if ((summary?.deletedGoalsCount ?? 0) > 0 || (summary?.deletedOperationsCount ?? 0) > 0) {
+        setResetSummary(`Removed ${summary?.deletedGoalsCount ?? 0} goals and ${summary?.deletedOperationsCount ?? 0} operations.`);
+      }
       router.refresh();
     } catch (error) {
       setResetError(error instanceof Error ? error.message : "Failed to reset data");
@@ -478,7 +488,14 @@ export const ProfileClient = () => {
               data={[
                 {
                   value: "auto",
-                  label: "System",
+                  label: (
+                    <Group gap={8} wrap="nowrap">
+                      <ThemeIcon size="sm" variant="transparent">
+                        <ThemeSystemIcon />
+                      </ThemeIcon>
+                      <span>System</span>
+                    </Group>
+                  ),
                 },
                 {
                   value: "light",
@@ -523,14 +540,16 @@ export const ProfileClient = () => {
               clearable
             />
 
-            <Group>
-              <Button variant="default" onClick={() => void handlePreviewImport()} loading={isPreparingImport} disabled={isImporting}>
-                Preview import
-              </Button>
-              <Button onClick={() => void handleImport()} loading={isImporting} disabled={!preparedGoals.length || isPreparingImport}>
-                Import
-              </Button>
-            </Group>
+            {file && (
+              <Group>
+                <Button variant="default" onClick={() => void handlePreviewImport()} loading={isPreparingImport} disabled={isImporting}>
+                  Preview import
+                </Button>
+                <Button onClick={() => void handleImport()} loading={isImporting} disabled={!preparedGoals.length || isPreparingImport}>
+                  Import
+                </Button>
+              </Group>
+            )}
 
             {importError && <Alert color="red">{importError}</Alert>}
             {importSummary && <Alert color="teal">{importSummary}</Alert>}
@@ -566,6 +585,7 @@ export const ProfileClient = () => {
                       <Table.Th>Target</Table.Th>
                       <Table.Th>Start</Table.Th>
                       <Table.Th>Operations</Table.Th>
+                      <Table.Th>Actions</Table.Th>
                     </Table.Tr>
                   </Table.Thead>
                   <Table.Tbody>
@@ -575,6 +595,27 @@ export const ProfileClient = () => {
                         <Table.Td>{goal.targetAmount}</Table.Td>
                         <Table.Td>{goal.initialAmount}</Table.Td>
                         <Table.Td>{goal.operationCount}</Table.Td>
+                        <Table.Td>
+                          {goal.canRemoveFromImport ? (
+                            <Button
+                              variant="subtle"
+                              color="red"
+                              size="compact-sm"
+                              onClick={() => {
+                                if (!importSource) {
+                                  return;
+                                }
+
+                                const nextIncludedIndexes = includedZeroTargetGoalIndexes.filter((item) => item !== goal.sourceIndex);
+                                applyPreparedImport(importSource, nextIncludedIndexes);
+                              }}
+                            >
+                              Remove
+                            </Button>
+                          ) : (
+                            "-"
+                          )}
+                        </Table.Td>
                       </Table.Tr>
                     ))}
                   </Table.Tbody>

@@ -111,6 +111,14 @@ export const GoalChart = ({ operations, color, height = 320, range }: GoalChartP
           color,
         },
       ],
+      legend: {
+        itemStyle: {
+          color: isDark ? "#E5E7EB" : "#0F172A",
+        },
+        itemHoverStyle: {
+          color: isDark ? "#FFFFFF" : "#020617",
+        },
+      },
       tooltip: {
         backgroundColor: isDark ? "#0F172A" : "#FFFFFF",
         borderColor: isDark ? "rgba(148, 163, 184, 0.25)" : "rgba(15, 23, 42, 0.12)",

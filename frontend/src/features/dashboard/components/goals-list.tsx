@@ -84,9 +84,11 @@ export const GoalsList = ({
             </Button>
           )}
         </Group>
-        <Text size="sm" c="dimmed">
-          Drag and drop cards to change their order.
-        </Text>
+        {goals.length > 0 && (
+          <Text size="sm" c="dimmed">
+            Drag and drop cards to change their order.
+          </Text>
+        )}
         <ScrollArea h={540} offsetScrollbars scrollbarSize={8}>
           <Stack gap="sm" pr={4}>
             {isLoadingGoals
@@ -150,7 +152,7 @@ export const GoalsList = ({
                               root: {
                                 minHeight: 28,
                                 backgroundColor: "rgba(15, 23, 42, 0.06)",
-                                color: "var(--mantine-color-gray-8)",
+                                color: "var(--mantine-color-text)",
                               },
                             }}
                             aria-label={`Edit ${goal.title}`}
@@ -212,7 +214,16 @@ export const GoalsList = ({
                 </Card>
               );
             })}
-            {!isLoadingGoals && !goals.length && <Text c="dimmed">No goals yet. Add your first one above.</Text>}
+            {!isLoadingGoals && !goals.length && (
+              <Card withBorder radius="md" p="xl">
+                <Stack gap={6} align="center">
+                  <Title order={5}>No goals yet</Title>
+                  <Text c="dimmed" ta="center">
+                    Create your first goal to start tracking progress.
+                  </Text>
+                </Stack>
+              </Card>
+            )}
           </Stack>
         </ScrollArea>
       </Stack>

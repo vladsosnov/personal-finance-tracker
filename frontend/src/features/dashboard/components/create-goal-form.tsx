@@ -65,7 +65,21 @@ export const CreateGoalForm = ({
             <GoalColorPicker label="Goal color" value={goalColor} onChange={setGoalColor} />
           </Grid.Col>
           <Grid.Col span={{ base: 12, md: 2 }}>
-            <Button fullWidth onClick={onCreateGoal} loading={isCreatingGoal} disabled={isAddDisabled}>
+            <Button
+              fullWidth
+              onClick={onCreateGoal}
+              loading={isCreatingGoal}
+              disabled={isAddDisabled}
+              styles={{
+                root: {
+                  "&:disabled": {
+                    backgroundColor: "rgba(148, 163, 184, 0.18)",
+                    color: "rgba(226, 232, 240, 0.72)",
+                    border: "1px solid rgba(148, 163, 184, 0.24)",
+                  },
+                },
+              }}
+            >
               Add
             </Button>
           </Grid.Col>

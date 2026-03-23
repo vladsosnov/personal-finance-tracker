@@ -52,6 +52,7 @@ const CHART_RANGE_OPTIONS = [
 ] as const;
 
 type GoalDetailsPanelProps = {
+  hasGoals: boolean;
   selectedGoal: GoalDetails | null;
   isLoadingGoalDetails: boolean;
   operationType: OperationType;
@@ -73,6 +74,7 @@ type GoalDetailsPanelProps = {
 };
 
 export const GoalDetailsPanel = ({
+  hasGoals,
   selectedGoal,
   isLoadingGoalDetails,
   operationType,
@@ -156,7 +158,25 @@ export const GoalDetailsPanel = ({
           </Stack>
         </Stack>
       ) : !selectedGoal ? (
-        <Text c="dimmed">Select a goal card to see details, operations, and chart.</Text>
+        hasGoals ? (
+          <Card withBorder radius="md" p="xl">
+            <Stack gap={6} align="center">
+              <Title order={5}>Choose a goal</Title>
+              <Text c="dimmed" ta="center">
+                Select a goal card to view details, operations, and chart.
+              </Text>
+            </Stack>
+          </Card>
+        ) : (
+          <Card withBorder radius="md" p="xl">
+            <Stack gap={6} align="center">
+              <Title order={5}>No goals yet</Title>
+              <Text c="dimmed" ta="center">
+                Create your first goal to start tracking progress.
+              </Text>
+            </Stack>
+          </Card>
+        )
       ) : (
         <ScrollArea h={610} offsetScrollbars scrollbarSize={8}>
           <Stack gap="md" pr={4}>
@@ -253,7 +273,7 @@ export const GoalDetailsPanel = ({
                           root: {
                             minHeight: 28,
                             backgroundColor: "rgba(15, 23, 42, 0.06)",
-                            color: "var(--mantine-color-gray-8)",
+                            color: "var(--mantine-color-text)",
                           },
                         }}
                         aria-label="Edit operation"

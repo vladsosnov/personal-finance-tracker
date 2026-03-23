@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery } from "@apollo/client/react";
-import { Button, Container, Grid, Group, Modal, NumberInput, Stack, Text, TextInput, Title } from "@mantine/core";
+import { Button, Card, Container, Grid, Group, Modal, NumberInput, Stack, Text, TextInput, Title } from "@mantine/core";
 import { CreateGoalForm } from "@/features/dashboard/components/create-goal-form";
 import { DashboardOverviewStats } from "@/features/dashboard/components/dashboard-overview-stats";
 import { DashboardSkeleton } from "@/features/dashboard/components/dashboard-skeleton";
@@ -434,48 +434,60 @@ export const DashboardClient = () => {
           onCreateGoal={handleCreateGoal}
         />
 
-        <Grid>
-          <Grid.Col span={{ base: 12, md: 5 }}>
-            <GoalsList
-              goals={goals}
-              isLoadingGoals={shouldShowGoalsSkeleton}
-              selectedGoalId={selectedGoalId}
-              isManageMode={isManageMode}
-              onSelectGoal={setSelectedGoalId}
-              onToggleManageMode={() => setIsManageMode((current) => !current)}
-              onStartEditGoal={handleStartEditGoal}
-              onStartDeleteGoal={setDeletingGoalId}
-              draggingGoalId={draggingGoalId}
-              dragOverGoalId={dragOverGoalId}
-              onDragStart={handleDragStart}
-              onDragOver={handleDragOver}
-              onDrop={handleDrop}
-              onDragEnd={handleDragEnd}
-            />
-          </Grid.Col>
-          <Grid.Col span={{ base: 12, md: 7 }}>
-            <GoalDetailsPanel
-              selectedGoal={selectedGoal}
-              isLoadingGoalDetails={shouldShowGoalDetailsSkeleton}
-              operationType={operationType}
-              operationAmount={operationAmount}
-              operationNote={operationNote}
-              operationDate={operationDate}
-              editingOperationId={editingOperationId}
-              deletingOperationId={deletingOperationId}
-              isUpdatingProgress={isUpdatingProgress || isEditingOperation}
-              isUpdateDisabled={isUpdateDisabled}
-              setOperationType={setOperationType}
-              setOperationAmount={setOperationAmount}
-              setOperationNote={setOperationNote}
-              setOperationDate={setOperationDate}
-              onStartEditOperation={handleStartEditOperation}
-              onDeleteOperation={handleDeleteOperation}
-              onCancelEditOperation={resetOperationForm}
-              onUpdateProgress={handleUpdateProgress}
-            />
-          </Grid.Col>
-        </Grid>
+        {!shouldShowGoalsSkeleton && !goals.length ? (
+          <Card withBorder radius="md" p="xl">
+            <Stack gap={6} align="center">
+              <Title order={4}>No goals yet</Title>
+              <Text c="dimmed" ta="center">
+                Create your first goal to start tracking progress.
+              </Text>
+            </Stack>
+          </Card>
+        ) : (
+          <Grid>
+            <Grid.Col span={{ base: 12, md: 4 }}>
+              <GoalsList
+                goals={goals}
+                isLoadingGoals={shouldShowGoalsSkeleton}
+                selectedGoalId={selectedGoalId}
+                isManageMode={isManageMode}
+                onSelectGoal={setSelectedGoalId}
+                onToggleManageMode={() => setIsManageMode((current) => !current)}
+                onStartEditGoal={handleStartEditGoal}
+                onStartDeleteGoal={setDeletingGoalId}
+                draggingGoalId={draggingGoalId}
+                dragOverGoalId={dragOverGoalId}
+                onDragStart={handleDragStart}
+                onDragOver={handleDragOver}
+                onDrop={handleDrop}
+                onDragEnd={handleDragEnd}
+              />
+            </Grid.Col>
+            <Grid.Col span={{ base: 12, md: 8 }}>
+              <GoalDetailsPanel
+                hasGoals={goals.length > 0}
+                selectedGoal={selectedGoal}
+                isLoadingGoalDetails={shouldShowGoalDetailsSkeleton}
+                operationType={operationType}
+                operationAmount={operationAmount}
+                operationNote={operationNote}
+                operationDate={operationDate}
+                editingOperationId={editingOperationId}
+                deletingOperationId={deletingOperationId}
+                isUpdatingProgress={isUpdatingProgress || isEditingOperation}
+                isUpdateDisabled={isUpdateDisabled}
+                setOperationType={setOperationType}
+                setOperationAmount={setOperationAmount}
+                setOperationNote={setOperationNote}
+                setOperationDate={setOperationDate}
+                onStartEditOperation={handleStartEditOperation}
+                onDeleteOperation={handleDeleteOperation}
+                onCancelEditOperation={resetOperationForm}
+                onUpdateProgress={handleUpdateProgress}
+              />
+            </Grid.Col>
+          </Grid>
+        )}
 
         <Modal
           opened={Boolean(editingGoalId)}
