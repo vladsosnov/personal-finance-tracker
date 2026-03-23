@@ -77,7 +77,7 @@ export const GoalsList = ({
     <Card withBorder radius="md" p="lg">
       <Stack gap={6}>
         <Group justify="space-between" align="center">
-          <Title order={4}>Goal cards</Title>
+          <Title order={4}>Goals ({goals.length})</Title>
           {goals.length > 0 && (
             <Button variant={isManageMode ? "light" : "subtle"} px={10} aria-label="Manage goals" onClick={onToggleManageMode}>
               {isManageMode ? <ManageActiveIcon /> : <ManageIcon />}
@@ -140,8 +140,10 @@ export const GoalsList = ({
                   onClick={() => onSelectGoal(goal.id)}
                 >
                   <Stack gap="xs">
-                    <Group justify="space-between">
-                      <Text fw={700}>{goal.title}</Text>
+                    <Group justify="space-between" align="flex-start" wrap="nowrap">
+                      <Text fw={700} style={{ flex: 1, minWidth: 0 }}>
+                        {goal.title}
+                      </Text>
                       {isManageMode ? (
                         <Group gap={4} wrap="nowrap" style={{ minHeight: 28 }}>
                           <Button

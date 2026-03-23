@@ -93,9 +93,10 @@ const ensureAuthed = (context: Context): string => {
   return context.userId;
 };
 
-const toSafeUser = (user: { id: string; email: string }) => ({
+const toSafeUser = (user: { id: string; email: string; subscription: string }) => ({
   id: user.id,
   email: user.email,
+  subscription: user.subscription,
 });
 
 export const schema = buildSchema(`
@@ -107,6 +108,7 @@ export const schema = buildSchema(`
   type User {
     id: ID!
     email: String!
+    subscription: String!
   }
 
   type AuthPayload {
@@ -234,6 +236,12 @@ export const rootValue = {
   },
   createGoal: async ({ title, targetAmount, initialAmount = 0, color = "#0F766E" }: GoalArgs, context: Context) => {
     const userId = ensureAuthed(context);
+    if (!title.trim()) {
+      throw new Error("Goal title is required");
+    }
+    if (title.trim().length > 80) {
+      throw new Error("Goal title must be at most 80 characters");
+    }
     if (targetAmount < 0) {
       throw new Error("Target amount cannot be negative");
     }
@@ -251,6 +259,9 @@ export const rootValue = {
     const userId = ensureAuthed(context);
     if (!title.trim()) {
       throw new Error("Goal title is required");
+    }
+    if (title.trim().length > 80) {
+      throw new Error("Goal title must be at most 80 characters");
     }
     if (targetAmount < 0) {
       throw new Error("Target amount cannot be negative");

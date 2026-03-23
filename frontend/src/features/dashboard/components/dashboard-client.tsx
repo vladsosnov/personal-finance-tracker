@@ -70,7 +70,7 @@ export const DashboardClient = () => {
     }
   }, [isAuthed, isHydrated, router]);
 
-  const { data: meData } = useQuery<{ me: { id: string; email: string } | null }>(GET_ME, {
+  const { data: meData } = useQuery<{ me: { id: string; email: string; subscription: string } | null }>(GET_ME, {
     skip: !isHydrated || !isAuthed,
   });
   const { data: goalsData, previousData: previousGoalsData, loading: isLoadingGoals, refetch: refetchGoals } = useQuery<{ goals: Goal[] }>(
@@ -143,7 +143,7 @@ export const DashboardClient = () => {
 
     await createGoal({
       variables: {
-        title: goalTitle.trim(),
+        title: goalTitle.trim().slice(0, 80),
         targetAmount: Number(goalTarget),
         initialAmount: Number(goalInitialAmount || 0),
         color: goalColor,
@@ -328,7 +328,7 @@ export const DashboardClient = () => {
       return;
     }
 
-    setEditedGoalTitle(goal.title);
+    setEditedGoalTitle(goal.title.slice(0, 80));
     setEditedGoalTarget(goal.targetAmount);
     setEditedGoalInitialAmount(goal.initialAmount > 0 ? goal.initialAmount : "");
     setEditedGoalColor(goal.color);
@@ -341,7 +341,7 @@ export const DashboardClient = () => {
     }
 
     await handleEditGoal(editingGoalId, {
-      title: editedGoalTitle.trim(),
+      title: editedGoalTitle.trim().slice(0, 80),
       targetAmount: Number(editedGoalTarget),
       initialAmount: Number(editedGoalInitialAmount || 0),
       color: editedGoalColor,
@@ -500,7 +500,12 @@ export const DashboardClient = () => {
           centered
         >
           <Stack gap="md">
-            <TextInput label="Goal title" value={editedGoalTitle} onChange={(event) => setEditedGoalTitle(event.currentTarget.value)} />
+            <TextInput
+              label="Title"
+              value={editedGoalTitle}
+              maxLength={80}
+              onChange={(event) => setEditedGoalTitle(event.currentTarget.value)}
+            />
             <NumberInput
               label="Target amount"
               placeholder="25000"
@@ -516,7 +521,7 @@ export const DashboardClient = () => {
               value={editedGoalInitialAmount}
               onChange={(value) => setEditedGoalInitialAmount(numberOrZero(value))}
             />
-            <GoalColorPicker label="Goal color" value={editedGoalColor} onChange={setEditedGoalColor} disabled={isEditingGoal} />
+            <GoalColorPicker label="Color" value={editedGoalColor} onChange={setEditedGoalColor} disabled={isEditingGoal} />
             <Group justify="flex-end">
               <Button variant="default" onClick={() => setEditingGoalId(null)} disabled={isEditingGoal}>
                 Cancel

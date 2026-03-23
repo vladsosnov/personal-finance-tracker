@@ -36,9 +36,10 @@ export const CreateGoalForm = ({
         <Grid align="flex-end">
           <Grid.Col span={{ base: 12, md: 4 }}>
             <TextInput
-              label="Goal title"
+              label="Title"
               placeholder="Buy a house"
               value={goalTitle}
+              maxLength={80}
               onChange={(event) => setGoalTitle(event.currentTarget.value)}
             />
           </Grid.Col>
@@ -62,7 +63,7 @@ export const CreateGoalForm = ({
             />
           </Grid.Col>
           <Grid.Col span={{ base: 12, md: 2 }}>
-            <GoalColorPicker label="Goal color" value={goalColor} onChange={setGoalColor} />
+            <GoalColorPicker label="Color" value={goalColor} onChange={setGoalColor} />
           </Grid.Col>
           <Grid.Col span={{ base: 12, md: 2 }}>
             <Button

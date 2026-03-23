@@ -284,7 +284,7 @@ export const ProfileClient = () => {
     }
   }, [isAuthed, isHydrated, router]);
 
-  const { data: meData } = useQuery<{ me: { id: string; email: string } | null }>(GET_ME, {
+  const { data: meData } = useQuery<{ me: { id: string; email: string; subscription: string } | null }>(GET_ME, {
     skip: !isHydrated || !isAuthed,
   });
   const [importGoalsMutation] = useMutation<{
@@ -419,15 +419,7 @@ export const ProfileClient = () => {
       setFile(null);
       await apolloClient.clearStore();
       router.refresh();
-      setImportProgress((current) =>
-        current
-          ? {
-              ...current,
-              completedSteps: 3,
-              currentLabel: "Import completed.",
-            }
-          : current
-      );
+      setImportProgress(null);
     } catch (error) {
       setImportError(error instanceof Error ? error.message : "Import failed");
     } finally {
@@ -476,6 +468,7 @@ export const ProfileClient = () => {
           <Stack gap="sm">
             <Title order={4}>Email</Title>
             <Text>{meData?.me?.email ?? "Loading..."}</Text>
+            <Text>Subscription: {meData?.me?.subscription ?? "Free"}</Text>
           </Stack>
         </Card>
 

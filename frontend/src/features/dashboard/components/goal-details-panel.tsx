@@ -228,7 +228,7 @@ export const GoalDetailsPanel = ({
                 <Table.Th>Type</Table.Th>
                 <Table.Th>Amount</Table.Th>
                 <Table.Th>Note</Table.Th>
-                <Table.Th>Actions</Table.Th>
+                <Table.Th ta="right">Actions</Table.Th>
               </Table.Tr>
             </Table.Thead>
             <Table.Tbody>
@@ -264,7 +264,7 @@ export const GoalDetailsPanel = ({
                     )}
                   </Table.Td>
                   <Table.Td>
-                    <Group gap={4} wrap="nowrap">
+                    <Group gap={4} wrap="nowrap" justify="flex-end">
                       <Button
                         variant="light"
                         size="compact-sm"

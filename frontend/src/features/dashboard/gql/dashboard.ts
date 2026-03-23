@@ -29,6 +29,7 @@ export const GET_ME = gql`
     me {
       id
       email
+      subscription
     }
   }
 `;
