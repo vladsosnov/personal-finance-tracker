@@ -78,9 +78,11 @@ export const GoalsList = ({
       <Stack gap={6}>
         <Group justify="space-between" align="center">
           <Title order={4}>Goal cards</Title>
-          <Button variant={isManageMode ? "light" : "subtle"} px={10} aria-label="Manage goals" onClick={onToggleManageMode}>
-            {isManageMode ? <ManageActiveIcon /> : <ManageIcon />}
-          </Button>
+          {goals.length > 0 && (
+            <Button variant={isManageMode ? "light" : "subtle"} px={10} aria-label="Manage goals" onClick={onToggleManageMode}>
+              {isManageMode ? <ManageActiveIcon /> : <ManageIcon />}
+            </Button>
+          )}
         </Group>
         <Text size="sm" c="dimmed">
           Drag and drop cards to change their order.

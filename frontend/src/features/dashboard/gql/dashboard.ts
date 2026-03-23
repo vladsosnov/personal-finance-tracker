@@ -158,3 +158,12 @@ export const DELETE_GOAL_OPERATION = gql`
     }
   }
 `;
+
+export const IMPORT_GOALS = gql`
+  mutation ImportGoals($goals: [ImportGoalInput!]!) {
+    importGoals(goals: $goals) {
+      importedGoalsCount
+      importedOperationsCount
+    }
+  }
+`;

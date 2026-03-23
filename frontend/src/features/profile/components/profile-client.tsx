@@ -7,6 +7,7 @@ import {
   Alert,
   Button,
   Card,
+  Checkbox,
   Container,
   FileInput,
   Group,
@@ -19,7 +20,7 @@ import {
   Title,
   useMantineColorScheme,
 } from "@mantine/core";
-import { CREATE_GOAL, GET_ME, UPDATE_GOAL_PROGRESS } from "@/features/dashboard/gql/dashboard";
+import { GET_ME, IMPORT_GOALS } from "@/features/dashboard/gql/dashboard";
 import { DEFAULT_GOAL_COLOR } from "@/shared/constants/goal-colors";
 import { APP_ROUTES } from "@/shared/constants/routes";
 import { AUTH_TOKEN_KEY } from "@/shared/constants/storage";
@@ -63,8 +64,10 @@ type PreparedImportGoal = {
 };
 
 type SkippedImportGoal = {
+  sourceIndex: number;
   title: string;
   reason: string;
+  canInclude: boolean;
 };
 
 type PreparedImportResult = {
@@ -130,7 +133,7 @@ const normalizeColor = (value: string | undefined): string => {
   return `#${match[1].slice(0, 6).toUpperCase()}`;
 };
 
-const prepareImportGoals = (source: string): PreparedImportResult => {
+const prepareImportGoals = (source: string, includedZeroTargetGoalIndexes: Set<number>): PreparedImportResult => {
   const parsed = JSON.parse(source) as unknown;
 
   if (!Array.isArray(parsed)) {
@@ -146,17 +149,30 @@ const prepareImportGoals = (source: string): PreparedImportResult => {
     const targetAmount = Number(goal.targetValue);
     const initialAmount = Number(goal.initialValue ?? 0);
 
-    if (!Number.isFinite(targetAmount) || targetAmount <= 0) {
+    if (!Number.isFinite(targetAmount) || targetAmount < 0) {
       skippedGoals.push({
+        sourceIndex: goalIndex,
         title,
-        reason: "Target amount is missing or zero",
+        reason: "Target amount is invalid",
+        canInclude: false,
+      });
+      return;
+    }
+    if (targetAmount === 0 && !includedZeroTargetGoalIndexes.has(goalIndex)) {
+      skippedGoals.push({
+        sourceIndex: goalIndex,
+        title,
+        reason: 'Target amount is missing or zero',
+        canInclude: true,
       });
       return;
     }
     if (!Number.isFinite(initialAmount) || initialAmount < 0) {
       skippedGoals.push({
+        sourceIndex: goalIndex,
         title,
         reason: "Starting amount is invalid",
+        canInclude: false,
       });
       return;
     }
@@ -172,8 +188,10 @@ const prepareImportGoals = (source: string): PreparedImportResult => {
 
       if (!Number.isFinite(value) || !operationDate || Number.isNaN(timestamp)) {
         skippedGoals.push({
+          sourceIndex: goalIndex,
           title,
           reason: `History item ${historyIndex + 1} is invalid`,
+          canInclude: false,
         });
         return;
       }
@@ -228,6 +246,7 @@ export const ProfileClient = () => {
   const [isHydrated, setIsHydrated] = useState(false);
   const [isAuthed, setIsAuthed] = useState(false);
   const [file, setFile] = useState<File | null>(null);
+  const [importSource, setImportSource] = useState<string | null>(null);
   const [preparedGoals, setPreparedGoals] = useState<PreparedImportGoal[]>([]);
   const [skippedGoals, setSkippedGoals] = useState<SkippedImportGoal[]>([]);
   const [importError, setImportError] = useState<string | null>(null);
@@ -235,6 +254,7 @@ export const ProfileClient = () => {
   const [isPreparingImport, setIsPreparingImport] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [importProgress, setImportProgress] = useState<ImportProgressState | null>(null);
+  const [includedZeroTargetGoalIndexes, setIncludedZeroTargetGoalIndexes] = useState<number[]>([]);
 
   useEffect(() => {
     const token = window.localStorage.getItem(AUTH_TOKEN_KEY);
@@ -251,8 +271,12 @@ export const ProfileClient = () => {
   const { data: meData } = useQuery<{ me: { id: string; email: string } | null }>(GET_ME, {
     skip: !isHydrated || !isAuthed,
   });
-  const [createGoal] = useMutation<{ createGoal: { id: string } }>(CREATE_GOAL);
-  const [updateGoalProgress] = useMutation(UPDATE_GOAL_PROGRESS);
+  const [importGoalsMutation] = useMutation<{
+    importGoals: {
+      importedGoalsCount: number;
+      importedOperationsCount: number;
+    };
+  }>(IMPORT_GOALS);
 
   const importTotals = useMemo(
     () =>
@@ -267,11 +291,27 @@ export const ProfileClient = () => {
   );
   const importProgressValue = importProgress ? (importProgress.completedSteps / Math.max(importProgress.totalSteps, 1)) * 100 : 0;
 
+  const applyPreparedImport = (source: string, nextIncludedZeroTargetGoalIndexes: number[]) => {
+    const result = prepareImportGoals(source, new Set(nextIncludedZeroTargetGoalIndexes));
+    setPreparedGoals(result.goals);
+    setSkippedGoals(result.skippedGoals);
+    setIncludedZeroTargetGoalIndexes(nextIncludedZeroTargetGoalIndexes);
+
+    if (!result.goals.length && result.skippedGoals.length) {
+      setImportError("No valid goals found in the selected file");
+      return;
+    }
+
+    setImportError(null);
+  };
+
   const handlePreviewImport = async () => {
     if (!file) {
       setImportError("Choose a .txt file first");
+      setImportSource(null);
       setPreparedGoals([]);
       setSkippedGoals([]);
+      setIncludedZeroTargetGoalIndexes([]);
       setImportSummary(null);
       return;
     }
@@ -282,17 +322,13 @@ export const ProfileClient = () => {
 
     try {
       const source = await file.text();
-      const result = prepareImportGoals(source);
-
-      setPreparedGoals(result.goals);
-      setSkippedGoals(result.skippedGoals);
-
-      if (!result.goals.length && result.skippedGoals.length) {
-        setImportError("No valid goals found in the selected file");
-      }
+      setImportSource(source);
+      applyPreparedImport(source, []);
     } catch (error) {
+      setImportSource(null);
       setPreparedGoals([]);
       setSkippedGoals([]);
+      setIncludedZeroTargetGoalIndexes([]);
       setImportError(error instanceof Error ? error.message : "Failed to parse import file");
     } finally {
       setIsPreparingImport(false);
@@ -310,84 +346,67 @@ export const ProfileClient = () => {
     setImportSummary(null);
     setImportProgress({
       completedSteps: 0,
-      totalSteps: preparedGoals.reduce((total, goal) => total + 1 + goal.operationCount, 0),
-      currentLabel: "Preparing import...",
+      totalSteps: 3,
+      currentLabel: "Preparing import payload...",
     });
 
     try {
-      for (const goal of preparedGoals) {
-        setImportProgress((current) =>
-          current
-            ? {
-                ...current,
-                currentLabel: `Creating goal: ${goal.title}`,
-              }
-            : current
-        );
+      setImportProgress((current) =>
+        current
+          ? {
+              ...current,
+              completedSteps: 1,
+              currentLabel: "Sending import request...",
+            }
+          : current
+      );
 
-        const result = await createGoal({
-          variables: {
+      const result = await importGoalsMutation({
+        variables: {
+          goals: preparedGoals.map((goal) => ({
             title: goal.title,
             targetAmount: goal.targetAmount,
             initialAmount: goal.initialAmount,
             color: goal.color,
-          },
-        });
+            operations: goal.operations,
+          })),
+        },
+      });
 
-        const goalId = result.data?.createGoal.id;
-        if (!goalId) {
-          throw new Error(`Failed to create goal "${goal.title}"`);
-        }
+      setImportProgress((current) =>
+        current
+          ? {
+              ...current,
+              completedSteps: 2,
+              currentLabel: "Updating dashboard...",
+            }
+          : current
+      );
 
-        setImportProgress((current) =>
-          current
-            ? {
-                ...current,
-                completedSteps: current.completedSteps + 1,
-              }
-            : current
-        );
-
-        for (const operation of goal.operations) {
-          setImportProgress((current) =>
-            current
-              ? {
-                  ...current,
-                  currentLabel: `${goal.title}: ${operation.type === "INCREASE" ? "adding" : "subtracting"} ${operation.amount}`,
-                }
-              : current
-          );
-
-          await updateGoalProgress({
-            variables: {
-              goalId,
-              type: operation.type,
-              amount: operation.amount,
-              note: operation.note,
-              operationDate: operation.operationDate,
-            },
-          });
-
-          setImportProgress((current) =>
-            current
-              ? {
-                  ...current,
-                  completedSteps: current.completedSteps + 1,
-                }
-              : current
-          );
-        }
-      }
-
-      setImportSummary(`Imported ${importTotals.goals} goals and ${importTotals.operations} operations.`);
+      const summary = result.data?.importGoals;
+      setImportSummary(
+        `Imported ${summary?.importedGoalsCount ?? preparedGoals.length} goals and ${summary?.importedOperationsCount ?? importTotals.operations} operations.`
+      );
       setPreparedGoals([]);
       setSkippedGoals([]);
+      setIncludedZeroTargetGoalIndexes([]);
+      setImportSource(null);
       setFile(null);
+      router.push(APP_ROUTES.dashboard);
+      router.refresh();
+      setImportProgress((current) =>
+        current
+          ? {
+              ...current,
+              completedSteps: 3,
+              currentLabel: "Import completed.",
+            }
+          : current
+      );
     } catch (error) {
       setImportError(error instanceof Error ? error.message : "Import failed");
     } finally {
       setIsImporting(false);
-      setImportProgress(null);
     }
   };
 
@@ -531,6 +550,7 @@ export const ProfileClient = () => {
                     <Table.Tr>
                       <Table.Th>Title</Table.Th>
                       <Table.Th>Reason</Table.Th>
+                      <Table.Th>Actions</Table.Th>
                     </Table.Tr>
                   </Table.Thead>
                   <Table.Tbody>
@@ -538,6 +558,27 @@ export const ProfileClient = () => {
                       <Table.Tr key={`${goal.title}-${goal.reason}-${index}`}>
                         <Table.Td>{goal.title}</Table.Td>
                         <Table.Td>{goal.reason}</Table.Td>
+                        <Table.Td>
+                          {goal.canInclude ? (
+                            <Checkbox
+                              label="Include"
+                              checked={includedZeroTargetGoalIndexes.includes(goal.sourceIndex)}
+                              onChange={(event) => {
+                                if (!importSource) {
+                                  return;
+                                }
+
+                                const nextIncludedIndexes = event.currentTarget.checked
+                                  ? [...includedZeroTargetGoalIndexes, goal.sourceIndex]
+                                  : includedZeroTargetGoalIndexes.filter((item) => item !== goal.sourceIndex);
+
+                                applyPreparedImport(importSource, nextIncludedIndexes);
+                              }}
+                            />
+                          ) : (
+                            "-"
+                          )}
+                        </Table.Td>
                       </Table.Tr>
                     ))}
                   </Table.Tbody>

@@ -53,6 +53,47 @@ export const createGoalOperation = async (
   );
 };
 
+export const bulkCreateGoalOperations = async (
+  operations: Array<{
+    userId: string;
+    goalId: string;
+    type: OperationType;
+    amount: number;
+    note?: string;
+    operationDate: string;
+  }>
+): Promise<GoalOperation[]> => {
+  if (!operations.length) {
+    return [];
+  }
+
+  const createdOperations = await GoalOperationModel.insertMany(
+    operations.map((operation) => ({
+      userId: operation.userId,
+      goalId: operation.goalId,
+      type: operation.type,
+      amount: operation.amount,
+      note: operation.note,
+      operationDate: operation.operationDate,
+    }))
+  );
+
+  return createdOperations.map((operation) =>
+    toGoalOperation(
+      operation.toObject() as unknown as {
+        _id: mongoose.Types.ObjectId;
+        userId: mongoose.Types.ObjectId;
+        goalId: mongoose.Types.ObjectId;
+        type: OperationType;
+        amount: number;
+        note?: string;
+        operationDate?: string;
+        createdAt: Date;
+      }
+    )
+  );
+};
+
 export const getGoalOperationById = async (userId: string, operationId: string): Promise<GoalOperation | undefined> => {
   const operation = await GoalOperationModel.findOne({ _id: operationId, userId }).lean();
 

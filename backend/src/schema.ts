@@ -1,8 +1,8 @@
 import { buildSchema } from "graphql";
 import { hashPassword, signJwt, verifyPassword } from "./auth";
 import { createUser, findUserByEmail, findUserById } from "./modules/auth/user.repository";
-import { createGoal, deleteGoal, getGoalById, listGoalsByUser, reorderGoals, updateGoal, updateGoalColor } from "./modules/goals/goal.repository";
-import { createGoalOperation, deleteGoalOperation, deleteOperationsByGoal, getGoalOperationById, updateGoalOperation } from "./modules/goals/operation.repository";
+import { bulkCreateGoals, createGoal, deleteGoal, getGoalById, listGoalsByUser, reorderGoals, updateGoal, updateGoalColor } from "./modules/goals/goal.repository";
+import { bulkCreateGoalOperations, createGoalOperation, deleteGoalOperation, deleteOperationsByGoal, getGoalOperationById, updateGoalOperation } from "./modules/goals/operation.repository";
 import { buildGoalView } from "./modules/goals/goal.service";
 import type { OperationType } from "./modules/goals/types";
 
@@ -67,6 +67,25 @@ type EditGoalArgs = {
   color: string;
 };
 
+type ImportGoalOperationInput = {
+  type: OperationType;
+  amount: number;
+  note?: string;
+  operationDate: string;
+};
+
+type ImportGoalInput = {
+  title: string;
+  targetAmount: number;
+  initialAmount?: number;
+  color: string;
+  operations: ImportGoalOperationInput[];
+};
+
+type ImportGoalsArgs = {
+  goals: ImportGoalInput[];
+};
+
 const ensureAuthed = (context: Context): string => {
   if (!context.userId) {
     throw new Error("Unauthorized");
@@ -93,6 +112,26 @@ export const schema = buildSchema(`
   type AuthPayload {
     token: String!
     user: User!
+  }
+
+  input ImportGoalOperationInput {
+    type: OperationType!
+    amount: Float!
+    note: String
+    operationDate: String!
+  }
+
+  input ImportGoalInput {
+    title: String!
+    targetAmount: Float!
+    initialAmount: Float
+    color: String!
+    operations: [ImportGoalOperationInput!]!
+  }
+
+  type ImportGoalsPayload {
+    importedGoalsCount: Int!
+    importedOperationsCount: Int!
   }
 
   type GoalOperation {
@@ -131,6 +170,7 @@ export const schema = buildSchema(`
     updateGoalColor(goalId: ID!, color: String!): Goal!
     deleteGoal(goalId: ID!): Goal!
     reorderGoals(goalIds: [ID!]!): [Goal!]!
+    importGoals(goals: [ImportGoalInput!]!): ImportGoalsPayload!
     updateGoalProgress(goalId: ID!, type: OperationType!, amount: Float!, note: String, operationDate: String): Goal!
     editGoalOperation(operationId: ID!, type: OperationType!, amount: Float!, note: String, operationDate: String): Goal!
     deleteGoalOperation(operationId: ID!): Goal!
@@ -188,8 +228,8 @@ export const rootValue = {
   },
   createGoal: async ({ title, targetAmount, initialAmount = 0, color = "#0F766E" }: GoalArgs, context: Context) => {
     const userId = ensureAuthed(context);
-    if (targetAmount <= 0) {
-      throw new Error("Target amount should be greater than 0");
+    if (targetAmount < 0) {
+      throw new Error("Target amount cannot be negative");
     }
     if (initialAmount < 0) {
       throw new Error("Initial amount cannot be negative");
@@ -206,8 +246,8 @@ export const rootValue = {
     if (!title.trim()) {
       throw new Error("Goal title is required");
     }
-    if (targetAmount <= 0) {
-      throw new Error("Target amount should be greater than 0");
+    if (targetAmount < 0) {
+      throw new Error("Target amount cannot be negative");
     }
     if (initialAmount < 0) {
       throw new Error("Initial amount cannot be negative");
@@ -261,6 +301,67 @@ export const rootValue = {
     await reorderGoals(userId, goalIds);
     const goals = await listGoalsByUser(userId);
     return Promise.all(goals.map((goal) => buildGoalView(userId, goal)));
+  },
+  importGoals: async ({ goals }: ImportGoalsArgs, context: Context) => {
+    const userId = ensureAuthed(context);
+    if (!goals.length) {
+      return {
+        importedGoalsCount: 0,
+        importedOperationsCount: 0,
+      };
+    }
+
+    for (const goal of goals) {
+      if (!goal.title.trim()) {
+        throw new Error("Goal title is required");
+      }
+      if (goal.targetAmount < 0) {
+        throw new Error("Target amount cannot be negative");
+      }
+      if ((goal.initialAmount ?? 0) < 0) {
+        throw new Error("Initial amount cannot be negative");
+      }
+      if (!/^#[0-9A-Fa-f]{6}$/.test(goal.color)) {
+        throw new Error("Goal color must be a valid hex color");
+      }
+
+      for (const operation of goal.operations) {
+        if (operation.amount <= 0) {
+          throw new Error("Operation amount should be greater than 0");
+        }
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(operation.operationDate)) {
+          throw new Error("Operation date must use YYYY-MM-DD format");
+        }
+      }
+    }
+
+    const createdGoals = await bulkCreateGoals(
+      userId,
+      goals.map((goal) => ({
+        title: goal.title.trim(),
+        targetAmount: goal.targetAmount,
+        initialAmount: goal.initialAmount ?? 0,
+        color: goal.color,
+      }))
+    );
+
+    const operations = goals.flatMap((goal, index) =>
+      goal.operations.map((operation) => ({
+        userId,
+        goalId: createdGoals[index].id,
+        type: operation.type,
+        amount: operation.amount,
+        note: operation.note?.trim() || undefined,
+        operationDate: operation.operationDate,
+      }))
+    );
+
+    await bulkCreateGoalOperations(operations);
+
+    return {
+      importedGoalsCount: createdGoals.length,
+      importedOperationsCount: operations.length,
+    };
   },
   updateGoalProgress: async ({ goalId, type, amount, note, operationDate }: GoalOperationArgs, context: Context) => {
     const userId = ensureAuthed(context);

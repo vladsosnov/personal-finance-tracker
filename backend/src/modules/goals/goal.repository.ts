@@ -46,6 +46,49 @@ export const createGoal = async (
   );
 };
 
+export const bulkCreateGoals = async (
+  userId: string,
+  goals: Array<{
+    title: string;
+    targetAmount: number;
+    initialAmount: number;
+    color: string;
+  }>
+): Promise<Goal[]> => {
+  if (!goals.length) {
+    return [];
+  }
+
+  const lastGoal = await GoalModel.findOne({ userId }).sort({ sortOrder: -1, createdAt: -1 }).lean();
+  const nextSortOrder = (lastGoal?.sortOrder ?? -1) + 1;
+
+  const createdGoals = await GoalModel.insertMany(
+    goals.map((goal, index) => ({
+      userId,
+      title: goal.title,
+      targetAmount: goal.targetAmount,
+      initialAmount: goal.initialAmount,
+      color: goal.color,
+      sortOrder: nextSortOrder + index,
+    }))
+  );
+
+  return createdGoals.map((goal) =>
+    toGoal(
+      goal.toObject() as unknown as {
+        _id: mongoose.Types.ObjectId;
+        userId: mongoose.Types.ObjectId;
+        title: string;
+        targetAmount: number;
+        initialAmount?: number;
+        color?: string;
+        sortOrder?: number;
+        createdAt: Date;
+      }
+    )
+  );
+};
+
 export const listGoalsByUser = async (userId: string): Promise<Goal[]> => {
   const goals = await GoalModel.find({ userId }).sort({ sortOrder: 1, createdAt: 1 }).lean();
   return goals.map((goal) =>

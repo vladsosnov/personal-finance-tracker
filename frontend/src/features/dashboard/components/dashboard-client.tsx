@@ -125,6 +125,12 @@ export const DashboardClient = () => {
   const shouldShowGoalsSkeleton = isLoadingGoals && !goals.length;
   const shouldShowGoalDetailsSkeleton = Boolean(selectedGoalId) && isLoadingGoalDetails && !selectedGoal;
 
+  useEffect(() => {
+    if (!goals.length && isManageMode) {
+      setIsManageMode(false);
+    }
+  }, [goals.length, isManageMode]);
+
   const totalTarget = useMemo(() => goals.reduce((sum: number, goal: Goal) => sum + goal.targetAmount, 0), [goals]);
   const totalCurrent = useMemo(() => goals.reduce((sum: number, goal: Goal) => sum + goal.currentAmount, 0), [goals]);
   const isAddDisabled = !goalTitle.trim() || !goalTarget || goalTarget <= 0;
