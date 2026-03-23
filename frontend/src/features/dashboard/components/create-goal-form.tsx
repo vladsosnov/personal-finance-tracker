@@ -55,7 +55,7 @@ export const CreateGoalForm = ({
             />
           </Grid.Col>
           <Grid.Col span={{ base: 12, md: 2 }}>
-            <Button fullWidth mt={24} onClick={onCreateGoal} loading={isCreatingGoal} disabled={isAddDisabled}>
+            <Button fullWidth mt={6} onClick={onCreateGoal} loading={isCreatingGoal} disabled={isAddDisabled}>
               Add
             </Button>
           </Grid.Col>

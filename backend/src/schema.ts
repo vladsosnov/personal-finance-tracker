@@ -1,7 +1,7 @@
 import { buildSchema } from "graphql";
 import { hashPassword, signJwt, verifyPassword } from "./auth";
 import { createUser, findUserByEmail, findUserById } from "./modules/auth/user.repository";
-import { createGoal, getGoalById, listGoalsByUser } from "./modules/goals/goal.repository";
+import { createGoal, getGoalById, listGoalsByUser, reorderGoals } from "./modules/goals/goal.repository";
 import { createGoalOperation } from "./modules/goals/operation.repository";
 import { buildGoalView } from "./modules/goals/goal.service";
 import type { OperationType } from "./modules/goals/types";
@@ -31,6 +31,10 @@ type GoalOperationArgs = {
 
 type GoalLookupArgs = {
   id: string;
+};
+
+type ReorderGoalsArgs = {
+  goalIds: string[];
 };
 
 const ensureAuthed = (context: Context): string => {
@@ -75,6 +79,7 @@ export const schema = buildSchema(`
     title: String!
     targetAmount: Float!
     initialAmount: Float!
+    sortOrder: Int!
     currentAmount: Float!
     progress: Float!
     createdAt: String!
@@ -91,6 +96,7 @@ export const schema = buildSchema(`
     register(email: String!, password: String!): AuthPayload!
     login(email: String!, password: String!): AuthPayload!
     createGoal(title: String!, targetAmount: Float!, initialAmount: Float): Goal!
+    reorderGoals(goalIds: [ID!]!): [Goal!]!
     updateGoalProgress(goalId: ID!, type: OperationType!, amount: Float!, note: String, operationDate: String): Goal!
   }
 `);
@@ -155,6 +161,12 @@ export const rootValue = {
 
     const goal = await createGoal(userId, title.trim(), targetAmount, initialAmount);
     return buildGoalView(userId, goal);
+  },
+  reorderGoals: async ({ goalIds }: ReorderGoalsArgs, context: Context) => {
+    const userId = ensureAuthed(context);
+    await reorderGoals(userId, goalIds);
+    const goals = await listGoalsByUser(userId);
+    return Promise.all(goals.map((goal) => buildGoalView(userId, goal)));
   },
   updateGoalProgress: async ({ goalId, type, amount, note, operationDate }: GoalOperationArgs, context: Context) => {
     const userId = ensureAuthed(context);

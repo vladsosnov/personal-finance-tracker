@@ -17,6 +17,7 @@ export const buildGoalView = async (userId: string, goal: Goal): Promise<GoalVie
     title: goal.title,
     targetAmount: goal.targetAmount,
     initialAmount: goal.initialAmount,
+    sortOrder: goal.sortOrder,
     currentAmount,
     progress,
     createdAt: goal.createdAt,

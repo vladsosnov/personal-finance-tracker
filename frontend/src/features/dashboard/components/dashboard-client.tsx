@@ -9,7 +9,7 @@ import { DashboardOverviewStats } from "@/features/dashboard/components/dashboar
 import { DashboardSkeleton } from "@/features/dashboard/components/dashboard-skeleton";
 import { GoalDetailsPanel } from "@/features/dashboard/components/goal-details-panel";
 import { GoalsList } from "@/features/dashboard/components/goals-list";
-import { CREATE_GOAL, GET_GOAL_DETAILS, GET_GOALS, GET_ME, UPDATE_GOAL_PROGRESS } from "@/features/dashboard/gql/dashboard";
+import { CREATE_GOAL, GET_GOAL_DETAILS, GET_GOALS, GET_ME, REORDER_GOALS, UPDATE_GOAL_PROGRESS } from "@/features/dashboard/gql/dashboard";
 import type { Goal, GoalDetails } from "@/features/dashboard/types";
 import { APP_ROUTES } from "@/shared/constants/routes";
 import { AUTH_TOKEN_KEY } from "@/shared/constants/storage";
@@ -29,6 +29,9 @@ export const DashboardClient = () => {
   const [operationAmount, setOperationAmount] = useState<number | "">(0);
   const [operationNote, setOperationNote] = useState("");
   const [operationDate, setOperationDate] = useState(getTodayDateValue);
+  const [draggingGoalId, setDraggingGoalId] = useState<string | null>(null);
+  const [dragOverGoalId, setDragOverGoalId] = useState<string | null>(null);
+  const [optimisticGoals, setOptimisticGoals] = useState<Goal[] | null>(null);
 
   useEffect(() => {
     const token = window.localStorage.getItem(AUTH_TOKEN_KEY);
@@ -53,10 +56,27 @@ export const DashboardClient = () => {
     skip: !isHydrated || !isAuthed || !selectedGoalId,
   });
 
+  const serverGoals = useMemo(() => goalsData?.goals ?? [], [goalsData]);
+
+  useEffect(() => {
+    if (!optimisticGoals) {
+      return;
+    }
+
+    const hasSameOrder =
+      optimisticGoals.length === serverGoals.length &&
+      optimisticGoals.every((goal, index) => goal.id === serverGoals[index]?.id);
+
+    if (hasSameOrder) {
+      setOptimisticGoals(null);
+    }
+  }, [optimisticGoals, serverGoals]);
+
   const [createGoal, { loading: isCreatingGoal }] = useMutation(CREATE_GOAL);
+  const [reorderGoalsMutation] = useMutation(REORDER_GOALS);
   const [updateGoalProgress, { loading: isUpdatingProgress }] = useMutation(UPDATE_GOAL_PROGRESS);
 
-  const goals = useMemo(() => goalsData?.goals ?? [], [goalsData]);
+  const goals = optimisticGoals ?? serverGoals;
   const selectedGoal = goalDetailsData?.goal ?? null;
 
   const totalTarget = useMemo(() => goals.reduce((sum: number, goal: Goal) => sum + goal.targetAmount, 0), [goals]);
@@ -104,6 +124,62 @@ export const DashboardClient = () => {
     await Promise.all([refetchGoals(), refetchGoalDetails()]);
   };
 
+  const handleDragStart = (goalId: string) => {
+    setDraggingGoalId(goalId);
+    setDragOverGoalId(goalId);
+  };
+
+  const handleDragOver = (goalId: string) => {
+    if (!draggingGoalId || draggingGoalId === goalId) {
+      return;
+    }
+
+    setDragOverGoalId(goalId);
+  };
+
+  const handleDragEnd = () => {
+    setDraggingGoalId(null);
+    setDragOverGoalId(null);
+  };
+
+  const handleDrop = async (goalId: string) => {
+    if (!draggingGoalId || draggingGoalId === goalId) {
+      handleDragEnd();
+      return;
+    }
+
+    const nextGoals = [...goals];
+    const fromIndex = nextGoals.findIndex((goal) => goal.id === draggingGoalId);
+    const toIndex = nextGoals.findIndex((goal) => goal.id === goalId);
+    if (fromIndex < 0 || toIndex < 0) {
+      handleDragEnd();
+      return;
+    }
+
+    const [movedGoal] = nextGoals.splice(fromIndex, 1);
+    nextGoals.splice(toIndex, 0, movedGoal);
+    const reorderedGoals = nextGoals.map((goal, index) => ({
+      ...goal,
+      sortOrder: index,
+    }));
+
+    setOptimisticGoals(reorderedGoals);
+    handleDragEnd();
+
+    try {
+      await reorderGoalsMutation({
+        variables: {
+          goalIds: reorderedGoals.map((goal) => goal.id),
+        },
+      });
+
+      await refetchGoals();
+    } catch {
+      setOptimisticGoals(null);
+      await refetchGoals();
+    }
+  };
+
   if (!isHydrated || !isAuthed) {
     return <DashboardSkeleton />;
   }
@@ -134,7 +210,17 @@ export const DashboardClient = () => {
 
         <Grid>
           <Grid.Col span={{ base: 12, md: 5 }}>
-            <GoalsList goals={goals} selectedGoalId={selectedGoalId} onSelectGoal={setSelectedGoalId} />
+            <GoalsList
+              goals={goals}
+              selectedGoalId={selectedGoalId}
+              onSelectGoal={setSelectedGoalId}
+              draggingGoalId={draggingGoalId}
+              dragOverGoalId={dragOverGoalId}
+              onDragStart={handleDragStart}
+              onDragOver={handleDragOver}
+              onDrop={handleDrop}
+              onDragEnd={handleDragEnd}
+            />
           </Grid.Col>
           <Grid.Col span={{ base: 12, md: 7 }}>
             <GoalDetailsPanel

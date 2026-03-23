@@ -40,6 +40,7 @@ export const GET_GOALS = gql`
       title
       targetAmount
       initialAmount
+      sortOrder
       currentAmount
       progress
       createdAt
@@ -54,6 +55,7 @@ export const GET_GOAL_DETAILS = gql`
       title
       targetAmount
       initialAmount
+      sortOrder
       currentAmount
       progress
       operations {
@@ -71,6 +73,14 @@ export const GET_GOAL_DETAILS = gql`
 export const CREATE_GOAL = gql`
   mutation CreateGoal($title: String!, $targetAmount: Float!, $initialAmount: Float) {
     createGoal(title: $title, targetAmount: $targetAmount, initialAmount: $initialAmount) {
+      id
+    }
+  }
+`;
+
+export const REORDER_GOALS = gql`
+  mutation ReorderGoals($goalIds: [ID!]!) {
+    reorderGoals(goalIds: $goalIds) {
       id
     }
   }

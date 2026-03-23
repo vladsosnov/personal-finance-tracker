@@ -5,6 +5,7 @@ export type GoalDocument = {
   title: string;
   targetAmount: number;
   initialAmount: number;
+  sortOrder: number;
 };
 
 const goalSchema = new Schema<GoalDocument>(
@@ -13,6 +14,7 @@ const goalSchema = new Schema<GoalDocument>(
     title: { type: String, required: true },
     targetAmount: { type: Number, required: true },
     initialAmount: { type: Number, required: true, default: 0 },
+    sortOrder: { type: Number, required: true, default: 0, index: true },
   },
   { timestamps: true }
 );
