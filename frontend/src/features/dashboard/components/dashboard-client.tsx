@@ -458,13 +458,6 @@ export const DashboardClient = () => {
   return (
     <Container size="xl" py={24}>
       <Stack gap="lg">
-        <Group justify="space-between" align="flex-start">
-          <Stack gap={2}>
-            <Title order={1}>Your Financial Goals</Title>
-            <Text c="dimmed">{meData?.me?.email ?? "Authenticated user"}</Text>
-          </Stack>
-        </Group>
-
         <DashboardOverviewStats totalTarget={totalTarget} totalCurrent={totalCurrent} />
 
         <CreateGoalForm
@@ -597,7 +590,7 @@ export const DashboardClient = () => {
                 Cancel
               </Button>
               <Button
-                onClick={() => void handleConfirmEditGoal()}
+                onClick={() => handleConfirmEditGoal()}
                 loading={isEditingGoal}
                 disabled={!editedGoalTitle.trim() || !editedGoalTarget || editedGoalTarget <= 0}
               >

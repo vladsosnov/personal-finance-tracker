@@ -615,14 +615,14 @@ export const ProfileClient = () => {
                   return;
                 }
 
-                void previewImportFile(nextFile);
+                previewImportFile(nextFile);
               }}
               clearable
             />
 
             {file && (
               <Group>
-                <Button onClick={() => void handleImport()} loading={isImporting} disabled={!preparedGoals.length || isPreparingImport}>
+                <Button onClick={() => handleImport()} loading={isImporting} disabled={!preparedGoals.length || isPreparingImport}>
                   Import
                 </Button>
               </Group>

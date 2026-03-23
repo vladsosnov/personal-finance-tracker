@@ -24,6 +24,29 @@ const features = [
   },
 ];
 
+const futureFeatures = [
+  {
+    title: "Multi-currency goals",
+    description: "Track goals in different currencies with clearer per-goal currency handling and stronger reporting.",
+  },
+  {
+    title: "Internationalization",
+    description: "Localize dates, numbers, labels, and interface copy for users in different languages and regions.",
+  },
+  {
+    title: "Monthly budget planning",
+    description: "Plan recurring categories like rent, food, transport, savings, and compare plan versus actual.",
+  },
+  {
+    title: "Recurring operations",
+    description: "Automate repeating contributions like salary transfers, rent, subscriptions, and monthly savings.",
+  },
+  {
+    title: "Goal reminders",
+    description: "Get nudges for inactive goals, upcoming deadlines, and monthly saving targets.",
+  },
+];
+
 const plans = [
   {
     name: "Free",
@@ -40,7 +63,6 @@ const plans = [
     features: ["Everything in Free", "Advanced analytics", "More customization"],
     cta: "Coming soon",
     href: APP_ROUTES.auth,
-    highlight: true,
   },
   {
     name: "Lifetime",
@@ -49,6 +71,7 @@ const plans = [
     features: ["Everything in Pro", "Permanent access"],
     cta: "Coming soon",
     href: APP_ROUTES.auth,
+    highlight: true,
   },
 ];
 
@@ -218,6 +241,27 @@ const LandingPage = () => {
 
         <Stack gap="md">
           <Stack gap={4} ta="center">
+            <Text fw={700}>Future features</Text>
+            <Title order={2}>We are actively building what comes next</Title>
+            <Text c="dimmed" maw={760} mx="auto">
+              Financial Goals Tracker is not static. The roadmap already points toward budgeting, localization, recurring planning, and
+              deeper personal finance workflows.
+            </Text>
+          </Stack>
+          <SimpleGrid cols={{ base: 1, md: 2, lg: 3 }} spacing="md">
+            {futureFeatures.map((feature) => (
+              <Card key={feature.title} withBorder radius="md" p="lg">
+                <Stack gap="xs">
+                  <Title order={4}>{feature.title}</Title>
+                  <Text c="dimmed">{feature.description}</Text>
+                </Stack>
+              </Card>
+            ))}
+          </SimpleGrid>
+        </Stack>
+
+        <Stack gap="md">
+          <Stack gap={4} ta="center">
             <Text fw={700}>Plans</Text>
             <Title order={2}>Choose the plan that fits your tracking needs</Title>
             <Text c="dimmed" maw={720} mx="auto">
@@ -253,12 +297,7 @@ const LandingPage = () => {
                       <List.Item key={feature}>{feature}</List.Item>
                     ))}
                   </List>
-                  <Button
-                    component={Link}
-                    href={plan.href}
-                    variant={plan.highlight ? "filled" : "light"}
-                    disabled={plan.cta === "Coming soon"}
-                  >
+                  <Button component={Link} href={plan.href} variant={plan.highlight ? "filled" : "light"} disabled={plan.cta === "Coming soon"}>
                     {plan.cta}
                   </Button>
                 </Stack>
