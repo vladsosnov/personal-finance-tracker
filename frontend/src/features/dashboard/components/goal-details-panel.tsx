@@ -13,12 +13,15 @@ type GoalDetailsPanelProps = {
   operationAmount: number | "";
   operationNote: string;
   operationDate: string;
+  editingOperationId: string | null;
   isUpdatingProgress: boolean;
   isUpdateDisabled: boolean;
   setOperationType: (value: OperationType) => void;
   setOperationAmount: (value: number | "") => void;
   setOperationNote: (value: string) => void;
   setOperationDate: (value: string) => void;
+  onStartEditOperation: (operationId: string) => void;
+  onCancelEditOperation: () => void;
   onUpdateProgress: () => Promise<void>;
 };
 
@@ -28,12 +31,15 @@ export const GoalDetailsPanel = ({
   operationAmount,
   operationNote,
   operationDate,
+  editingOperationId,
   isUpdatingProgress,
   isUpdateDisabled,
   setOperationType,
   setOperationAmount,
   setOperationNote,
   setOperationDate,
+  onStartEditOperation,
+  onCancelEditOperation,
   onUpdateProgress,
 }: GoalDetailsPanelProps) => {
   return (
@@ -94,9 +100,16 @@ export const GoalDetailsPanel = ({
               />
             </Grid.Col>
             <Grid.Col span={{ base: 12, md: 2 }}>
-              <Button fullWidth mt={24} onClick={onUpdateProgress} loading={isUpdatingProgress} disabled={isUpdateDisabled}>
-                Update
-              </Button>
+              <Stack gap="xs" mt={24}>
+                <Button fullWidth onClick={onUpdateProgress} loading={isUpdatingProgress} disabled={isUpdateDisabled}>
+                  {editingOperationId ? "Save" : "Update"}
+                </Button>
+                {editingOperationId && (
+                  <Button fullWidth variant="subtle" onClick={onCancelEditOperation}>
+                    Cancel
+                  </Button>
+                )}
+              </Stack>
             </Grid.Col>
           </Grid>
 
@@ -110,6 +123,7 @@ export const GoalDetailsPanel = ({
                 <Table.Th>Type</Table.Th>
                 <Table.Th>Amount</Table.Th>
                 <Table.Th>Note</Table.Th>
+                <Table.Th />
               </Table.Tr>
             </Table.Thead>
             <Table.Tbody>
@@ -135,11 +149,16 @@ export const GoalDetailsPanel = ({
                       "-"
                     )}
                   </Table.Td>
+                  <Table.Td>
+                    <Button variant="subtle" size="compact-sm" onClick={() => onStartEditOperation(operation.id)}>
+                      Edit
+                    </Button>
+                  </Table.Td>
                 </Table.Tr>
               ))}
               {!selectedGoal.operations.length && (
                 <Table.Tr>
-                  <Table.Td colSpan={4}>
+                  <Table.Td colSpan={5}>
                     <Text c="dimmed">No operations yet.</Text>
                   </Table.Td>
                 </Table.Tr>

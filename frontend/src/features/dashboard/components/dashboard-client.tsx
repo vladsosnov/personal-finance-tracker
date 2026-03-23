@@ -9,7 +9,7 @@ import { DashboardOverviewStats } from "@/features/dashboard/components/dashboar
 import { DashboardSkeleton } from "@/features/dashboard/components/dashboard-skeleton";
 import { GoalDetailsPanel } from "@/features/dashboard/components/goal-details-panel";
 import { GoalsList } from "@/features/dashboard/components/goals-list";
-import { CREATE_GOAL, GET_GOAL_DETAILS, GET_GOALS, GET_ME, REORDER_GOALS, UPDATE_GOAL_PROGRESS } from "@/features/dashboard/gql/dashboard";
+import { CREATE_GOAL, EDIT_GOAL_OPERATION, GET_GOAL_DETAILS, GET_GOALS, GET_ME, REORDER_GOALS, UPDATE_GOAL_PROGRESS } from "@/features/dashboard/gql/dashboard";
 import type { Goal, GoalDetails } from "@/features/dashboard/types";
 import { APP_ROUTES } from "@/shared/constants/routes";
 import { AUTH_TOKEN_KEY } from "@/shared/constants/storage";
@@ -29,6 +29,7 @@ export const DashboardClient = () => {
   const [operationAmount, setOperationAmount] = useState<number | "">(0);
   const [operationNote, setOperationNote] = useState("");
   const [operationDate, setOperationDate] = useState(getTodayDateValue);
+  const [editingOperationId, setEditingOperationId] = useState<string | null>(null);
   const [draggingGoalId, setDraggingGoalId] = useState<string | null>(null);
   const [dragOverGoalId, setDragOverGoalId] = useState<string | null>(null);
   const [optimisticGoals, setOptimisticGoals] = useState<Goal[] | null>(null);
@@ -74,6 +75,7 @@ export const DashboardClient = () => {
 
   const [createGoal, { loading: isCreatingGoal }] = useMutation(CREATE_GOAL);
   const [reorderGoalsMutation] = useMutation(REORDER_GOALS);
+  const [editGoalOperation, { loading: isEditingOperation }] = useMutation(EDIT_GOAL_OPERATION);
   const [updateGoalProgress, { loading: isUpdatingProgress }] = useMutation(UPDATE_GOAL_PROGRESS);
 
   const goals = optimisticGoals ?? serverGoals;
@@ -103,25 +105,60 @@ export const DashboardClient = () => {
     await refetchGoals();
   };
 
-  const handleUpdateProgress = async () => {
-    if (!selectedGoalId || !operationAmount || operationAmount <= 0) {
-      return;
-    }
-
-    await updateGoalProgress({
-      variables: {
-        goalId: selectedGoalId,
-        type: operationType,
-        amount: Number(operationAmount),
-        note: operationNote.trim() || undefined,
-        operationDate,
-      },
-    });
-
+  const resetOperationForm = () => {
+    setOperationType("INCREASE");
     setOperationAmount(0);
     setOperationNote("");
     setOperationDate(getTodayDateValue());
+    setEditingOperationId(null);
+  };
+
+  const handleUpdateProgress = async () => {
+    if (!operationAmount || operationAmount <= 0) {
+      return;
+    }
+
+    if (editingOperationId) {
+      await editGoalOperation({
+        variables: {
+          operationId: editingOperationId,
+          type: operationType,
+          amount: Number(operationAmount),
+          note: operationNote.trim() || undefined,
+          operationDate,
+        },
+      });
+    } else {
+      if (!selectedGoalId) {
+        return;
+      }
+
+      await updateGoalProgress({
+        variables: {
+          goalId: selectedGoalId,
+          type: operationType,
+          amount: Number(operationAmount),
+          note: operationNote.trim() || undefined,
+          operationDate,
+        },
+      });
+    }
+
+    resetOperationForm();
     await Promise.all([refetchGoals(), refetchGoalDetails()]);
+  };
+
+  const handleStartEditOperation = (operationId: string) => {
+    const operation = selectedGoal?.operations.find((item) => item.id === operationId);
+    if (!operation) {
+      return;
+    }
+
+    setEditingOperationId(operation.id);
+    setOperationType(operation.type);
+    setOperationAmount(operation.amount);
+    setOperationNote(operation.note ?? "");
+    setOperationDate(operation.operationDate);
   };
 
   const handleDragStart = (goalId: string) => {
@@ -229,12 +266,15 @@ export const DashboardClient = () => {
               operationAmount={operationAmount}
               operationNote={operationNote}
               operationDate={operationDate}
-              isUpdatingProgress={isUpdatingProgress}
+              editingOperationId={editingOperationId}
+              isUpdatingProgress={isUpdatingProgress || isEditingOperation}
               isUpdateDisabled={isUpdateDisabled}
               setOperationType={setOperationType}
               setOperationAmount={setOperationAmount}
               setOperationNote={setOperationNote}
               setOperationDate={setOperationDate}
+              onStartEditOperation={handleStartEditOperation}
+              onCancelEditOperation={resetOperationForm}
               onUpdateProgress={handleUpdateProgress}
             />
           </Grid.Col>

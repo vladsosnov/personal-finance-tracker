@@ -2,7 +2,7 @@ import { buildSchema } from "graphql";
 import { hashPassword, signJwt, verifyPassword } from "./auth";
 import { createUser, findUserByEmail, findUserById } from "./modules/auth/user.repository";
 import { createGoal, getGoalById, listGoalsByUser, reorderGoals } from "./modules/goals/goal.repository";
-import { createGoalOperation } from "./modules/goals/operation.repository";
+import { createGoalOperation, getGoalOperationById, updateGoalOperation } from "./modules/goals/operation.repository";
 import { buildGoalView } from "./modules/goals/goal.service";
 import type { OperationType } from "./modules/goals/types";
 
@@ -23,6 +23,14 @@ type GoalArgs = {
 
 type GoalOperationArgs = {
   goalId: string;
+  type: OperationType;
+  amount: number;
+  note?: string;
+  operationDate?: string;
+};
+
+type EditGoalOperationArgs = {
+  operationId: string;
   type: OperationType;
   amount: number;
   note?: string;
@@ -98,6 +106,7 @@ export const schema = buildSchema(`
     createGoal(title: String!, targetAmount: Float!, initialAmount: Float): Goal!
     reorderGoals(goalIds: [ID!]!): [Goal!]!
     updateGoalProgress(goalId: ID!, type: OperationType!, amount: Float!, note: String, operationDate: String): Goal!
+    editGoalOperation(operationId: ID!, type: OperationType!, amount: Float!, note: String, operationDate: String): Goal!
   }
 `);
 
@@ -183,6 +192,37 @@ export const rootValue = {
     }
 
     await createGoalOperation(userId, goalId, type, amount, note?.trim(), operationDate);
+    return buildGoalView(userId, goal);
+  },
+  editGoalOperation: async ({ operationId, type, amount, note, operationDate }: EditGoalOperationArgs, context: Context) => {
+    const userId = ensureAuthed(context);
+    if (amount <= 0) {
+      throw new Error("Amount should be greater than 0");
+    }
+    if (operationDate && !/^\d{4}-\d{2}-\d{2}$/.test(operationDate)) {
+      throw new Error("Operation date must be in YYYY-MM-DD format");
+    }
+
+    const operation = await getGoalOperationById(userId, operationId);
+    if (!operation) {
+      throw new Error("Operation not found");
+    }
+
+    const updatedOperation = await updateGoalOperation(userId, operationId, {
+      type,
+      amount,
+      note: note?.trim(),
+      operationDate,
+    });
+    if (!updatedOperation) {
+      throw new Error("Operation not found");
+    }
+
+    const goal = await getGoalById(userId, updatedOperation.goalId);
+    if (!goal) {
+      throw new Error("Goal not found");
+    }
+
     return buildGoalView(userId, goal);
   },
 };

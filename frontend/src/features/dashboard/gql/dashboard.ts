@@ -93,3 +93,17 @@ export const UPDATE_GOAL_PROGRESS = gql`
     }
   }
 `;
+
+export const EDIT_GOAL_OPERATION = gql`
+  mutation EditGoalOperation($operationId: ID!, $type: OperationType!, $amount: Float!, $note: String, $operationDate: String) {
+    editGoalOperation(
+      operationId: $operationId
+      type: $type
+      amount: $amount
+      note: $note
+      operationDate: $operationDate
+    ) {
+      id
+    }
+  }
+`;
