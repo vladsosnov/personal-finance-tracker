@@ -100,6 +100,16 @@ html[data-mantine-color-scheme="dark"] body {
   background: linear-gradient(to bottom, #111827, #030712);
 }
 
+html[data-mantine-color-scheme="dark"] {
+  --mantine-color-body: #09111f;
+  --mantine-color-text: #e5e7eb;
+  --mantine-color-dimmed: #94a3b8;
+  --mantine-color-default: #142033;
+  --mantine-color-default-hover: #1b2a40;
+  --mantine-color-default-color: #e5e7eb;
+  --mantine-color-default-border: rgba(148, 163, 184, 0.24);
+}
+
 .app-shell {
   min-height: 100vh;
   display: flex;

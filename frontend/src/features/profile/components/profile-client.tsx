@@ -10,6 +10,7 @@ import {
   Container,
   FileInput,
   Group,
+  Progress,
   SegmentedControl,
   Stack,
   Table,
@@ -23,6 +24,7 @@ import { DEFAULT_GOAL_COLOR } from "@/shared/constants/goal-colors";
 import { APP_ROUTES } from "@/shared/constants/routes";
 import { AUTH_TOKEN_KEY } from "@/shared/constants/storage";
 import type { OperationType } from "@/shared/gql/__generated__/schema-types";
+import type { MantineColorScheme } from "@mantine/core";
 
 type ImportHistoryEntry = {
   date?: string;
@@ -58,6 +60,22 @@ type PreparedImportGoal = {
   color: string;
   operationCount: number;
   operations: PreparedImportOperation[];
+};
+
+type SkippedImportGoal = {
+  title: string;
+  reason: string;
+};
+
+type PreparedImportResult = {
+  goals: PreparedImportGoal[];
+  skippedGoals: SkippedImportGoal[];
+};
+
+type ImportProgressState = {
+  completedSteps: number;
+  totalSteps: number;
+  currentLabel: string;
 };
 
 const ThemeLightIcon = () => (
@@ -112,51 +130,63 @@ const normalizeColor = (value: string | undefined): string => {
   return `#${match[1].slice(0, 6).toUpperCase()}`;
 };
 
-const prepareImportGoals = (source: string): PreparedImportGoal[] => {
+const prepareImportGoals = (source: string): PreparedImportResult => {
   const parsed = JSON.parse(source) as unknown;
 
   if (!Array.isArray(parsed)) {
     throw new Error("Import file must contain an array of goals");
   }
 
-  return parsed.map((item, goalIndex) => {
+  const goals: PreparedImportGoal[] = [];
+  const skippedGoals: SkippedImportGoal[] = [];
+
+  parsed.forEach((item, goalIndex) => {
     const goal = item as ImportGoalEntry;
-    const title = goal.title?.trim();
+    const title = goal.title?.trim() || `Goal ${goalIndex + 1}`;
     const targetAmount = Number(goal.targetValue);
     const initialAmount = Number(goal.initialValue ?? 0);
 
-    if (!title) {
-      throw new Error(`Goal ${goalIndex + 1} is missing a valid title`);
-    }
     if (!Number.isFinite(targetAmount) || targetAmount <= 0) {
-      throw new Error(`Goal ${goalIndex + 1} has an invalid target value`);
+      skippedGoals.push({
+        title,
+        reason: "Target amount is missing or zero",
+      });
+      return;
     }
     if (!Number.isFinite(initialAmount) || initialAmount < 0) {
-      throw new Error(`Goal ${goalIndex + 1} has an invalid initial value`);
+      skippedGoals.push({
+        title,
+        reason: "Starting amount is invalid",
+      });
+      return;
     }
 
     const history = Array.isArray(goal.history) ? goal.history : [];
-    const normalizedHistory = history
-      .map((entry, historyIndex) => {
-        const value = Number(entry.value);
-        const operationDate = toOperationDate(entry.date);
-        const timestamp = entry.date ? new Date(entry.date).getTime() : Number.NaN;
+    const normalizedHistory = [];
 
-        if (!Number.isFinite(value)) {
-          throw new Error(`Goal ${goalIndex + 1}, history item ${historyIndex + 1} has an invalid value`);
-        }
-        if (!operationDate || Number.isNaN(timestamp)) {
-          throw new Error(`Goal ${goalIndex + 1}, history item ${historyIndex + 1} has an invalid date`);
-        }
+    for (let historyIndex = 0; historyIndex < history.length; historyIndex += 1) {
+      const entry = history[historyIndex];
+      const value = Number(entry.value);
+      const operationDate = toOperationDate(entry.date);
+      const timestamp = entry.date ? new Date(entry.date).getTime() : Number.NaN;
 
-        return {
-          value,
-          note: entry.note?.trim() || undefined,
-          operationDate,
-          timestamp,
-        };
-      })
-      .sort((left, right) => left.timestamp - right.timestamp);
+      if (!Number.isFinite(value) || !operationDate || Number.isNaN(timestamp)) {
+        skippedGoals.push({
+          title,
+          reason: `History item ${historyIndex + 1} is invalid`,
+        });
+        return;
+      }
+
+      normalizedHistory.push({
+        value,
+        note: entry.note?.trim() || undefined,
+        operationDate,
+        timestamp,
+      });
+    }
+
+    normalizedHistory.sort((left, right) => left.timestamp - right.timestamp);
 
     let previousValue = initialAmount;
     const operations: PreparedImportOperation[] = [];
@@ -176,15 +206,20 @@ const prepareImportGoals = (source: string): PreparedImportGoal[] => {
       previousValue = entry.value;
     }
 
-    return {
+    goals.push({
       title,
       targetAmount,
       initialAmount,
       color: normalizeColor(goal.display?.bar?.colors?.primary),
       operationCount: operations.length,
       operations,
-    };
+    });
   });
+
+  return {
+    goals,
+    skippedGoals,
+  };
 };
 
 export const ProfileClient = () => {
@@ -194,10 +229,12 @@ export const ProfileClient = () => {
   const [isAuthed, setIsAuthed] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [preparedGoals, setPreparedGoals] = useState<PreparedImportGoal[]>([]);
+  const [skippedGoals, setSkippedGoals] = useState<SkippedImportGoal[]>([]);
   const [importError, setImportError] = useState<string | null>(null);
   const [importSummary, setImportSummary] = useState<string | null>(null);
   const [isPreparingImport, setIsPreparingImport] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
+  const [importProgress, setImportProgress] = useState<ImportProgressState | null>(null);
 
   useEffect(() => {
     const token = window.localStorage.getItem(AUTH_TOKEN_KEY);
@@ -228,11 +265,13 @@ export const ProfileClient = () => {
       ),
     [preparedGoals]
   );
+  const importProgressValue = importProgress ? (importProgress.completedSteps / Math.max(importProgress.totalSteps, 1)) * 100 : 0;
 
   const handlePreviewImport = async () => {
     if (!file) {
       setImportError("Choose a .txt file first");
       setPreparedGoals([]);
+      setSkippedGoals([]);
       setImportSummary(null);
       return;
     }
@@ -243,9 +282,17 @@ export const ProfileClient = () => {
 
     try {
       const source = await file.text();
-      setPreparedGoals(prepareImportGoals(source));
+      const result = prepareImportGoals(source);
+
+      setPreparedGoals(result.goals);
+      setSkippedGoals(result.skippedGoals);
+
+      if (!result.goals.length && result.skippedGoals.length) {
+        setImportError("No valid goals found in the selected file");
+      }
     } catch (error) {
       setPreparedGoals([]);
+      setSkippedGoals([]);
       setImportError(error instanceof Error ? error.message : "Failed to parse import file");
     } finally {
       setIsPreparingImport(false);
@@ -261,9 +308,23 @@ export const ProfileClient = () => {
     setIsImporting(true);
     setImportError(null);
     setImportSummary(null);
+    setImportProgress({
+      completedSteps: 0,
+      totalSteps: preparedGoals.reduce((total, goal) => total + 1 + goal.operationCount, 0),
+      currentLabel: "Preparing import...",
+    });
 
     try {
       for (const goal of preparedGoals) {
+        setImportProgress((current) =>
+          current
+            ? {
+                ...current,
+                currentLabel: `Creating goal: ${goal.title}`,
+              }
+            : current
+        );
+
         const result = await createGoal({
           variables: {
             title: goal.title,
@@ -278,7 +339,25 @@ export const ProfileClient = () => {
           throw new Error(`Failed to create goal "${goal.title}"`);
         }
 
+        setImportProgress((current) =>
+          current
+            ? {
+                ...current,
+                completedSteps: current.completedSteps + 1,
+              }
+            : current
+        );
+
         for (const operation of goal.operations) {
+          setImportProgress((current) =>
+            current
+              ? {
+                  ...current,
+                  currentLabel: `${goal.title}: ${operation.type === "INCREASE" ? "adding" : "subtracting"} ${operation.amount}`,
+                }
+              : current
+          );
+
           await updateGoalProgress({
             variables: {
               goalId,
@@ -288,16 +367,27 @@ export const ProfileClient = () => {
               operationDate: operation.operationDate,
             },
           });
+
+          setImportProgress((current) =>
+            current
+              ? {
+                  ...current,
+                  completedSteps: current.completedSteps + 1,
+                }
+              : current
+          );
         }
       }
 
       setImportSummary(`Imported ${importTotals.goals} goals and ${importTotals.operations} operations.`);
       setPreparedGoals([]);
+      setSkippedGoals([]);
       setFile(null);
     } catch (error) {
       setImportError(error instanceof Error ? error.message : "Import failed");
     } finally {
       setIsImporting(false);
+      setImportProgress(null);
     }
   };
 
@@ -325,8 +415,12 @@ export const ProfileClient = () => {
             <Title order={4}>Theme</Title>
             <SegmentedControl
               value={colorScheme}
-              onChange={(value) => setColorScheme(value as "light" | "dark")}
+              onChange={(value) => setColorScheme(value as MantineColorScheme)}
               data={[
+                {
+                  value: "auto",
+                  label: "System",
+                },
                 {
                   value: "light",
                   label: (
@@ -381,6 +475,25 @@ export const ProfileClient = () => {
 
             {importError && <Alert color="red">{importError}</Alert>}
             {importSummary && <Alert color="teal">{importSummary}</Alert>}
+            {skippedGoals.length > 0 && (
+              <Alert color="yellow">
+                Skipping {skippedGoals.length} item{skippedGoals.length === 1 ? "" : "s"} during import preview.
+              </Alert>
+            )}
+            {importProgress && (
+              <Stack gap={6}>
+                <Group justify="space-between" gap="xs">
+                  <Text fw={600}>Importing progress</Text>
+                  <Text size="sm" c="dimmed">
+                    {importProgress.completedSteps} / {importProgress.totalSteps}
+                  </Text>
+                </Group>
+                <Progress value={importProgressValue} animated />
+                <Text size="sm" c="dimmed">
+                  {importProgress.currentLabel}
+                </Text>
+              </Stack>
+            )}
 
             {preparedGoals.length > 0 && (
               <Stack gap="sm">
@@ -403,6 +516,28 @@ export const ProfileClient = () => {
                         <Table.Td>{goal.targetAmount}</Table.Td>
                         <Table.Td>{goal.initialAmount}</Table.Td>
                         <Table.Td>{goal.operationCount}</Table.Td>
+                      </Table.Tr>
+                    ))}
+                  </Table.Tbody>
+                </Table>
+              </Stack>
+            )}
+
+            {skippedGoals.length > 0 && (
+              <Stack gap="sm">
+                <Text fw={600}>Skipped items</Text>
+                <Table striped highlightOnHover>
+                  <Table.Thead>
+                    <Table.Tr>
+                      <Table.Th>Title</Table.Th>
+                      <Table.Th>Reason</Table.Th>
+                    </Table.Tr>
+                  </Table.Thead>
+                  <Table.Tbody>
+                    {skippedGoals.map((goal, index) => (
+                      <Table.Tr key={`${goal.title}-${goal.reason}-${index}`}>
+                        <Table.Td>{goal.title}</Table.Td>
+                        <Table.Td>{goal.reason}</Table.Td>
                       </Table.Tr>
                     ))}
                   </Table.Tbody>

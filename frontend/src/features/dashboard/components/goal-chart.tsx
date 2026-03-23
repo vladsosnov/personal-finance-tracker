@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import Highcharts from "highcharts";
 import HighchartsReact from "highcharts-react-official";
+import { useComputedColorScheme } from "@mantine/core";
 import type { Options } from "highcharts";
 import type { OperationType } from "@/shared/gql/__generated__/schema-types";
 import { dateStringToUtcTimestamp } from "@/shared/utils/date";
@@ -25,6 +26,8 @@ type GoalChartProps = {
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 export const GoalChart = ({ operations, color, height = 320, range }: GoalChartProps) => {
+  const computedColorScheme = useComputedColorScheme("light", { getInitialValueInEffect: true });
+  const isDark = computedColorScheme === "dark";
   const seriesData = useMemo<Array<[number, number]>>(() => {
     let total = 0;
     const sortedOperations = [...operations]
@@ -69,9 +72,37 @@ export const GoalChart = ({ operations, color, height = 320, range }: GoalChartP
 
   const options = useMemo<Options>(
     () => ({
-      title: { text: "Progress over time" },
-      xAxis: { type: "datetime" },
-      yAxis: { title: { text: "Current amount" } },
+      title: {
+        text: "Progress over time",
+        style: {
+          color: isDark ? "#E5E7EB" : "#0F172A",
+          fontWeight: "600",
+        },
+      },
+      xAxis: {
+        type: "datetime",
+        lineColor: isDark ? "rgba(148, 163, 184, 0.3)" : "rgba(15, 23, 42, 0.18)",
+        tickColor: isDark ? "rgba(148, 163, 184, 0.3)" : "rgba(15, 23, 42, 0.18)",
+        labels: {
+          style: {
+            color: isDark ? "#94A3B8" : "#475569",
+          },
+        },
+      },
+      yAxis: {
+        title: {
+          text: "Current amount",
+          style: {
+            color: isDark ? "#94A3B8" : "#475569",
+          },
+        },
+        gridLineColor: isDark ? "rgba(148, 163, 184, 0.16)" : "rgba(15, 23, 42, 0.08)",
+        labels: {
+          style: {
+            color: isDark ? "#94A3B8" : "#475569",
+          },
+        },
+      },
       series: [
         {
           type: "line",
@@ -80,10 +111,23 @@ export const GoalChart = ({ operations, color, height = 320, range }: GoalChartP
           color,
         },
       ],
+      tooltip: {
+        backgroundColor: isDark ? "#0F172A" : "#FFFFFF",
+        borderColor: isDark ? "rgba(148, 163, 184, 0.25)" : "rgba(15, 23, 42, 0.12)",
+        style: {
+          color: isDark ? "#E5E7EB" : "#0F172A",
+        },
+      },
       credits: { enabled: false },
-      chart: { height },
+      chart: {
+        height,
+        backgroundColor: "transparent",
+        style: {
+          fontFamily: "inherit",
+        },
+      },
     }),
-    [color, height, seriesData]
+    [color, height, isDark, seriesData]
   );
 
   return <HighchartsReact highcharts={Highcharts} options={options} />;

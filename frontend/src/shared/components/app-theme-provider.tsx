@@ -13,7 +13,7 @@ const colorSchemeManager = localStorageColorSchemeManager({
 
 export const AppThemeProvider = ({ children }: AppThemeProviderProps) => {
   return (
-    <MantineProvider colorSchemeManager={colorSchemeManager} defaultColorScheme="light">
+    <MantineProvider colorSchemeManager={colorSchemeManager} defaultColorScheme="auto">
       {children}
     </MantineProvider>
   );
