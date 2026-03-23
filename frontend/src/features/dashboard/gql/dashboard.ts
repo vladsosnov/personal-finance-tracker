@@ -43,6 +43,8 @@ export const GET_GOALS = gql`
       initialAmount
       color
       sortOrder
+      isCompleted
+      completedAt
       currentAmount
       progress
       createdAt
@@ -59,8 +61,11 @@ export const GET_GOAL_DETAILS = gql`
       initialAmount
       color
       sortOrder
+      isCompleted
+      completedAt
       currentAmount
       progress
+      createdAt
       operations {
         id
         type
@@ -85,6 +90,16 @@ export const EDIT_GOAL = gql`
   mutation EditGoal($goalId: ID!, $title: String!, $targetAmount: Float!, $initialAmount: Float, $color: String!) {
     editGoal(goalId: $goalId, title: $title, targetAmount: $targetAmount, initialAmount: $initialAmount, color: $color) {
       id
+      title
+      targetAmount
+      initialAmount
+      color
+      sortOrder
+      isCompleted
+      completedAt
+      currentAmount
+      progress
+      createdAt
     }
   }
 `;
@@ -118,6 +133,16 @@ export const UPDATE_GOAL_PROGRESS = gql`
   mutation UpdateGoalProgress($goalId: ID!, $type: OperationType!, $amount: Float!, $note: String, $operationDate: String) {
     updateGoalProgress(goalId: $goalId, type: $type, amount: $amount, note: $note, operationDate: $operationDate) {
       id
+      title
+      targetAmount
+      initialAmount
+      color
+      sortOrder
+      isCompleted
+      completedAt
+      currentAmount
+      progress
+      createdAt
     }
   }
 `;
@@ -132,6 +157,24 @@ export const EDIT_GOAL_OPERATION = gql`
       operationDate: $operationDate
     ) {
       id
+      title
+      targetAmount
+      initialAmount
+      color
+      sortOrder
+      isCompleted
+      completedAt
+      currentAmount
+      progress
+      createdAt
+      operations {
+        id
+        type
+        amount
+        note
+        operationDate
+        createdAt
+      }
     }
   }
 `;
@@ -145,6 +188,34 @@ export const DELETE_GOAL_OPERATION = gql`
       initialAmount
       color
       sortOrder
+      isCompleted
+      completedAt
+      currentAmount
+      progress
+      createdAt
+      operations {
+        id
+        type
+        amount
+        note
+        operationDate
+        createdAt
+      }
+    }
+  }
+`;
+
+export const COMPLETE_GOAL = gql`
+  mutation CompleteGoal($goalId: ID!) {
+    completeGoal(goalId: $goalId) {
+      id
+      title
+      targetAmount
+      initialAmount
+      color
+      sortOrder
+      isCompleted
+      completedAt
       currentAmount
       progress
       createdAt

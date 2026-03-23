@@ -41,10 +41,17 @@ const ManageActiveIcon = () => (
 );
 
 type GoalsListProps = {
+  title: string;
   goals: Goal[];
   isLoadingGoals: boolean;
   selectedGoalId: string | null;
   isManageMode: boolean;
+  showManageToggle?: boolean;
+  canManage?: boolean;
+  showDragHint?: boolean;
+  allowDrag?: boolean;
+  emptyTitle?: string;
+  emptyDescription?: string;
   onSelectGoal: (goalId: string) => void;
   onToggleManageMode: () => void;
   onStartEditGoal: (goalId: string) => void;
@@ -58,10 +65,17 @@ type GoalsListProps = {
 };
 
 export const GoalsList = ({
+  title,
   goals,
   isLoadingGoals,
   selectedGoalId,
   isManageMode,
+  showManageToggle = true,
+  canManage = goals.length > 0,
+  showDragHint = true,
+  allowDrag = true,
+  emptyTitle = "No goals yet",
+  emptyDescription = "Create your first goal to start tracking progress.",
   onSelectGoal,
   onToggleManageMode,
   onStartEditGoal,
@@ -77,14 +91,16 @@ export const GoalsList = ({
     <Card withBorder radius="md" p="lg">
       <Stack gap={6}>
         <Group justify="space-between" align="center">
-          <Title order={4}>Goals ({goals.length})</Title>
-          {goals.length > 0 && (
+          <Title order={4}>
+            {title} ({goals.length})
+          </Title>
+          {showManageToggle && canManage && (
             <Button variant={isManageMode ? "light" : "subtle"} px={10} aria-label="Manage goals" onClick={onToggleManageMode}>
               {isManageMode ? <ManageActiveIcon /> : <ManageIcon />}
             </Button>
           )}
         </Group>
-        {goals.length > 0 && (
+        {showDragHint && goals.length > 0 && (
           <Text size="sm" c="dimmed">
             Drag and drop cards to change their order.
           </Text>
@@ -115,9 +131,9 @@ export const GoalsList = ({
                   withBorder
                   radius="md"
                   p="md"
-                  draggable
+                  draggable={allowDrag && !isManageMode}
                   style={{
-                    cursor: isDragged ? "grabbing" : "grab",
+                    cursor: allowDrag && !isManageMode ? (isDragged ? "grabbing" : "grab") : "pointer",
                     borderColor: isDropTarget
                       ? goal.color
                       : selectedGoalId === goal.id
@@ -127,16 +143,28 @@ export const GoalsList = ({
                     backgroundColor: selectedGoalId === goal.id ? hexToRgba(goal.color, 0.05) : undefined,
                     opacity: isDragged ? 0.55 : 1,
                   }}
-                  onDragStart={() => onDragStart(goal.id)}
+                  onDragStart={() => {
+                    if (allowDrag && !isManageMode) {
+                      onDragStart(goal.id);
+                    }
+                  }}
                   onDragOver={(event) => {
-                    event.preventDefault();
-                    onDragOver(goal.id);
+                    if (allowDrag && !isManageMode) {
+                      event.preventDefault();
+                      onDragOver(goal.id);
+                    }
                   }}
                   onDrop={(event) => {
-                    event.preventDefault();
-                    onDrop(goal.id);
+                    if (allowDrag && !isManageMode) {
+                      event.preventDefault();
+                      onDrop(goal.id);
+                    }
                   }}
-                  onDragEnd={onDragEnd}
+                  onDragEnd={() => {
+                    if (allowDrag && !isManageMode) {
+                      onDragEnd();
+                    }
+                  }}
                   onClick={() => onSelectGoal(goal.id)}
                 >
                   <Stack gap="xs">
@@ -197,7 +225,7 @@ export const GoalsList = ({
                             },
                           }}
                         >
-                          {goalProgress.toFixed(1)}%
+                          {goal.isCompleted ? "Completed" : `${goalProgress.toFixed(1)}%`}
                         </Badge>
                       )}
                     </Group>
@@ -219,9 +247,9 @@ export const GoalsList = ({
             {!isLoadingGoals && !goals.length && (
               <Card withBorder radius="md" p="xl">
                 <Stack gap={6} align="center">
-                  <Title order={5}>No goals yet</Title>
+                  <Title order={5}>{emptyTitle}</Title>
                   <Text c="dimmed" ta="center">
-                    Create your first goal to start tracking progress.
+                    {emptyDescription}
                   </Text>
                 </Stack>
               </Card>

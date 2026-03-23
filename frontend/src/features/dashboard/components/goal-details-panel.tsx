@@ -163,7 +163,7 @@ export const GoalDetailsPanel = ({
             <Stack gap={6} align="center">
               <Title order={5}>Choose a goal</Title>
               <Text c="dimmed" ta="center">
-                Select a goal card to view details, operations, and chart.
+                Select a goal to view details, operations, and chart.
               </Text>
             </Stack>
           </Card>
@@ -181,7 +181,21 @@ export const GoalDetailsPanel = ({
         <ScrollArea h={610} offsetScrollbars scrollbarSize={8}>
           <Stack gap="md" pr={4}>
           <Group justify="space-between" align="flex-start">
-            <Title order={4}>{selectedGoal.title}</Title>
+            <Stack gap={4}>
+              <Title order={4}>{selectedGoal.title}</Title>
+              {selectedGoal.isCompleted && (
+                <Group gap="xs">
+                  <Badge color="teal" variant="light">
+                    Completed
+                  </Badge>
+                  {selectedGoal.completedAt && (
+                    <Text size="sm" c="dimmed">
+                      {formatDay(selectedGoal.completedAt.slice(0, 10))}
+                    </Text>
+                  )}
+                </Group>
+              )}
+            </Stack>
             <Group gap="xs" wrap="nowrap">
               <Popover opened={isRangePickerOpen} onChange={setIsRangePickerOpen} position="bottom-end" withArrow shadow="md">
                 <Popover.Target>

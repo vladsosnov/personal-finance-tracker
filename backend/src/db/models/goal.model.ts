@@ -7,6 +7,8 @@ export type GoalDocument = {
   initialAmount: number;
   color: string;
   sortOrder: number;
+  isCompleted: boolean;
+  completedAt?: Date;
 };
 
 const goalSchema = new Schema<GoalDocument>(
@@ -17,6 +19,8 @@ const goalSchema = new Schema<GoalDocument>(
     initialAmount: { type: Number, required: true, default: 0 },
     color: { type: String, required: true, default: "#0F766E" },
     sortOrder: { type: Number, required: true, default: 0, index: true },
+    isCompleted: { type: Boolean, required: true, default: false },
+    completedAt: { type: Date },
   },
   { timestamps: true }
 );

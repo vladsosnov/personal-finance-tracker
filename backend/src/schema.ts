@@ -1,7 +1,7 @@
 import { buildSchema } from "graphql";
 import { hashPassword, signJwt, verifyPassword } from "./auth";
 import { createUser, findUserByEmail, findUserById } from "./modules/auth/user.repository";
-import { bulkCreateGoals, createGoal, deleteAllGoalsByUser, deleteGoal, getGoalById, listGoalsByUser, reorderGoals, updateGoal, updateGoalColor } from "./modules/goals/goal.repository";
+import { bulkCreateGoals, createGoal, deleteAllGoalsByUser, deleteGoal, getGoalById, listGoalsByUser, reorderGoals, updateGoal, updateGoalColor, updateGoalCompletion } from "./modules/goals/goal.repository";
 import { bulkCreateGoalOperations, createGoalOperation, deleteAllOperationsByUser, deleteGoalOperation, deleteOperationsByGoal, getGoalOperationById, updateGoalOperation } from "./modules/goals/operation.repository";
 import { buildGoalView } from "./modules/goals/goal.service";
 import type { OperationType } from "./modules/goals/types";
@@ -56,6 +56,10 @@ type UpdateGoalColorArgs = {
 };
 
 type DeleteGoalArgs = {
+  goalId: string;
+};
+
+type CompleteGoalArgs = {
   goalId: string;
 };
 
@@ -157,6 +161,8 @@ export const schema = buildSchema(`
     initialAmount: Float!
     color: String!
     sortOrder: Int!
+    isCompleted: Boolean!
+    completedAt: String
     currentAmount: Float!
     progress: Float!
     createdAt: String!
@@ -179,11 +185,28 @@ export const schema = buildSchema(`
     reorderGoals(goalIds: [ID!]!): [Goal!]!
     importGoals(goals: [ImportGoalInput!]!): ImportGoalsPayload!
     resetAllData: ResetAllDataPayload!
+    completeGoal(goalId: ID!): Goal!
     updateGoalProgress(goalId: ID!, type: OperationType!, amount: Float!, note: String, operationDate: String): Goal!
     editGoalOperation(operationId: ID!, type: OperationType!, amount: Float!, note: String, operationDate: String): Goal!
     deleteGoalOperation(operationId: ID!): Goal!
   }
 `);
+
+const buildGoalViewWithCompletionState = async (userId: string, goal: import("./modules/goals/types").Goal) => {
+  const goalView = await buildGoalView(userId, goal);
+  const shouldBeCompleted = goalView.targetAmount > 0 && goalView.currentAmount >= goalView.targetAmount;
+
+  if (goal.isCompleted && !shouldBeCompleted) {
+    const reopenedGoal = await updateGoalCompletion(userId, goal.id, false);
+    if (!reopenedGoal) {
+      throw new Error("Goal not found");
+    }
+
+    return buildGoalView(userId, reopenedGoal);
+  }
+
+  return goalView;
+};
 
 export const rootValue = {
   me: async (_args: unknown, context: Context) => {
@@ -198,12 +221,12 @@ export const rootValue = {
   goals: async (_args: unknown, context: Context) => {
     const userId = ensureAuthed(context);
     const goals = await listGoalsByUser(userId);
-    return Promise.all(goals.map((goal) => buildGoalView(userId, goal)));
+    return Promise.all(goals.map((goal) => buildGoalViewWithCompletionState(userId, goal)));
   },
   goal: async ({ id }: GoalLookupArgs, context: Context) => {
     const userId = ensureAuthed(context);
     const goal = await getGoalById(userId, id);
-    return goal ? await buildGoalView(userId, goal) : null;
+    return goal ? await buildGoalViewWithCompletionState(userId, goal) : null;
   },
   register: async ({ email, password }: RegisterArgs) => {
     if (password.length < 6) {
@@ -239,8 +262,8 @@ export const rootValue = {
     if (!title.trim()) {
       throw new Error("Goal title is required");
     }
-    if (title.trim().length > 80) {
-      throw new Error("Goal title must be at most 80 characters");
+    if (title.trim().length > 100) {
+      throw new Error("Goal title must be at most 100 characters");
     }
     if (targetAmount < 0) {
       throw new Error("Target amount cannot be negative");
@@ -253,15 +276,15 @@ export const rootValue = {
     }
 
     const goal = await createGoal(userId, title.trim(), targetAmount, initialAmount, color);
-    return buildGoalView(userId, goal);
+    return buildGoalViewWithCompletionState(userId, goal);
   },
   editGoal: async ({ goalId, title, targetAmount, initialAmount = 0, color }: EditGoalArgs, context: Context) => {
     const userId = ensureAuthed(context);
     if (!title.trim()) {
       throw new Error("Goal title is required");
     }
-    if (title.trim().length > 80) {
-      throw new Error("Goal title must be at most 80 characters");
+    if (title.trim().length > 100) {
+      throw new Error("Goal title must be at most 100 characters");
     }
     if (targetAmount < 0) {
       throw new Error("Target amount cannot be negative");
@@ -283,7 +306,7 @@ export const rootValue = {
       throw new Error("Goal not found");
     }
 
-    return buildGoalView(userId, goal);
+    return buildGoalViewWithCompletionState(userId, goal);
   },
   updateGoalColor: async ({ goalId, color }: UpdateGoalColorArgs, context: Context) => {
     const userId = ensureAuthed(context);
@@ -296,7 +319,7 @@ export const rootValue = {
       throw new Error("Goal not found");
     }
 
-    return buildGoalView(userId, goal);
+    return buildGoalViewWithCompletionState(userId, goal);
   },
   deleteGoal: async ({ goalId }: DeleteGoalArgs, context: Context) => {
     const userId = ensureAuthed(context);
@@ -311,13 +334,13 @@ export const rootValue = {
       throw new Error("Goal not found");
     }
 
-    return buildGoalView(userId, goal);
+    return buildGoalViewWithCompletionState(userId, goal);
   },
   reorderGoals: async ({ goalIds }: ReorderGoalsArgs, context: Context) => {
     const userId = ensureAuthed(context);
     await reorderGoals(userId, goalIds);
     const goals = await listGoalsByUser(userId);
-    return Promise.all(goals.map((goal) => buildGoalView(userId, goal)));
+    return Promise.all(goals.map((goal) => buildGoalViewWithCompletionState(userId, goal)));
   },
   importGoals: async ({ goals }: ImportGoalsArgs, context: Context) => {
     const userId = ensureAuthed(context);
@@ -390,6 +413,25 @@ export const rootValue = {
       deletedOperationsCount,
     };
   },
+  completeGoal: async ({ goalId }: CompleteGoalArgs, context: Context) => {
+    const userId = ensureAuthed(context);
+    const goal = await getGoalById(userId, goalId);
+    if (!goal) {
+      throw new Error("Goal not found");
+    }
+
+    const goalView = await buildGoalView(userId, goal);
+    if (goalView.targetAmount <= 0 || goalView.currentAmount < goalView.targetAmount) {
+      throw new Error("Goal is not ready to be completed");
+    }
+
+    const completedGoal = await updateGoalCompletion(userId, goalId, true, new Date().toISOString());
+    if (!completedGoal) {
+      throw new Error("Goal not found");
+    }
+
+    return buildGoalViewWithCompletionState(userId, completedGoal);
+  },
   updateGoalProgress: async ({ goalId, type, amount, note, operationDate }: GoalOperationArgs, context: Context) => {
     const userId = ensureAuthed(context);
     if (amount <= 0) {
@@ -405,7 +447,7 @@ export const rootValue = {
     }
 
     await createGoalOperation(userId, goalId, type, amount, note?.trim(), operationDate);
-    return buildGoalView(userId, goal);
+    return buildGoalViewWithCompletionState(userId, goal);
   },
   editGoalOperation: async ({ operationId, type, amount, note, operationDate }: EditGoalOperationArgs, context: Context) => {
     const userId = ensureAuthed(context);
@@ -436,7 +478,7 @@ export const rootValue = {
       throw new Error("Goal not found");
     }
 
-    return buildGoalView(userId, goal);
+    return buildGoalViewWithCompletionState(userId, goal);
   },
   deleteGoalOperation: async ({ operationId }: DeleteGoalOperationArgs, context: Context) => {
     const userId = ensureAuthed(context);
@@ -456,6 +498,6 @@ export const rootValue = {
       throw new Error("Goal not found");
     }
 
-    return buildGoalView(userId, goal);
+    return buildGoalViewWithCompletionState(userId, goal);
   },
 };

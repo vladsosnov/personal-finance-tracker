@@ -10,6 +10,8 @@ const toGoal = (doc: {
   initialAmount?: number;
   color?: string;
   sortOrder?: number;
+  isCompleted?: boolean;
+  completedAt?: Date | null;
   createdAt: Date;
 }): Goal => ({
   id: doc._id.toString(),
@@ -19,6 +21,8 @@ const toGoal = (doc: {
   initialAmount: doc.initialAmount ?? 0,
   color: doc.color ?? "#0F766E",
   sortOrder: doc.sortOrder ?? 0,
+  isCompleted: doc.isCompleted ?? false,
+  completedAt: doc.completedAt?.toISOString(),
   createdAt: doc.createdAt.toISOString(),
 });
 
@@ -41,6 +45,8 @@ export const createGoal = async (
       initialAmount: number;
       color: string;
       sortOrder: number;
+      isCompleted?: boolean;
+      completedAt?: Date | null;
       createdAt: Date;
     }
   );
@@ -70,6 +76,7 @@ export const bulkCreateGoals = async (
       initialAmount: goal.initialAmount,
       color: goal.color,
       sortOrder: nextSortOrder + index,
+      isCompleted: false,
     }))
   );
 
@@ -83,6 +90,8 @@ export const bulkCreateGoals = async (
         initialAmount?: number;
         color?: string;
         sortOrder?: number;
+        isCompleted?: boolean;
+        completedAt?: Date | null;
         createdAt: Date;
       }
     )
@@ -101,6 +110,8 @@ export const listGoalsByUser = async (userId: string): Promise<Goal[]> => {
         initialAmount?: number;
         color?: string;
         sortOrder?: number;
+        isCompleted?: boolean;
+        completedAt?: Date | null;
         createdAt: Date;
       }
     )
@@ -114,11 +125,48 @@ export const getGoalById = async (userId: string, goalId: string): Promise<Goal 
         goal as unknown as {
           _id: mongoose.Types.ObjectId;
           userId: mongoose.Types.ObjectId;
+        title: string;
+        targetAmount: number;
+        initialAmount?: number;
+        color?: string;
+        sortOrder?: number;
+        isCompleted?: boolean;
+        completedAt?: Date | null;
+        createdAt: Date;
+      }
+    )
+    : undefined;
+};
+
+export const updateGoalCompletion = async (
+  userId: string,
+  goalId: string,
+  isCompleted: boolean,
+  completedAt?: string
+): Promise<Goal | undefined> => {
+  const goal = await GoalModel.findOneAndUpdate(
+    { _id: goalId, userId },
+    {
+      $set: {
+        isCompleted,
+        completedAt: isCompleted && completedAt ? new Date(completedAt) : null,
+      },
+    },
+    { new: true }
+  ).lean();
+
+  return goal
+    ? toGoal(
+        goal as unknown as {
+          _id: mongoose.Types.ObjectId;
+          userId: mongoose.Types.ObjectId;
           title: string;
           targetAmount: number;
           initialAmount?: number;
           color?: string;
           sortOrder?: number;
+          isCompleted?: boolean;
+          completedAt?: Date | null;
           createdAt: Date;
         }
       )
@@ -133,14 +181,16 @@ export const deleteGoal = async (userId: string, goalId: string): Promise<Goal |
         goal as unknown as {
           _id: mongoose.Types.ObjectId;
           userId: mongoose.Types.ObjectId;
-          title: string;
-          targetAmount: number;
-          initialAmount?: number;
-          color?: string;
-          sortOrder?: number;
-          createdAt: Date;
-        }
-      )
+        title: string;
+        targetAmount: number;
+        initialAmount?: number;
+        color?: string;
+        sortOrder?: number;
+        isCompleted?: boolean;
+        completedAt?: Date | null;
+        createdAt: Date;
+      }
+    )
     : undefined;
 };
 
@@ -176,14 +226,16 @@ export const updateGoalColor = async (userId: string, goalId: string, color: str
         goal as unknown as {
           _id: mongoose.Types.ObjectId;
           userId: mongoose.Types.ObjectId;
-          title: string;
-          targetAmount: number;
-          initialAmount?: number;
-          color?: string;
-          sortOrder?: number;
-          createdAt: Date;
-        }
-      )
+        title: string;
+        targetAmount: number;
+        initialAmount?: number;
+        color?: string;
+        sortOrder?: number;
+        isCompleted?: boolean;
+        completedAt?: Date | null;
+        createdAt: Date;
+      }
+    )
     : undefined;
 };
 

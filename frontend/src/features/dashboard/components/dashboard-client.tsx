@@ -11,6 +11,7 @@ import { GoalColorPicker } from "@/features/dashboard/components/goal-color-pick
 import { GoalDetailsPanel } from "@/features/dashboard/components/goal-details-panel";
 import { GoalsList } from "@/features/dashboard/components/goals-list";
 import {
+  COMPLETE_GOAL,
   CREATE_GOAL,
   DELETE_GOAL,
   DELETE_GOAL_OPERATION,
@@ -57,6 +58,7 @@ export const DashboardClient = () => {
   const [draggingGoalId, setDraggingGoalId] = useState<string | null>(null);
   const [dragOverGoalId, setDragOverGoalId] = useState<string | null>(null);
   const [optimisticGoals, setOptimisticGoals] = useState<Goal[] | null>(null);
+  const [pendingCompletionGoal, setPendingCompletionGoal] = useState<Goal | null>(null);
 
   useEffect(() => {
     const token = window.localStorage.getItem(AUTH_TOKEN_KEY);
@@ -106,6 +108,7 @@ export const DashboardClient = () => {
   }, [optimisticGoals, serverGoals]);
 
   const [createGoal, { loading: isCreatingGoal }] = useMutation(CREATE_GOAL);
+  const [completeGoalMutation, { loading: isCompletingGoal }] = useMutation(COMPLETE_GOAL);
   const [deleteGoalMutation] = useMutation(DELETE_GOAL);
   const [editGoalMutation, { loading: isEditingGoal }] = useMutation(EDIT_GOAL);
   const [reorderGoalsMutation] = useMutation(REORDER_GOALS);
@@ -114,7 +117,8 @@ export const DashboardClient = () => {
   const [updateGoalProgress, { loading: isUpdatingProgress }] = useMutation(UPDATE_GOAL_PROGRESS);
 
   const goals = optimisticGoals ?? serverGoals;
-  const managingGoal = useMemo(() => goals.find((goal) => goal.id === editingGoalId) ?? null, [editingGoalId, goals]);
+  const activeGoals = useMemo(() => goals.filter((goal) => !goal.isCompleted), [goals]);
+  const completedGoals = useMemo(() => goals.filter((goal) => goal.isCompleted), [goals]);
   const deletingGoal = useMemo(() => goals.find((goal) => goal.id === deletingGoalId) ?? null, [deletingGoalId, goals]);
   const selectedGoal =
     goalDetailsData?.goal?.id === selectedGoalId
@@ -131,10 +135,30 @@ export const DashboardClient = () => {
     }
   }, [goals.length, isManageMode]);
 
-  const totalTarget = useMemo(() => goals.reduce((sum: number, goal: Goal) => sum + goal.targetAmount, 0), [goals]);
-  const totalCurrent = useMemo(() => goals.reduce((sum: number, goal: Goal) => sum + goal.currentAmount, 0), [goals]);
+  const totalTarget = useMemo(() => activeGoals.reduce((sum: number, goal: Goal) => sum + goal.targetAmount, 0), [activeGoals]);
+  const totalCurrent = useMemo(() => activeGoals.reduce((sum: number, goal: Goal) => sum + goal.currentAmount, 0), [activeGoals]);
   const isAddDisabled = !goalTitle.trim() || !goalTarget || goalTarget <= 0;
   const isUpdateDisabled = !selectedGoalId || !operationAmount || operationAmount <= 0;
+
+  const maybePromptGoalCompletion = (goal: Goal | GoalDetails | null | undefined) => {
+    if (!goal || goal.isCompleted || goal.targetAmount <= 0 || goal.currentAmount < goal.targetAmount) {
+      return;
+    }
+
+    setPendingCompletionGoal({
+      id: goal.id,
+      title: goal.title,
+      targetAmount: goal.targetAmount,
+      initialAmount: goal.initialAmount,
+      color: goal.color,
+      sortOrder: goal.sortOrder,
+      isCompleted: goal.isCompleted,
+      completedAt: goal.completedAt,
+      currentAmount: goal.currentAmount,
+      progress: goal.progress,
+      createdAt: goal.createdAt,
+    });
+  };
 
   const handleCreateGoal = async () => {
     if (!goalTitle.trim() || !goalTarget || goalTarget <= 0) {
@@ -143,7 +167,7 @@ export const DashboardClient = () => {
 
     await createGoal({
       variables: {
-        title: goalTitle.trim().slice(0, 80),
+        title: goalTitle.trim().slice(0, 100),
         targetAmount: Number(goalTarget),
         initialAmount: Number(goalInitialAmount || 0),
         color: goalColor,
@@ -170,8 +194,10 @@ export const DashboardClient = () => {
       return;
     }
 
+    let updatedGoal: GoalDetails | null = null;
+
     if (editingOperationId) {
-      await editGoalOperation({
+      const result = await editGoalOperation({
         variables: {
           operationId: editingOperationId,
           type: operationType,
@@ -180,12 +206,13 @@ export const DashboardClient = () => {
           operationDate,
         },
       });
+      updatedGoal = (result.data as { editGoalOperation?: GoalDetails } | undefined)?.editGoalOperation ?? null;
     } else {
       if (!selectedGoalId) {
         return;
       }
 
-      await updateGoalProgress({
+      const result = await updateGoalProgress({
         variables: {
           goalId: selectedGoalId,
           type: operationType,
@@ -194,10 +221,12 @@ export const DashboardClient = () => {
           operationDate,
         },
       });
+      updatedGoal = (result.data as { updateGoalProgress?: GoalDetails } | undefined)?.updateGoalProgress ?? null;
     }
 
     resetOperationForm();
     await Promise.all([refetchGoals(), refetchGoalDetails()]);
+    maybePromptGoalCompletion(updatedGoal);
   };
 
   const handleStartEditOperation = (operationId: string) => {
@@ -252,6 +281,8 @@ export const DashboardClient = () => {
                         initialAmount: updatedGoal.initialAmount,
                         color: updatedGoal.color,
                         sortOrder: updatedGoal.sortOrder,
+                        isCompleted: updatedGoal.isCompleted,
+                        completedAt: updatedGoal.completedAt,
                         currentAmount: updatedGoal.currentAmount,
                         progress: updatedGoal.progress,
                         createdAt: updatedGoal.createdAt,
@@ -302,7 +333,7 @@ export const DashboardClient = () => {
       return;
     }
 
-    await editGoalMutation({
+    const result = await editGoalMutation({
       variables: {
         goalId,
         title: input.title,
@@ -311,15 +342,17 @@ export const DashboardClient = () => {
         color: input.color,
       },
     });
+    const updatedGoal = (result.data as { editGoal?: Goal } | undefined)?.editGoal ?? null;
 
     setEditingGoalId(null);
 
     if (selectedGoalId === goalId) {
       await Promise.all([refetchGoals(), refetchGoalDetails()]);
-      return;
+    } else {
+      await refetchGoals();
     }
 
-    await refetchGoals();
+    maybePromptGoalCompletion(updatedGoal);
   };
 
   const handleStartEditGoal = (goalId: string) => {
@@ -328,7 +361,7 @@ export const DashboardClient = () => {
       return;
     }
 
-    setEditedGoalTitle(goal.title.slice(0, 80));
+    setEditedGoalTitle(goal.title.slice(0, 100));
     setEditedGoalTarget(goal.targetAmount);
     setEditedGoalInitialAmount(goal.initialAmount > 0 ? goal.initialAmount : "");
     setEditedGoalColor(goal.color);
@@ -341,7 +374,7 @@ export const DashboardClient = () => {
     }
 
     await handleEditGoal(editingGoalId, {
-      title: editedGoalTitle.trim().slice(0, 80),
+      title: editedGoalTitle.trim().slice(0, 100),
       targetAmount: Number(editedGoalTarget),
       initialAmount: Number(editedGoalInitialAmount || 0),
       color: editedGoalColor,
@@ -372,7 +405,7 @@ export const DashboardClient = () => {
       return;
     }
 
-    const nextGoals = [...goals];
+    const nextGoals = [...activeGoals];
     const fromIndex = nextGoals.findIndex((goal) => goal.id === draggingGoalId);
     const toIndex = nextGoals.findIndex((goal) => goal.id === goalId);
     if (fromIndex < 0 || toIndex < 0) {
@@ -382,10 +415,14 @@ export const DashboardClient = () => {
 
     const [movedGoal] = nextGoals.splice(fromIndex, 1);
     nextGoals.splice(toIndex, 0, movedGoal);
-    const reorderedGoals = nextGoals.map((goal, index) => ({
+    const reorderedActiveGoals = nextGoals.map((goal, index) => ({
       ...goal,
       sortOrder: index,
     }));
+    const reorderedGoals = [...reorderedActiveGoals, ...completedGoals.map((goal, index) => ({
+      ...goal,
+      sortOrder: reorderedActiveGoals.length + index,
+    }))];
 
     setOptimisticGoals(reorderedGoals);
     handleDragEnd();
@@ -447,10 +484,21 @@ export const DashboardClient = () => {
           <Grid>
             <Grid.Col span={{ base: 12, md: 4 }}>
               <GoalsList
-                goals={goals}
+                title="Goals"
+                goals={activeGoals}
                 isLoadingGoals={shouldShowGoalsSkeleton}
                 selectedGoalId={selectedGoalId}
                 isManageMode={isManageMode}
+                showManageToggle
+                canManage={goals.length > 0}
+                showDragHint
+                allowDrag
+                emptyTitle={completedGoals.length > 0 ? "No active goals" : "No goals yet"}
+                emptyDescription={
+                  completedGoals.length > 0
+                    ? "Completed goals are moved below. Add a new goal to keep tracking."
+                    : "Create your first goal to start tracking progress."
+                }
                 onSelectGoal={setSelectedGoalId}
                 onToggleManageMode={() => setIsManageMode((current) => !current)}
                 onStartEditGoal={handleStartEditGoal}
@@ -462,6 +510,30 @@ export const DashboardClient = () => {
                 onDrop={handleDrop}
                 onDragEnd={handleDragEnd}
               />
+              {completedGoals.length > 0 && (
+                <Stack mt="md">
+                  <GoalsList
+                    title="Completed goals"
+                    goals={completedGoals}
+                    isLoadingGoals={false}
+                    selectedGoalId={selectedGoalId}
+                    isManageMode={isManageMode}
+                    showManageToggle={false}
+                    showDragHint={false}
+                    allowDrag={false}
+                    onSelectGoal={setSelectedGoalId}
+                    onToggleManageMode={() => setIsManageMode((current) => !current)}
+                    onStartEditGoal={handleStartEditGoal}
+                    onStartDeleteGoal={setDeletingGoalId}
+                    draggingGoalId={null}
+                    dragOverGoalId={null}
+                    onDragStart={() => undefined}
+                    onDragOver={() => undefined}
+                    onDrop={() => undefined}
+                    onDragEnd={() => undefined}
+                  />
+                </Stack>
+              )}
             </Grid.Col>
             <Grid.Col span={{ base: 12, md: 8 }}>
               <GoalDetailsPanel
@@ -503,7 +575,7 @@ export const DashboardClient = () => {
             <TextInput
               label="Title"
               value={editedGoalTitle}
-              maxLength={80}
+              maxLength={100}
               onChange={(event) => setEditedGoalTitle(event.currentTarget.value)}
             />
             <NumberInput
@@ -532,6 +604,49 @@ export const DashboardClient = () => {
                 disabled={!editedGoalTitle.trim() || !editedGoalTarget || editedGoalTarget <= 0}
               >
                 Save
+              </Button>
+            </Group>
+          </Stack>
+        </Modal>
+
+        <Modal
+          opened={Boolean(pendingCompletionGoal)}
+          onClose={() => {
+            if (!isCompletingGoal) {
+              setPendingCompletionGoal(null);
+            }
+          }}
+          title="Complete goal?"
+          centered
+        >
+          <Stack gap="md">
+            <Text>
+              <strong>{pendingCompletionGoal?.title ?? "This goal"}</strong> has reached its target. Do you want to move it to
+              completed goals?
+            </Text>
+            <Group justify="flex-end">
+              <Button variant="default" onClick={() => setPendingCompletionGoal(null)} disabled={isCompletingGoal}>
+                Keep active
+              </Button>
+              <Button
+                color="teal"
+                loading={isCompletingGoal}
+                onClick={async () => {
+                  if (!pendingCompletionGoal) {
+                    return;
+                  }
+
+                  await completeGoalMutation({
+                    variables: {
+                      goalId: pendingCompletionGoal.id,
+                    },
+                  });
+
+                  setPendingCompletionGoal(null);
+                  await Promise.all([refetchGoals(), selectedGoalId === pendingCompletionGoal.id ? refetchGoalDetails() : Promise.resolve()]);
+                }}
+              >
+                Complete
               </Button>
             </Group>
           </Stack>

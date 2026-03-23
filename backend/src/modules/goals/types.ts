@@ -8,6 +8,8 @@ export type Goal = {
   initialAmount: number;
   color: string;
   sortOrder: number;
+  isCompleted: boolean;
+  completedAt?: string;
   createdAt: string;
 };
 
@@ -29,6 +31,8 @@ export type GoalView = {
   initialAmount: number;
   color: string;
   sortOrder: number;
+  isCompleted: boolean;
+  completedAt?: string;
   currentAmount: number;
   progress: number;
   createdAt: string;

@@ -466,7 +466,7 @@ export const ProfileClient = () => {
 
         <Card withBorder radius="md" p="lg">
           <Stack gap="sm">
-            <Title order={4}>Email</Title>
+            <Title order={4}>Personal information</Title>
             <Text>{meData?.me?.email ?? "Loading..."}</Text>
             <Text>Subscription: {meData?.me?.subscription ?? "Free"}</Text>
           </Stack>
