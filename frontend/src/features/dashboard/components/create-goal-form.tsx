@@ -45,6 +45,7 @@ export const CreateGoalForm = ({
           <Grid.Col span={{ base: 12, md: 2 }}>
             <NumberInput
               label="Target amount"
+              placeholder="25000"
               {...MONEY_INPUT_PROPS}
               value={goalTarget}
               onChange={(value) => setGoalTarget(numberOrZero(value))}
@@ -53,6 +54,7 @@ export const CreateGoalForm = ({
           <Grid.Col span={{ base: 12, md: 2 }}>
             <NumberInput
               label="Starting amount"
+              placeholder="5000"
               {...MONEY_INPUT_PROPS}
               min={0}
               value={goalInitialAmount}

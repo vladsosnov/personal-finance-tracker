@@ -7,8 +7,6 @@ import type { OperationType } from "@/shared/gql/__generated__/schema-types";
 import { formatDay } from "@/shared/utils/date";
 import { formatMoney, MONEY_INPUT_PROPS, numberOrZero } from "@/shared/utils/number";
 
-const NOTE_PREVIEW_LENGTH = 30;
-
 const EditIcon = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
     <path
@@ -28,6 +26,15 @@ const DeleteIcon = () => (
     <path d="M8 6V4h8v2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
     <path d="M19 6l-1 14H6L5 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
     <path d="M10 11v6M14 11v6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+  </svg>
+);
+
+const ExpandIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <path d="M15 4h5v5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M14 10 20 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M9 20H4v-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="m4 20 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 );
 
@@ -84,9 +91,11 @@ export const GoalDetailsPanel = ({
   const [isDeleteGoalModalOpen, setIsDeleteGoalModalOpen] = useState(false);
   const [isEditGoalModalOpen, setIsEditGoalModalOpen] = useState(false);
   const [isOperationModalOpen, setIsOperationModalOpen] = useState(false);
+  const [isChartModalOpen, setIsChartModalOpen] = useState(false);
+  const [chartRange, setChartRange] = useState<"all" | "7d" | "1m" | "6m" | "12m">("all");
   const [editedGoalTitle, setEditedGoalTitle] = useState("");
-  const [editedGoalTarget, setEditedGoalTarget] = useState<number | "">(0);
-  const [editedGoalInitialAmount, setEditedGoalInitialAmount] = useState<number | "">(0);
+  const [editedGoalTarget, setEditedGoalTarget] = useState<number | "">("");
+  const [editedGoalInitialAmount, setEditedGoalInitialAmount] = useState<number | "">("");
   const [editedGoalColor, setEditedGoalColor] = useState("");
   const pendingDeleteOperation = useMemo(
     () => selectedGoal?.operations.find((operation) => operation.id === pendingDeleteOperationId) ?? null,
@@ -126,7 +135,7 @@ export const GoalDetailsPanel = ({
 
     setEditedGoalTitle(selectedGoal.title);
     setEditedGoalTarget(selectedGoal.targetAmount);
-    setEditedGoalInitialAmount(selectedGoal.initialAmount);
+    setEditedGoalInitialAmount(selectedGoal.initialAmount > 0 ? selectedGoal.initialAmount : "");
     setEditedGoalColor(selectedGoal.color);
     setIsEditGoalModalOpen(true);
   };
@@ -197,7 +206,29 @@ export const GoalDetailsPanel = ({
             </Group>
           </Group>
 
-          <GoalChart operations={selectedGoal.operations} color={selectedGoal.color} />
+          <Stack gap="xs">
+            <Group justify="space-between" align="center">
+              <Title order={5}>Progress over time</Title>
+              <Group gap="xs" wrap="nowrap">
+                <SegmentedControl
+                  size="xs"
+                  value={chartRange}
+                  onChange={(value) => setChartRange(value as "all" | "7d" | "1m" | "6m" | "12m")}
+                  data={[
+                    { label: "All time", value: "all" },
+                    { label: "7D", value: "7d" },
+                    { label: "1M", value: "1m" },
+                    { label: "6M", value: "6m" },
+                    { label: "12M", value: "12m" },
+                  ]}
+                />
+                <Button variant="light" px={10} aria-label="Expand chart" onClick={() => setIsChartModalOpen(true)}>
+                  <ExpandIcon />
+                </Button>
+              </Group>
+            </Group>
+            <GoalChart operations={selectedGoal.operations} color={selectedGoal.color} range={chartRange} />
+          </Stack>
 
           <Group justify="space-between" align="center">
             <Title order={5}>Operations</Title>
@@ -226,10 +257,19 @@ export const GoalDetailsPanel = ({
                   <Table.Td>
                     {operation.note ? (
                       <Tooltip label={operation.note} withArrow multiline maw={360}>
-                        <Text span>
-                          {operation.note.length > NOTE_PREVIEW_LENGTH
-                            ? `${operation.note.slice(0, NOTE_PREVIEW_LENGTH)}...`
-                            : operation.note}
+                        <Text
+                          span
+                          style={{
+                            width: 280,
+                            display: "-webkit-box",
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: "vertical",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            wordBreak: "break-word",
+                          }}
+                        >
+                          {operation.note}
                         </Text>
                       </Tooltip>
                     ) : (
@@ -296,6 +336,7 @@ export const GoalDetailsPanel = ({
               />
               <NumberInput
                 label="Amount"
+                placeholder="500"
                 {...MONEY_INPUT_PROPS}
                 value={operationAmount}
                 onChange={(value) => setOperationAmount(numberOrZero(value))}
@@ -374,12 +415,14 @@ export const GoalDetailsPanel = ({
               />
               <NumberInput
                 label="Target amount"
+                placeholder="25000"
                 {...MONEY_INPUT_PROPS}
                 value={editedGoalTarget}
                 onChange={(value) => setEditedGoalTarget(numberOrZero(value))}
               />
               <NumberInput
                 label="Starting amount"
+                placeholder="5000"
                 {...MONEY_INPUT_PROPS}
                 min={0}
                 value={editedGoalInitialAmount}
@@ -398,6 +441,25 @@ export const GoalDetailsPanel = ({
                   Save
                 </Button>
               </Group>
+            </Stack>
+          </Modal>
+
+          <Modal opened={isChartModalOpen} onClose={() => setIsChartModalOpen(false)} title="Progress over time" centered size="calc(100vw - 96px)">
+            <Stack gap="md">
+              <Group justify="space-between" align="center">
+                <SegmentedControl
+                  value={chartRange}
+                  onChange={(value) => setChartRange(value as "all" | "7d" | "1m" | "6m" | "12m")}
+                  data={[
+                    { label: "All time", value: "all" },
+                    { label: "7D", value: "7d" },
+                    { label: "1M", value: "1m" },
+                    { label: "6M", value: "6m" },
+                    { label: "12M", value: "12m" },
+                  ]}
+                />
+              </Group>
+              <GoalChart operations={selectedGoal.operations} color={selectedGoal.color} range={chartRange} height={520} />
             </Stack>
           </Modal>
 

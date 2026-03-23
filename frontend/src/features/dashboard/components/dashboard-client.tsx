@@ -39,7 +39,7 @@ export const DashboardClient = () => {
   const [goalInitialAmount, setGoalInitialAmount] = useState<number | "">("");
   const [goalColor, setGoalColor] = useState<string>(DEFAULT_GOAL_COLOR);
   const [operationType, setOperationType] = useState<OperationType>("INCREASE");
-  const [operationAmount, setOperationAmount] = useState<number | "">(0);
+  const [operationAmount, setOperationAmount] = useState<number | "">("");
   const [operationNote, setOperationNote] = useState("");
   const [operationDate, setOperationDate] = useState(getTodayDateValue);
   const [editingOperationId, setEditingOperationId] = useState<string | null>(null);
@@ -142,7 +142,7 @@ export const DashboardClient = () => {
 
   const resetOperationForm = () => {
     setOperationType("INCREASE");
-    setOperationAmount(0);
+    setOperationAmount("");
     setOperationNote("");
     setOperationDate(getTodayDateValue());
     setEditingOperationId(null);
@@ -356,7 +356,7 @@ export const DashboardClient = () => {
   }
 
   return (
-    <Container size="xl" py={40}>
+    <Container size="xl" py={24}>
       <Stack gap="lg">
         <Group justify="space-between" align="flex-start">
           <Stack gap={2}>

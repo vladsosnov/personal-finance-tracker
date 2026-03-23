@@ -18,21 +18,54 @@ type Operation = {
 type GoalChartProps = {
   operations: Operation[];
   color: string;
+  height?: number;
+  range: "all" | "7d" | "1m" | "6m" | "12m";
 };
 
-export const GoalChart = ({ operations, color }: GoalChartProps) => {
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+export const GoalChart = ({ operations, color, height = 320, range }: GoalChartProps) => {
   const seriesData = useMemo<Array<[number, number]>>(() => {
     let total = 0;
-    return [...operations]
+    const sortedOperations = [...operations]
       .sort((a, b) => {
         const dateComparison = a.operationDate.localeCompare(b.operationDate);
         return dateComparison !== 0 ? dateComparison : a.createdAt.localeCompare(b.createdAt);
-      })
-      .map((operation) => {
+      });
+
+    const allData = sortedOperations
+      .map((operation): [number, number] => {
         total += operation.type === "INCREASE" ? operation.amount : -operation.amount;
         return [dateStringToUtcTimestamp(operation.operationDate), Number(total.toFixed(2))];
       });
-  }, [operations]);
+
+    if (range === "all" || !allData.length) {
+      return allData;
+    }
+
+    const lastTimestamp = allData[allData.length - 1][0];
+    const rangeStart = (() => {
+      switch (range) {
+        case "7d":
+          return lastTimestamp - 7 * DAY_MS;
+        case "1m":
+          return lastTimestamp - 30 * DAY_MS;
+        case "6m":
+          return lastTimestamp - 183 * DAY_MS;
+        case "12m":
+          return lastTimestamp - 365 * DAY_MS;
+        default:
+          return 0;
+      }
+    })();
+
+    const firstVisibleIndex = allData.findIndex(([timestamp]) => timestamp >= rangeStart);
+    if (firstVisibleIndex <= 0) {
+      return allData;
+    }
+
+    return [allData[firstVisibleIndex - 1], ...allData.slice(firstVisibleIndex)];
+  }, [operations, range]);
 
   const options = useMemo<Options>(
     () => ({
@@ -48,9 +81,9 @@ export const GoalChart = ({ operations, color }: GoalChartProps) => {
         },
       ],
       credits: { enabled: false },
-      chart: { height: 320 },
+      chart: { height },
     }),
-    [color, seriesData]
+    [color, height, seriesData]
   );
 
   return <HighchartsReact highcharts={Highcharts} options={options} />;

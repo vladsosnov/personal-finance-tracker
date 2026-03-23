@@ -2,7 +2,7 @@ import { Card, Container, SimpleGrid, Skeleton, Stack } from "@mantine/core";
 
 export const DashboardSkeleton = () => {
   return (
-    <Container size="xl" py={40}>
+    <Container size="xl" py={24}>
       <Stack gap="lg">
         <Stack gap="xs">
           <Skeleton height={34} width="40%" />
