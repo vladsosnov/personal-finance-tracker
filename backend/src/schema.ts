@@ -2,7 +2,7 @@ import { buildSchema } from "graphql";
 import { hashPassword, signJwt, verifyPassword } from "./auth";
 import { createUser, findUserByEmail, findUserById } from "./modules/auth/user.repository";
 import { createGoal, getGoalById, listGoalsByUser, reorderGoals } from "./modules/goals/goal.repository";
-import { createGoalOperation, getGoalOperationById, updateGoalOperation } from "./modules/goals/operation.repository";
+import { createGoalOperation, deleteGoalOperation, getGoalOperationById, updateGoalOperation } from "./modules/goals/operation.repository";
 import { buildGoalView } from "./modules/goals/goal.service";
 import type { OperationType } from "./modules/goals/types";
 
@@ -19,6 +19,7 @@ type GoalArgs = {
   title: string;
   targetAmount: number;
   initialAmount?: number;
+  color?: string;
 };
 
 type GoalOperationArgs = {
@@ -35,6 +36,10 @@ type EditGoalOperationArgs = {
   amount: number;
   note?: string;
   operationDate?: string;
+};
+
+type DeleteGoalOperationArgs = {
+  operationId: string;
 };
 
 type GoalLookupArgs = {
@@ -87,6 +92,7 @@ export const schema = buildSchema(`
     title: String!
     targetAmount: Float!
     initialAmount: Float!
+    color: String!
     sortOrder: Int!
     currentAmount: Float!
     progress: Float!
@@ -103,10 +109,11 @@ export const schema = buildSchema(`
   type Mutation {
     register(email: String!, password: String!): AuthPayload!
     login(email: String!, password: String!): AuthPayload!
-    createGoal(title: String!, targetAmount: Float!, initialAmount: Float): Goal!
+    createGoal(title: String!, targetAmount: Float!, initialAmount: Float, color: String): Goal!
     reorderGoals(goalIds: [ID!]!): [Goal!]!
     updateGoalProgress(goalId: ID!, type: OperationType!, amount: Float!, note: String, operationDate: String): Goal!
     editGoalOperation(operationId: ID!, type: OperationType!, amount: Float!, note: String, operationDate: String): Goal!
+    deleteGoalOperation(operationId: ID!): Goal!
   }
 `);
 
@@ -159,7 +166,7 @@ export const rootValue = {
       user: toSafeUser(user),
     };
   },
-  createGoal: async ({ title, targetAmount, initialAmount = 0 }: GoalArgs, context: Context) => {
+  createGoal: async ({ title, targetAmount, initialAmount = 0, color = "#0F766E" }: GoalArgs, context: Context) => {
     const userId = ensureAuthed(context);
     if (targetAmount <= 0) {
       throw new Error("Target amount should be greater than 0");
@@ -167,8 +174,11 @@ export const rootValue = {
     if (initialAmount < 0) {
       throw new Error("Initial amount cannot be negative");
     }
+    if (!/^#[0-9A-Fa-f]{6}$/.test(color)) {
+      throw new Error("Goal color must be a valid hex color");
+    }
 
-    const goal = await createGoal(userId, title.trim(), targetAmount, initialAmount);
+    const goal = await createGoal(userId, title.trim(), targetAmount, initialAmount, color);
     return buildGoalView(userId, goal);
   },
   reorderGoals: async ({ goalIds }: ReorderGoalsArgs, context: Context) => {
@@ -219,6 +229,26 @@ export const rootValue = {
     }
 
     const goal = await getGoalById(userId, updatedOperation.goalId);
+    if (!goal) {
+      throw new Error("Goal not found");
+    }
+
+    return buildGoalView(userId, goal);
+  },
+  deleteGoalOperation: async ({ operationId }: DeleteGoalOperationArgs, context: Context) => {
+    const userId = ensureAuthed(context);
+
+    const operation = await getGoalOperationById(userId, operationId);
+    if (!operation) {
+      throw new Error("Operation not found");
+    }
+
+    const deletedOperation = await deleteGoalOperation(userId, operationId);
+    if (!deletedOperation) {
+      throw new Error("Operation not found");
+    }
+
+    const goal = await getGoalById(userId, deletedOperation.goalId);
     if (!goal) {
       throw new Error("Goal not found");
     }

@@ -6,6 +6,7 @@ export type Goal = {
   title: string;
   targetAmount: number;
   initialAmount: number;
+  color: string;
   sortOrder: number;
   createdAt: string;
 };
@@ -26,6 +27,7 @@ export type GoalView = {
   title: string;
   targetAmount: number;
   initialAmount: number;
+  color: string;
   sortOrder: number;
   currentAmount: number;
   progress: number;

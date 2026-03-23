@@ -111,6 +111,25 @@ export const updateGoalOperation = async (
     : undefined;
 };
 
+export const deleteGoalOperation = async (userId: string, operationId: string): Promise<GoalOperation | undefined> => {
+  const operation = await GoalOperationModel.findOneAndDelete({ _id: operationId, userId }).lean();
+
+  return operation
+    ? toGoalOperation(
+        operation as unknown as {
+          _id: mongoose.Types.ObjectId;
+          userId: mongoose.Types.ObjectId;
+          goalId: mongoose.Types.ObjectId;
+          type: OperationType;
+          amount: number;
+          note?: string;
+          operationDate?: string;
+          createdAt: Date;
+        }
+      )
+    : undefined;
+};
+
 export const listOperationsByGoal = async (userId: string, goalId: string): Promise<GoalOperation[]> => {
   const operations = await GoalOperationModel.find({ userId, goalId }).sort({ operationDate: -1, createdAt: -1 }).lean();
 

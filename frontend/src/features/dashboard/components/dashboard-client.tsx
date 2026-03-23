@@ -9,8 +9,18 @@ import { DashboardOverviewStats } from "@/features/dashboard/components/dashboar
 import { DashboardSkeleton } from "@/features/dashboard/components/dashboard-skeleton";
 import { GoalDetailsPanel } from "@/features/dashboard/components/goal-details-panel";
 import { GoalsList } from "@/features/dashboard/components/goals-list";
-import { CREATE_GOAL, EDIT_GOAL_OPERATION, GET_GOAL_DETAILS, GET_GOALS, GET_ME, REORDER_GOALS, UPDATE_GOAL_PROGRESS } from "@/features/dashboard/gql/dashboard";
+import {
+  CREATE_GOAL,
+  DELETE_GOAL_OPERATION,
+  EDIT_GOAL_OPERATION,
+  GET_GOAL_DETAILS,
+  GET_GOALS,
+  GET_ME,
+  REORDER_GOALS,
+  UPDATE_GOAL_PROGRESS,
+} from "@/features/dashboard/gql/dashboard";
 import type { Goal, GoalDetails } from "@/features/dashboard/types";
+import { DEFAULT_GOAL_COLOR } from "@/shared/constants/goal-colors";
 import { APP_ROUTES } from "@/shared/constants/routes";
 import { AUTH_TOKEN_KEY } from "@/shared/constants/storage";
 import type { OperationType } from "@/shared/gql/__generated__/schema-types";
@@ -25,11 +35,13 @@ export const DashboardClient = () => {
   const [goalTitle, setGoalTitle] = useState("");
   const [goalTarget, setGoalTarget] = useState<number | "">(0);
   const [goalInitialAmount, setGoalInitialAmount] = useState<number | "">(0);
+  const [goalColor, setGoalColor] = useState<string>(DEFAULT_GOAL_COLOR);
   const [operationType, setOperationType] = useState<OperationType>("INCREASE");
   const [operationAmount, setOperationAmount] = useState<number | "">(0);
   const [operationNote, setOperationNote] = useState("");
   const [operationDate, setOperationDate] = useState(getTodayDateValue);
   const [editingOperationId, setEditingOperationId] = useState<string | null>(null);
+  const [deletingOperationId, setDeletingOperationId] = useState<string | null>(null);
   const [draggingGoalId, setDraggingGoalId] = useState<string | null>(null);
   const [dragOverGoalId, setDragOverGoalId] = useState<string | null>(null);
   const [optimisticGoals, setOptimisticGoals] = useState<Goal[] | null>(null);
@@ -75,6 +87,7 @@ export const DashboardClient = () => {
 
   const [createGoal, { loading: isCreatingGoal }] = useMutation(CREATE_GOAL);
   const [reorderGoalsMutation] = useMutation(REORDER_GOALS);
+  const [deleteGoalOperationMutation] = useMutation(DELETE_GOAL_OPERATION);
   const [editGoalOperation, { loading: isEditingOperation }] = useMutation(EDIT_GOAL_OPERATION);
   const [updateGoalProgress, { loading: isUpdatingProgress }] = useMutation(UPDATE_GOAL_PROGRESS);
 
@@ -96,12 +109,14 @@ export const DashboardClient = () => {
         title: goalTitle.trim(),
         targetAmount: Number(goalTarget),
         initialAmount: Number(goalInitialAmount || 0),
+        color: goalColor,
       },
     });
 
     setGoalTitle("");
     setGoalTarget(0);
     setGoalInitialAmount(0);
+    setGoalColor(DEFAULT_GOAL_COLOR);
     await refetchGoals();
   };
 
@@ -159,6 +174,26 @@ export const DashboardClient = () => {
     setOperationAmount(operation.amount);
     setOperationNote(operation.note ?? "");
     setOperationDate(operation.operationDate);
+  };
+
+  const handleDeleteOperation = async (operationId: string) => {
+    setDeletingOperationId(operationId);
+
+    try {
+      await deleteGoalOperationMutation({
+        variables: {
+          operationId,
+        },
+      });
+
+      if (editingOperationId === operationId) {
+        resetOperationForm();
+      }
+
+      await Promise.all([refetchGoals(), refetchGoalDetails()]);
+    } finally {
+      setDeletingOperationId(null);
+    }
   };
 
   const handleDragStart = (goalId: string) => {
@@ -237,11 +272,13 @@ export const DashboardClient = () => {
           goalTitle={goalTitle}
           goalTarget={goalTarget}
           goalInitialAmount={goalInitialAmount}
+          goalColor={goalColor}
           isCreatingGoal={isCreatingGoal}
           isAddDisabled={isAddDisabled}
           setGoalTitle={setGoalTitle}
           setGoalTarget={setGoalTarget}
           setGoalInitialAmount={setGoalInitialAmount}
+          setGoalColor={setGoalColor}
           onCreateGoal={handleCreateGoal}
         />
 
@@ -267,6 +304,7 @@ export const DashboardClient = () => {
               operationNote={operationNote}
               operationDate={operationDate}
               editingOperationId={editingOperationId}
+              deletingOperationId={deletingOperationId}
               isUpdatingProgress={isUpdatingProgress || isEditingOperation}
               isUpdateDisabled={isUpdateDisabled}
               setOperationType={setOperationType}
@@ -274,6 +312,7 @@ export const DashboardClient = () => {
               setOperationNote={setOperationNote}
               setOperationDate={setOperationDate}
               onStartEditOperation={handleStartEditOperation}
+              onDeleteOperation={handleDeleteOperation}
               onCancelEditOperation={resetOperationForm}
               onUpdateProgress={handleUpdateProgress}
             />

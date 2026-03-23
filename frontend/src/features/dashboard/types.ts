@@ -5,6 +5,7 @@ export type Goal = {
   title: string;
   targetAmount: number;
   initialAmount: number;
+  color: string;
   sortOrder: number;
   currentAmount: number;
   progress: number;

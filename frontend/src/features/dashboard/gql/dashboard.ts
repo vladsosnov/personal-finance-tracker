@@ -40,6 +40,7 @@ export const GET_GOALS = gql`
       title
       targetAmount
       initialAmount
+      color
       sortOrder
       currentAmount
       progress
@@ -55,6 +56,7 @@ export const GET_GOAL_DETAILS = gql`
       title
       targetAmount
       initialAmount
+      color
       sortOrder
       currentAmount
       progress
@@ -71,8 +73,8 @@ export const GET_GOAL_DETAILS = gql`
 `;
 
 export const CREATE_GOAL = gql`
-  mutation CreateGoal($title: String!, $targetAmount: Float!, $initialAmount: Float) {
-    createGoal(title: $title, targetAmount: $targetAmount, initialAmount: $initialAmount) {
+  mutation CreateGoal($title: String!, $targetAmount: Float!, $initialAmount: Float, $color: String) {
+    createGoal(title: $title, targetAmount: $targetAmount, initialAmount: $initialAmount, color: $color) {
       id
     }
   }
@@ -103,6 +105,14 @@ export const EDIT_GOAL_OPERATION = gql`
       note: $note
       operationDate: $operationDate
     ) {
+      id
+    }
+  }
+`;
+
+export const DELETE_GOAL_OPERATION = gql`
+  mutation DeleteGoalOperation($operationId: ID!) {
+    deleteGoalOperation(operationId: $operationId) {
       id
     }
   }

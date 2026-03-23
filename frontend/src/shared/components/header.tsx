@@ -25,7 +25,7 @@ export const Header = () => {
 
   return (
     <header className="app-header">
-      <Container size="lg" py="sm">
+      <Container size="xl" py="sm">
         <Group justify="space-between">
           <Text fw={800}>Finance Goals</Text>
           <Group gap="xs">

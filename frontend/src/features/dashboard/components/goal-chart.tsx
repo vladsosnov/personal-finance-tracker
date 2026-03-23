@@ -17,9 +17,10 @@ type Operation = {
 
 type GoalChartProps = {
   operations: Operation[];
+  color: string;
 };
 
-export const GoalChart = ({ operations }: GoalChartProps) => {
+export const GoalChart = ({ operations, color }: GoalChartProps) => {
   const seriesData = useMemo<Array<[number, number]>>(() => {
     let total = 0;
     return [...operations]
@@ -38,11 +39,18 @@ export const GoalChart = ({ operations }: GoalChartProps) => {
       title: { text: "Progress over time" },
       xAxis: { type: "datetime" },
       yAxis: { title: { text: "Current Amount ($)" } },
-      series: [{ type: "line", name: "Amount", data: seriesData }],
+      series: [
+        {
+          type: "line",
+          name: "Amount",
+          data: seriesData,
+          color,
+        },
+      ],
       credits: { enabled: false },
       chart: { height: 320 },
     }),
-    [seriesData]
+    [color, seriesData]
   );
 
   return <HighchartsReact highcharts={Highcharts} options={options} />;

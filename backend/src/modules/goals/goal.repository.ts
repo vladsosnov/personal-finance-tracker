@@ -8,6 +8,7 @@ const toGoal = (doc: {
   title: string;
   targetAmount: number;
   initialAmount?: number;
+  color?: string;
   sortOrder?: number;
   createdAt: Date;
 }): Goal => ({
@@ -16,6 +17,7 @@ const toGoal = (doc: {
   title: doc.title,
   targetAmount: doc.targetAmount,
   initialAmount: doc.initialAmount ?? 0,
+  color: doc.color ?? "#0F766E",
   sortOrder: doc.sortOrder ?? 0,
   createdAt: doc.createdAt.toISOString(),
 });
@@ -24,11 +26,12 @@ export const createGoal = async (
   userId: string,
   title: string,
   targetAmount: number,
-  initialAmount = 0
+  initialAmount = 0,
+  color = "#0F766E"
 ): Promise<Goal> => {
   const lastGoal = await GoalModel.findOne({ userId }).sort({ sortOrder: -1, createdAt: -1 }).lean();
   const nextSortOrder = (lastGoal?.sortOrder ?? -1) + 1;
-  const goal = await GoalModel.create({ userId, title, targetAmount, initialAmount, sortOrder: nextSortOrder });
+  const goal = await GoalModel.create({ userId, title, targetAmount, initialAmount, color, sortOrder: nextSortOrder });
   return toGoal(
     goal.toObject() as unknown as {
       _id: mongoose.Types.ObjectId;
@@ -36,6 +39,7 @@ export const createGoal = async (
       title: string;
       targetAmount: number;
       initialAmount: number;
+      color: string;
       sortOrder: number;
       createdAt: Date;
     }
@@ -52,6 +56,7 @@ export const listGoalsByUser = async (userId: string): Promise<Goal[]> => {
         title: string;
         targetAmount: number;
         initialAmount?: number;
+        color?: string;
         sortOrder?: number;
         createdAt: Date;
       }
@@ -69,6 +74,7 @@ export const getGoalById = async (userId: string, goalId: string): Promise<Goal 
           title: string;
           targetAmount: number;
           initialAmount?: number;
+          color?: string;
           sortOrder?: number;
           createdAt: Date;
         }
