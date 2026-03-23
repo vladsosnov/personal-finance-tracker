@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
-import { Badge, Button, Card, Grid, Modal, NumberInput, Progress, SegmentedControl, Stack, Table, Text, TextInput, Tooltip, Title } from "@mantine/core";
+import { Badge, Button, Card, Grid, Group, Modal, NumberInput, Progress, SegmentedControl, Stack, Table, Text, TextInput, Tooltip, Title } from "@mantine/core";
+import { GoalColorPicker } from "@/features/dashboard/components/goal-color-picker";
 import { GoalChart } from "@/features/dashboard/components/goal-chart";
 import type { GoalDetails } from "@/features/dashboard/types";
 import type { OperationType } from "@/shared/gql/__generated__/schema-types";
@@ -39,12 +40,16 @@ type GoalDetailsPanelProps = {
   operationDate: string;
   editingOperationId: string | null;
   deletingOperationId: string | null;
+  isDeletingGoal: boolean;
+  isUpdatingGoalColor: boolean;
   isUpdatingProgress: boolean;
   isUpdateDisabled: boolean;
   setOperationType: (value: OperationType) => void;
   setOperationAmount: (value: number | "") => void;
   setOperationNote: (value: string) => void;
   setOperationDate: (value: string) => void;
+  onUpdateGoalColor: (color: string) => Promise<void>;
+  onDeleteGoal: () => Promise<void>;
   onStartEditOperation: (operationId: string) => void;
   onDeleteOperation: (operationId: string) => Promise<void>;
   onCancelEditOperation: () => void;
@@ -59,18 +64,23 @@ export const GoalDetailsPanel = ({
   operationDate,
   editingOperationId,
   deletingOperationId,
+  isDeletingGoal,
+  isUpdatingGoalColor,
   isUpdatingProgress,
   isUpdateDisabled,
   setOperationType,
   setOperationAmount,
   setOperationNote,
   setOperationDate,
+  onUpdateGoalColor,
+  onDeleteGoal,
   onStartEditOperation,
   onDeleteOperation,
   onCancelEditOperation,
   onUpdateProgress,
 }: GoalDetailsPanelProps) => {
   const [pendingDeleteOperationId, setPendingDeleteOperationId] = useState<string | null>(null);
+  const [isDeleteGoalModalOpen, setIsDeleteGoalModalOpen] = useState(false);
   const pendingDeleteOperation = useMemo(
     () => selectedGoal?.operations.find((operation) => operation.id === pendingDeleteOperationId) ?? null,
     [pendingDeleteOperationId, selectedGoal]
@@ -88,13 +98,36 @@ export const GoalDetailsPanel = ({
     }
   };
 
+  const handleConfirmGoalDelete = async () => {
+    try {
+      await onDeleteGoal();
+    } finally {
+      setIsDeleteGoalModalOpen(false);
+    }
+  };
+
   return (
     <Card withBorder radius="md" p="lg">
       {!selectedGoal ? (
         <Text c="dimmed">Select a goal card to see details, operations, and chart.</Text>
       ) : (
         <Stack gap="md">
-          <Title order={4}>{selectedGoal.title}</Title>
+          <Group justify="space-between" align="flex-start">
+            <Title order={4}>{selectedGoal.title}</Title>
+            <Stack gap="xs" align="flex-end">
+              <div style={{ minWidth: 220 }}>
+                <GoalColorPicker
+                  label="Goal color"
+                  value={selectedGoal.color}
+                  onChange={(color) => void onUpdateGoalColor(color)}
+                  disabled={isUpdatingGoalColor}
+                />
+              </div>
+              <Button color="red" variant="light" onClick={() => setIsDeleteGoalModalOpen(true)} loading={isDeletingGoal}>
+                Delete goal
+              </Button>
+            </Stack>
+          </Group>
           <Text c="dimmed">
             {formatMoney(selectedGoal.currentAmount)} / {formatMoney(selectedGoal.targetAmount)}
           </Text>
@@ -269,6 +302,31 @@ export const GoalDetailsPanel = ({
                   Cancel
                 </Button>
               </Stack>
+            </Stack>
+          </Modal>
+
+          <Modal
+            opened={isDeleteGoalModalOpen}
+            onClose={() => {
+              if (!isDeletingGoal) {
+                setIsDeleteGoalModalOpen(false);
+              }
+            }}
+            title="Delete goal?"
+            centered
+          >
+            <Stack gap="md">
+              <Text>
+                Delete <strong>{selectedGoal.title}</strong> and all of its operations? This action cannot be undone.
+              </Text>
+              <Group justify="flex-end">
+                <Button variant="default" onClick={() => setIsDeleteGoalModalOpen(false)} disabled={isDeletingGoal}>
+                  Cancel
+                </Button>
+                <Button color="red" onClick={() => void handleConfirmGoalDelete()} loading={isDeletingGoal}>
+                  Delete
+                </Button>
+              </Group>
             </Stack>
           </Modal>
         </Stack>

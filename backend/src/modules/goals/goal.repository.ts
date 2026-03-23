@@ -82,6 +82,25 @@ export const getGoalById = async (userId: string, goalId: string): Promise<Goal 
     : undefined;
 };
 
+export const deleteGoal = async (userId: string, goalId: string): Promise<Goal | undefined> => {
+  const goal = await GoalModel.findOneAndDelete({ _id: goalId, userId }).lean();
+
+  return goal
+    ? toGoal(
+        goal as unknown as {
+          _id: mongoose.Types.ObjectId;
+          userId: mongoose.Types.ObjectId;
+          title: string;
+          targetAmount: number;
+          initialAmount?: number;
+          color?: string;
+          sortOrder?: number;
+          createdAt: Date;
+        }
+      )
+    : undefined;
+};
+
 export const reorderGoals = async (userId: string, orderedGoalIds: string[]): Promise<void> => {
   const goals = await GoalModel.find({ userId }).select("_id").lean();
   if (goals.length !== orderedGoalIds.length) {
@@ -99,4 +118,23 @@ export const reorderGoals = async (userId: string, orderedGoalIds: string[]): Pr
       GoalModel.updateOne({ _id: goalId, userId }, { $set: { sortOrder: index } })
     )
   );
+};
+
+export const updateGoalColor = async (userId: string, goalId: string, color: string): Promise<Goal | undefined> => {
+  const goal = await GoalModel.findOneAndUpdate({ _id: goalId, userId }, { $set: { color } }, { new: true }).lean();
+
+  return goal
+    ? toGoal(
+        goal as unknown as {
+          _id: mongoose.Types.ObjectId;
+          userId: mongoose.Types.ObjectId;
+          title: string;
+          targetAmount: number;
+          initialAmount?: number;
+          color?: string;
+          sortOrder?: number;
+          createdAt: Date;
+        }
+      )
+    : undefined;
 };

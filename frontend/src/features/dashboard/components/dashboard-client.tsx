@@ -11,12 +11,14 @@ import { GoalDetailsPanel } from "@/features/dashboard/components/goal-details-p
 import { GoalsList } from "@/features/dashboard/components/goals-list";
 import {
   CREATE_GOAL,
+  DELETE_GOAL,
   DELETE_GOAL_OPERATION,
   EDIT_GOAL_OPERATION,
   GET_GOAL_DETAILS,
   GET_GOALS,
   GET_ME,
   REORDER_GOALS,
+  UPDATE_GOAL_COLOR,
   UPDATE_GOAL_PROGRESS,
 } from "@/features/dashboard/gql/dashboard";
 import type { Goal, GoalDetails } from "@/features/dashboard/types";
@@ -42,6 +44,7 @@ export const DashboardClient = () => {
   const [operationDate, setOperationDate] = useState(getTodayDateValue);
   const [editingOperationId, setEditingOperationId] = useState<string | null>(null);
   const [deletingOperationId, setDeletingOperationId] = useState<string | null>(null);
+  const [isDeletingGoal, setIsDeletingGoal] = useState(false);
   const [draggingGoalId, setDraggingGoalId] = useState<string | null>(null);
   const [dragOverGoalId, setDragOverGoalId] = useState<string | null>(null);
   const [optimisticGoals, setOptimisticGoals] = useState<Goal[] | null>(null);
@@ -86,9 +89,11 @@ export const DashboardClient = () => {
   }, [optimisticGoals, serverGoals]);
 
   const [createGoal, { loading: isCreatingGoal }] = useMutation(CREATE_GOAL);
+  const [deleteGoalMutation] = useMutation(DELETE_GOAL);
   const [reorderGoalsMutation] = useMutation(REORDER_GOALS);
   const [deleteGoalOperationMutation] = useMutation(DELETE_GOAL_OPERATION);
   const [editGoalOperation, { loading: isEditingOperation }] = useMutation(EDIT_GOAL_OPERATION);
+  const [updateGoalColorMutation, { loading: isUpdatingGoalColor }] = useMutation(UPDATE_GOAL_COLOR);
   const [updateGoalProgress, { loading: isUpdatingProgress }] = useMutation(UPDATE_GOAL_PROGRESS);
 
   const goals = optimisticGoals ?? serverGoals;
@@ -176,6 +181,21 @@ export const DashboardClient = () => {
     setOperationDate(operation.operationDate);
   };
 
+  const handleUpdateGoalColor = async (color: string) => {
+    if (!selectedGoalId || selectedGoal?.color === color) {
+      return;
+    }
+
+    await updateGoalColorMutation({
+      variables: {
+        goalId: selectedGoalId,
+        color,
+      },
+    });
+
+    await Promise.all([refetchGoals(), refetchGoalDetails()]);
+  };
+
   const handleDeleteOperation = async (operationId: string) => {
     setDeletingOperationId(operationId);
 
@@ -193,6 +213,28 @@ export const DashboardClient = () => {
       await Promise.all([refetchGoals(), refetchGoalDetails()]);
     } finally {
       setDeletingOperationId(null);
+    }
+  };
+
+  const handleDeleteGoal = async () => {
+    if (!selectedGoalId) {
+      return;
+    }
+
+    setIsDeletingGoal(true);
+
+    try {
+      await deleteGoalMutation({
+        variables: {
+          goalId: selectedGoalId,
+        },
+      });
+
+      setSelectedGoalId(null);
+      resetOperationForm();
+      await refetchGoals();
+    } finally {
+      setIsDeletingGoal(false);
     }
   };
 
@@ -305,12 +347,16 @@ export const DashboardClient = () => {
               operationDate={operationDate}
               editingOperationId={editingOperationId}
               deletingOperationId={deletingOperationId}
+              isDeletingGoal={isDeletingGoal}
+              isUpdatingGoalColor={isUpdatingGoalColor}
               isUpdatingProgress={isUpdatingProgress || isEditingOperation}
               isUpdateDisabled={isUpdateDisabled}
               setOperationType={setOperationType}
               setOperationAmount={setOperationAmount}
               setOperationNote={setOperationNote}
               setOperationDate={setOperationDate}
+              onUpdateGoalColor={handleUpdateGoalColor}
+              onDeleteGoal={handleDeleteGoal}
               onStartEditOperation={handleStartEditOperation}
               onDeleteOperation={handleDeleteOperation}
               onCancelEditOperation={resetOperationForm}

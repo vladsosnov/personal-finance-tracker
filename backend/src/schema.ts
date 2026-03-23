@@ -1,8 +1,8 @@
 import { buildSchema } from "graphql";
 import { hashPassword, signJwt, verifyPassword } from "./auth";
 import { createUser, findUserByEmail, findUserById } from "./modules/auth/user.repository";
-import { createGoal, getGoalById, listGoalsByUser, reorderGoals } from "./modules/goals/goal.repository";
-import { createGoalOperation, deleteGoalOperation, getGoalOperationById, updateGoalOperation } from "./modules/goals/operation.repository";
+import { createGoal, deleteGoal, getGoalById, listGoalsByUser, reorderGoals, updateGoalColor } from "./modules/goals/goal.repository";
+import { createGoalOperation, deleteGoalOperation, deleteOperationsByGoal, getGoalOperationById, updateGoalOperation } from "./modules/goals/operation.repository";
 import { buildGoalView } from "./modules/goals/goal.service";
 import type { OperationType } from "./modules/goals/types";
 
@@ -48,6 +48,15 @@ type GoalLookupArgs = {
 
 type ReorderGoalsArgs = {
   goalIds: string[];
+};
+
+type UpdateGoalColorArgs = {
+  goalId: string;
+  color: string;
+};
+
+type DeleteGoalArgs = {
+  goalId: string;
 };
 
 const ensureAuthed = (context: Context): string => {
@@ -110,6 +119,8 @@ export const schema = buildSchema(`
     register(email: String!, password: String!): AuthPayload!
     login(email: String!, password: String!): AuthPayload!
     createGoal(title: String!, targetAmount: Float!, initialAmount: Float, color: String): Goal!
+    updateGoalColor(goalId: ID!, color: String!): Goal!
+    deleteGoal(goalId: ID!): Goal!
     reorderGoals(goalIds: [ID!]!): [Goal!]!
     updateGoalProgress(goalId: ID!, type: OperationType!, amount: Float!, note: String, operationDate: String): Goal!
     editGoalOperation(operationId: ID!, type: OperationType!, amount: Float!, note: String, operationDate: String): Goal!
@@ -179,6 +190,34 @@ export const rootValue = {
     }
 
     const goal = await createGoal(userId, title.trim(), targetAmount, initialAmount, color);
+    return buildGoalView(userId, goal);
+  },
+  updateGoalColor: async ({ goalId, color }: UpdateGoalColorArgs, context: Context) => {
+    const userId = ensureAuthed(context);
+    if (!/^#[0-9A-Fa-f]{6}$/.test(color)) {
+      throw new Error("Goal color must be a valid hex color");
+    }
+
+    const goal = await updateGoalColor(userId, goalId, color);
+    if (!goal) {
+      throw new Error("Goal not found");
+    }
+
+    return buildGoalView(userId, goal);
+  },
+  deleteGoal: async ({ goalId }: DeleteGoalArgs, context: Context) => {
+    const userId = ensureAuthed(context);
+    const goal = await getGoalById(userId, goalId);
+    if (!goal) {
+      throw new Error("Goal not found");
+    }
+
+    await deleteOperationsByGoal(userId, goalId);
+    const deletedGoal = await deleteGoal(userId, goalId);
+    if (!deletedGoal) {
+      throw new Error("Goal not found");
+    }
+
     return buildGoalView(userId, goal);
   },
   reorderGoals: async ({ goalIds }: ReorderGoalsArgs, context: Context) => {

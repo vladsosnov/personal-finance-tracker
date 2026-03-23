@@ -1,5 +1,5 @@
-import { Button, Card, ColorSwatch, Grid, Group, NumberInput, Stack, Text, TextInput, Title, Tooltip } from "@mantine/core";
-import { GOAL_COLOR_OPTIONS } from "@/shared/constants/goal-colors";
+import { Button, Card, Grid, NumberInput, Stack, TextInput, Title } from "@mantine/core";
+import { GoalColorPicker } from "@/features/dashboard/components/goal-color-picker";
 import { MONEY_INPUT_PROPS, numberOrZero } from "@/shared/utils/number";
 
 type CreateGoalFormProps = {
@@ -60,33 +60,7 @@ export const CreateGoalForm = ({
             />
           </Grid.Col>
           <Grid.Col span={{ base: 12, md: 2 }}>
-            <Stack gap={8}>
-              <Text size="sm" fw={500}>
-                Goal color
-              </Text>
-              <Group gap="xs">
-                {GOAL_COLOR_OPTIONS.map((option) => {
-                  const isSelected = goalColor === option.value;
-
-                  return (
-                    <Tooltip key={option.value} label={option.label} withArrow>
-                      <ColorSwatch
-                        color={option.value}
-                        component="button"
-                        type="button"
-                        onClick={() => setGoalColor(option.value)}
-                        style={{
-                          cursor: "pointer",
-                          outline: isSelected ? `3px solid ${option.value}` : "2px solid transparent",
-                          outlineOffset: 2,
-                          boxShadow: isSelected ? "0 0 0 4px rgba(15, 23, 42, 0.08)" : undefined,
-                        }}
-                      />
-                    </Tooltip>
-                  );
-                })}
-              </Group>
-            </Stack>
+            <GoalColorPicker label="Goal color" value={goalColor} onChange={setGoalColor} />
           </Grid.Col>
           <Grid.Col span={{ base: 12, md: 2 }}>
             <Button fullWidth mt={6} onClick={onCreateGoal} loading={isCreatingGoal} disabled={isAddDisabled}>

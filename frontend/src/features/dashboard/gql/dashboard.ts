@@ -80,6 +80,23 @@ export const CREATE_GOAL = gql`
   }
 `;
 
+export const UPDATE_GOAL_COLOR = gql`
+  mutation UpdateGoalColor($goalId: ID!, $color: String!) {
+    updateGoalColor(goalId: $goalId, color: $color) {
+      id
+      color
+    }
+  }
+`;
+
+export const DELETE_GOAL = gql`
+  mutation DeleteGoal($goalId: ID!) {
+    deleteGoal(goalId: $goalId) {
+      id
+    }
+  }
+`;
+
 export const REORDER_GOALS = gql`
   mutation ReorderGoals($goalIds: [ID!]!) {
     reorderGoals(goalIds: $goalIds) {

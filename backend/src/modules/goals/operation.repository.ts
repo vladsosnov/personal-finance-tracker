@@ -130,6 +130,10 @@ export const deleteGoalOperation = async (userId: string, operationId: string): 
     : undefined;
 };
 
+export const deleteOperationsByGoal = async (userId: string, goalId: string): Promise<void> => {
+  await GoalOperationModel.deleteMany({ userId, goalId });
+};
+
 export const listOperationsByGoal = async (userId: string, goalId: string): Promise<GoalOperation[]> => {
   const operations = await GoalOperationModel.find({ userId, goalId }).sort({ operationDate: -1, createdAt: -1 }).lean();
 
