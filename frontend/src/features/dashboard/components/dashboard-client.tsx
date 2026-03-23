@@ -668,7 +668,7 @@ export const DashboardClient = () => {
               <Button variant="default" onClick={() => setDeletingGoalId(null)} disabled={isDeletingGoal}>
                 Cancel
               </Button>
-              <Button color="red" onClick={() => deletingGoalId && void handleDeleteGoal(deletingGoalId)} loading={isDeletingGoal}>
+              <Button color="red" onClick={() => deletingGoalId && handleDeleteGoal(deletingGoalId)} loading={isDeletingGoal}>
                 Remove
               </Button>
             </Group>

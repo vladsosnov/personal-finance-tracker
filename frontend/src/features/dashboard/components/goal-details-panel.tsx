@@ -404,7 +404,7 @@ export const GoalDetailsPanel = ({
                 <Button variant="default" onClick={handleCloseOperationModal} disabled={isUpdatingProgress}>
                   Cancel
                 </Button>
-                <Button onClick={() => void handleSubmitOperation()} loading={isUpdatingProgress} disabled={isUpdateDisabled}>
+                <Button onClick={() => handleSubmitOperation()} loading={isUpdatingProgress} disabled={isUpdateDisabled}>
                   {editingOperationId ? "Save" : "Add"}
                 </Button>
               </Group>
@@ -430,7 +430,7 @@ export const GoalDetailsPanel = ({
                   : "Delete this operation?"}
               </Text>
               <Stack gap="xs">
-                <Button color="red" onClick={() => void handleConfirmDelete()} loading={Boolean(deletingOperationId)}>
+                <Button color="red" onClick={() => handleConfirmDelete()} loading={Boolean(deletingOperationId)}>
                   Delete
                 </Button>
                 <Button

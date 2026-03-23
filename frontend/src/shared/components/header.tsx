@@ -27,7 +27,7 @@ export const Header = () => {
     <header className="app-header">
       <Container size="xl" py="sm">
         <Group justify="space-between">
-          <Text fw={800}>Finance Goals</Text>
+          <Text fw={800}>Financial Goals Tracker</Text>
           <Group gap="xs">
             <Button component={Link} href={APP_ROUTES.home} variant={pathname === APP_ROUTES.home ? "light" : "subtle"}>
               Home

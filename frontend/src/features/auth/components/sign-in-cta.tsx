@@ -13,15 +13,26 @@ export const SignInCta = () => {
     setIsAuthed(Boolean(window.localStorage.getItem(AUTH_TOKEN_KEY)));
   }, []);
 
-  if (isAuthed === null || isAuthed) {
+  if (isAuthed === null) {
     return null;
   }
 
   return (
     <Group justify="center" mt="sm">
-      <Button component={Link} href={APP_ROUTES.auth} size="md">
-        Sign In
-      </Button>
+      {isAuthed ? (
+        <Button component={Link} href={APP_ROUTES.dashboard} size="md">
+          Open dashboard
+        </Button>
+      ) : (
+        <>
+          <Button component={Link} href={APP_ROUTES.auth} size="md">
+            Get started
+          </Button>
+          <Button component={Link} href={APP_ROUTES.auth} size="md" variant="light">
+            Sign in
+          </Button>
+        </>
+      )}
     </Group>
   );
 };

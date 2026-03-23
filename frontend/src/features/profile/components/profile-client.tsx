@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useApolloClient, useMutation, useQuery } from "@apollo/client/react";
 import {
   Alert,
+  Badge,
   Button,
   Card,
   Checkbox,
@@ -14,6 +15,7 @@ import {
   Modal,
   Progress,
   SegmentedControl,
+  SimpleGrid,
   Stack,
   Table,
   Text,
@@ -84,6 +86,27 @@ type ImportProgressState = {
   currentLabel: string;
 };
 
+const SUBSCRIPTION_PLANS = [
+  {
+    name: "Free",
+    price: "$0",
+    description: "Good for getting started with core goal tracking.",
+    features: ["Goal tracking", "Operations log", "Theme settings"],
+  },
+  {
+    name: "Pro",
+    price: "$3/mo",
+    description: "For users who want deeper planning and more advanced insights.",
+    features: ["Everything in Free", "Advanced analytics", "More customization"],
+  },
+  {
+    name: "Lifetime",
+    price: "$9 once",
+    description: "One-time purchase for long-term use without a subscription.",
+    features: ["Everything in Pro", "Permanent access"],
+  },
+] as const;
+
 const ThemeLightIcon = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
     <circle cx="12" cy="12" r="4" stroke="currentColor" strokeWidth="2" />
@@ -114,6 +137,13 @@ const ThemeSystemIcon = () => (
     <path d="M8 20h8M12 16v4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
   </svg>
 );
+
+const themeOptionLabelStyles = {
+  display: "inline-flex",
+  alignItems: "center",
+  gap: 8,
+  whiteSpace: "nowrap" as const,
+};
 
 const toOperationDate = (value: string | undefined): string | null => {
   if (!value) {
@@ -313,6 +343,16 @@ export const ProfileClient = () => {
   );
   const importProgressValue = importProgress ? (importProgress.completedSteps / Math.max(importProgress.totalSteps, 1)) * 100 : 0;
 
+  const resetImportState = () => {
+    setImportSource(null);
+    setPreparedGoals([]);
+    setSkippedGoals([]);
+    setIncludedZeroTargetGoalIndexes([]);
+    setImportError(null);
+    setImportSummary(null);
+    setImportProgress(null);
+  };
+
   const applyPreparedImport = (source: string, nextIncludedZeroTargetGoalIndexes: number[]) => {
     const result = prepareImportGoals(source, new Set(nextIncludedZeroTargetGoalIndexes));
     setPreparedGoals(result.goals);
@@ -327,13 +367,11 @@ export const ProfileClient = () => {
     setImportError(null);
   };
 
-  const handlePreviewImport = async () => {
-    if (!file) {
+  const previewImportFile = async (nextFile: File | null) => {
+    if (!nextFile) {
       setImportError("Choose a .txt file first");
-      setImportSource(null);
-      setPreparedGoals([]);
-      setSkippedGoals([]);
-      setIncludedZeroTargetGoalIndexes([]);
+      resetImportState();
+      setImportError("Choose a .txt file first");
       setImportSummary(null);
       setResetSummary(null);
       return;
@@ -344,14 +382,11 @@ export const ProfileClient = () => {
     setImportSummary(null);
 
     try {
-      const source = await file.text();
+      const source = await nextFile.text();
       setImportSource(source);
       applyPreparedImport(source, []);
     } catch (error) {
-      setImportSource(null);
-      setPreparedGoals([]);
-      setSkippedGoals([]);
-      setIncludedZeroTargetGoalIndexes([]);
+      resetImportState();
       setImportError(error instanceof Error ? error.message : "Failed to parse import file");
     } finally {
       setIsPreparingImport(false);
@@ -456,8 +491,10 @@ export const ProfileClient = () => {
     return null;
   }
 
+  const currentSubscription = meData?.me?.subscription ?? "Free";
+
   return (
-    <Container size="md" py={24}>
+    <Container size="xl" py={24}>
       <Stack gap="lg">
         <Stack gap={2}>
           <Title order={1}>Profile</Title>
@@ -465,10 +502,51 @@ export const ProfileClient = () => {
         </Stack>
 
         <Card withBorder radius="md" p="lg">
-          <Stack gap="sm">
+          <Stack gap="md">
             <Title order={4}>Personal information</Title>
-            <Text>{meData?.me?.email ?? "Loading..."}</Text>
-            <Text>Subscription: {meData?.me?.subscription ?? "Free"}</Text>
+            <Text>
+              Email: {meData?.me?.email ?? "Loading..."}
+              <br />
+              Subscription: {currentSubscription}
+            </Text>
+          </Stack>
+        </Card>
+
+        <Card withBorder radius="md" p="lg">
+          <Stack gap="md">
+            <Stack gap={2}>
+              <Title order={4}>Subscription</Title>
+              <Text c="dimmed">Review your current plan and see available upgrade options.</Text>
+            </Stack>
+            <SimpleGrid cols={{ base: 1, md: 3 }} spacing="sm">
+              {SUBSCRIPTION_PLANS.map((plan) => {
+                const isCurrentPlan = currentSubscription.toLowerCase() === plan.name.toLowerCase();
+
+                return (
+                  <Card key={plan.name} withBorder radius="md" p="md">
+                    <Stack gap="sm">
+                      <Group justify="space-between" align="flex-start">
+                        <Stack gap={2}>
+                          <Title order={5}>{plan.name}</Title>
+                          <Text fw={700}>{plan.price}</Text>
+                        </Stack>
+                        {isCurrentPlan ? <Badge color="teal">Current</Badge> : <Badge variant="light">Soon</Badge>}
+                      </Group>
+                      <Text c="dimmed">{plan.description}</Text>
+                      <Table>
+                        <Table.Tbody>
+                          {plan.features.map((feature) => (
+                            <Table.Tr key={feature}>
+                              <Table.Td py={6}>{feature}</Table.Td>
+                            </Table.Tr>
+                          ))}
+                        </Table.Tbody>
+                      </Table>
+                    </Stack>
+                  </Card>
+                );
+              })}
+            </SimpleGrid>
           </Stack>
         </Card>
 
@@ -482,34 +560,34 @@ export const ProfileClient = () => {
                 {
                   value: "auto",
                   label: (
-                    <Group gap={8} wrap="nowrap">
-                      <ThemeIcon size="sm" variant="transparent">
+                    <span style={themeOptionLabelStyles}>
+                      <ThemeIcon size="sm" variant="transparent" style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
                         <ThemeSystemIcon />
                       </ThemeIcon>
                       <span>System</span>
-                    </Group>
+                    </span>
                   ),
                 },
                 {
                   value: "light",
                   label: (
-                    <Group gap={8} wrap="nowrap">
-                      <ThemeIcon size="sm" variant="transparent">
+                    <span style={themeOptionLabelStyles}>
+                      <ThemeIcon size="sm" variant="transparent" style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
                         <ThemeLightIcon />
                       </ThemeIcon>
                       <span>Light</span>
-                    </Group>
+                    </span>
                   ),
                 },
                 {
                   value: "dark",
                   label: (
-                    <Group gap={8} wrap="nowrap">
-                      <ThemeIcon size="sm" variant="transparent">
+                    <span style={themeOptionLabelStyles}>
+                      <ThemeIcon size="sm" variant="transparent" style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
                         <ThemeDarkIcon />
                       </ThemeIcon>
                       <span>Dark</span>
-                    </Group>
+                    </span>
                   ),
                 },
               ]}
@@ -529,15 +607,21 @@ export const ProfileClient = () => {
               placeholder="Choose example_of_progress.txt"
               accept=".txt,application/json,text/plain"
               value={file}
-              onChange={setFile}
+              onChange={(nextFile) => {
+                setFile(nextFile);
+
+                if (!nextFile) {
+                  resetImportState();
+                  return;
+                }
+
+                void previewImportFile(nextFile);
+              }}
               clearable
             />
 
             {file && (
               <Group>
-                <Button variant="default" onClick={() => void handlePreviewImport()} loading={isPreparingImport} disabled={isImporting}>
-                  Preview import
-                </Button>
                 <Button onClick={() => void handleImport()} loading={isImporting} disabled={!preparedGoals.length || isPreparingImport}>
                   Import
                 </Button>
@@ -663,9 +747,11 @@ export const ProfileClient = () => {
         </Card>
 
         <Card withBorder radius="md" p="lg">
-          <Stack gap="sm">
-            <Title order={4}>Reset all data</Title>
-            <Text c="dimmed">Remove all goals and operations from your account. This cannot be undone.</Text>
+          <Stack gap="md">
+            <Stack gap={2}>
+              <Title order={4}>Reset all data</Title>
+              <Text c="dimmed">Remove all goals and operations from your account. This cannot be undone.</Text>
+            </Stack>
             {resetError && <Alert color="red">{resetError}</Alert>}
             {resetSummary && <Alert color="teal">{resetSummary}</Alert>}
             <Group justify="flex-start">
@@ -684,7 +770,7 @@ export const ProfileClient = () => {
             <Button variant="default" onClick={() => setIsResetModalOpen(false)} disabled={isResettingAllData}>
               Cancel
             </Button>
-            <Button color="red" onClick={() => void handleResetAllData()} loading={isResettingAllData}>
+            <Button color="red" onClick={() => handleResetAllData()} loading={isResettingAllData}>
               Reset
             </Button>
           </Group>
