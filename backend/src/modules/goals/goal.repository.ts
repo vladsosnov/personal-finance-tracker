@@ -7,23 +7,31 @@ const toGoal = (doc: {
   userId: mongoose.Types.ObjectId;
   title: string;
   targetAmount: number;
+  initialAmount?: number;
   createdAt: Date;
 }): Goal => ({
   id: doc._id.toString(),
   userId: doc.userId.toString(),
   title: doc.title,
   targetAmount: doc.targetAmount,
+  initialAmount: doc.initialAmount ?? 0,
   createdAt: doc.createdAt.toISOString(),
 });
 
-export const createGoal = async (userId: string, title: string, targetAmount: number): Promise<Goal> => {
-  const goal = await GoalModel.create({ userId, title, targetAmount });
+export const createGoal = async (
+  userId: string,
+  title: string,
+  targetAmount: number,
+  initialAmount = 0
+): Promise<Goal> => {
+  const goal = await GoalModel.create({ userId, title, targetAmount, initialAmount });
   return toGoal(
     goal.toObject() as unknown as {
       _id: mongoose.Types.ObjectId;
       userId: mongoose.Types.ObjectId;
       title: string;
       targetAmount: number;
+      initialAmount: number;
       createdAt: Date;
     }
   );
@@ -38,6 +46,7 @@ export const listGoalsByUser = async (userId: string): Promise<Goal[]> => {
         userId: mongoose.Types.ObjectId;
         title: string;
         targetAmount: number;
+        initialAmount?: number;
         createdAt: Date;
       }
     )
@@ -53,6 +62,7 @@ export const getGoalById = async (userId: string, goalId: string): Promise<Goal 
           userId: mongoose.Types.ObjectId;
           title: string;
           targetAmount: number;
+          initialAmount?: number;
           createdAt: Date;
         }
       )

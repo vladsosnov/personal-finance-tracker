@@ -2,6 +2,7 @@ import { Badge, Button, Card, Grid, NumberInput, Progress, SegmentedControl, Sta
 import { GoalChart } from "@/features/dashboard/components/goal-chart";
 import type { GoalDetails } from "@/features/dashboard/types";
 import type { OperationType } from "@/shared/gql/__generated__/schema-types";
+import { formatDay } from "@/shared/utils/date";
 import { formatMoney, getProgressPercentage, MONEY_INPUT_PROPS, numberOrZero } from "@/shared/utils/number";
 
 const NOTE_PREVIEW_LENGTH = 30;
@@ -11,11 +12,13 @@ type GoalDetailsPanelProps = {
   operationType: OperationType;
   operationAmount: number | "";
   operationNote: string;
+  operationDate: string;
   isUpdatingProgress: boolean;
   isUpdateDisabled: boolean;
   setOperationType: (value: OperationType) => void;
   setOperationAmount: (value: number | "") => void;
   setOperationNote: (value: string) => void;
+  setOperationDate: (value: string) => void;
   onUpdateProgress: () => Promise<void>;
 };
 
@@ -24,11 +27,13 @@ export const GoalDetailsPanel = ({
   operationType,
   operationAmount,
   operationNote,
+  operationDate,
   isUpdatingProgress,
   isUpdateDisabled,
   setOperationType,
   setOperationAmount,
   setOperationNote,
+  setOperationDate,
   onUpdateProgress,
 }: GoalDetailsPanelProps) => {
   return (
@@ -64,7 +69,7 @@ export const GoalDetailsPanel = ({
                 onChange={(value) => setOperationType(value as OperationType)}
               />
             </Grid.Col>
-            <Grid.Col span={{ base: 12, md: 3 }}>
+            <Grid.Col span={{ base: 12, md: 2 }}>
               <NumberInput
                 label="Amount"
                 {...MONEY_INPUT_PROPS}
@@ -72,7 +77,15 @@ export const GoalDetailsPanel = ({
                 onChange={(value) => setOperationAmount(numberOrZero(value))}
               />
             </Grid.Col>
-            <Grid.Col span={{ base: 12, md: 4 }}>
+            <Grid.Col span={{ base: 12, md: 2 }}>
+              <TextInput
+                label="Date"
+                type="date"
+                value={operationDate}
+                onChange={(event) => setOperationDate(event.currentTarget.value)}
+              />
+            </Grid.Col>
+            <Grid.Col span={{ base: 12, md: 3 }}>
               <TextInput
                 label="Note"
                 placeholder="Salary transfer..."
@@ -102,7 +115,7 @@ export const GoalDetailsPanel = ({
             <Table.Tbody>
               {selectedGoal.operations.map((operation) => (
                 <Table.Tr key={operation.id}>
-                  <Table.Td>{new Date(operation.createdAt).toLocaleString()}</Table.Td>
+                  <Table.Td>{formatDay(operation.operationDate)}</Table.Td>
                   <Table.Td>
                     <Badge color={operation.type === "INCREASE" ? "teal" : "red"} variant="light">
                       {operation.type}

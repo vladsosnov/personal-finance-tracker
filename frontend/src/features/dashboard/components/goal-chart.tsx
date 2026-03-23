@@ -5,11 +5,13 @@ import Highcharts from "highcharts";
 import HighchartsReact from "highcharts-react-official";
 import type { Options } from "highcharts";
 import type { OperationType } from "@/shared/gql/__generated__/schema-types";
+import { dateStringToUtcTimestamp } from "@/shared/utils/date";
 
 type Operation = {
   id: string;
   type: OperationType;
   amount: number;
+  operationDate: string;
   createdAt: string;
 };
 
@@ -21,10 +23,13 @@ export const GoalChart = ({ operations }: GoalChartProps) => {
   const seriesData = useMemo<Array<[number, number]>>(() => {
     let total = 0;
     return [...operations]
-      .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
+      .sort((a, b) => {
+        const dateComparison = a.operationDate.localeCompare(b.operationDate);
+        return dateComparison !== 0 ? dateComparison : a.createdAt.localeCompare(b.createdAt);
+      })
       .map((operation) => {
         total += operation.type === "INCREASE" ? operation.amount : -operation.amount;
-        return [new Date(operation.createdAt).getTime(), Number(total.toFixed(2))];
+        return [dateStringToUtcTimestamp(operation.operationDate), Number(total.toFixed(2))];
       });
   }, [operations]);
 

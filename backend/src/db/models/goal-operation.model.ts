@@ -6,6 +6,7 @@ export type GoalOperationDocument = {
   type: "INCREASE" | "DECREASE";
   amount: number;
   note?: string;
+  operationDate: string;
 };
 
 const goalOperationSchema = new Schema<GoalOperationDocument>(
@@ -15,6 +16,7 @@ const goalOperationSchema = new Schema<GoalOperationDocument>(
     type: { type: String, required: true, enum: ["INCREASE", "DECREASE"] },
     amount: { type: Number, required: true },
     note: { type: String },
+    operationDate: { type: String, required: true },
   },
   { timestamps: true }
 );

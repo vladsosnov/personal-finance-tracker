@@ -14,7 +14,7 @@ const plans = [
   },
   {
     name: "Pro",
-    price: "$12/mo",
+    price: "$3/mo",
     description: "For users managing multiple goals with deeper tracking.",
     features: ["Unlimited goals", "Priority support", "Advanced analytics"],
     cta: "Go pro",
@@ -23,7 +23,7 @@ const plans = [
   },
   {
     name: "Lifetime",
-    price: "$249 once",
+    price: "$5 once",
     description: "One-time payment for long-term planning without subscription.",
     features: ["Everything in Pro", "All future core updates", "Founder badge"],
     cta: "Get lifetime",

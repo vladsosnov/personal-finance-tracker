@@ -9,6 +9,7 @@ const toGoalOperation = (doc: {
   type: OperationType;
   amount: number;
   note?: string;
+  operationDate?: string;
   createdAt: Date;
 }): GoalOperation => ({
   id: doc._id.toString(),
@@ -17,6 +18,7 @@ const toGoalOperation = (doc: {
   type: doc.type,
   amount: doc.amount,
   note: doc.note,
+  operationDate: doc.operationDate ?? doc.createdAt.toISOString().slice(0, 10),
   createdAt: doc.createdAt.toISOString(),
 });
 
@@ -25,9 +27,17 @@ export const createGoalOperation = async (
   goalId: string,
   type: OperationType,
   amount: number,
-  note?: string
+  note?: string,
+  operationDate?: string
 ): Promise<GoalOperation> => {
-  const operation = await GoalOperationModel.create({ userId, goalId, type, amount, note });
+  const operation = await GoalOperationModel.create({
+    userId,
+    goalId,
+    type,
+    amount,
+    note,
+    operationDate: operationDate ?? new Date().toISOString().slice(0, 10),
+  });
 
   return toGoalOperation(
     operation.toObject() as unknown as {
@@ -37,13 +47,14 @@ export const createGoalOperation = async (
       type: OperationType;
       amount: number;
       note?: string;
+      operationDate: string;
       createdAt: Date;
     }
   );
 };
 
 export const listOperationsByGoal = async (userId: string, goalId: string): Promise<GoalOperation[]> => {
-  const operations = await GoalOperationModel.find({ userId, goalId }).sort({ createdAt: -1 }).lean();
+  const operations = await GoalOperationModel.find({ userId, goalId }).sort({ operationDate: -1, createdAt: -1 }).lean();
 
   return operations.map((operation) =>
     toGoalOperation(
@@ -54,6 +65,7 @@ export const listOperationsByGoal = async (userId: string, goalId: string): Prom
         type: OperationType;
         amount: number;
         note?: string;
+        operationDate?: string;
         createdAt: Date;
       }
     )

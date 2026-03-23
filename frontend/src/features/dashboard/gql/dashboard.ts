@@ -39,6 +39,7 @@ export const GET_GOALS = gql`
       id
       title
       targetAmount
+      initialAmount
       currentAmount
       progress
       createdAt
@@ -52,6 +53,7 @@ export const GET_GOAL_DETAILS = gql`
       id
       title
       targetAmount
+      initialAmount
       currentAmount
       progress
       operations {
@@ -59,6 +61,7 @@ export const GET_GOAL_DETAILS = gql`
         type
         amount
         note
+        operationDate
         createdAt
       }
     }
@@ -66,16 +69,16 @@ export const GET_GOAL_DETAILS = gql`
 `;
 
 export const CREATE_GOAL = gql`
-  mutation CreateGoal($title: String!, $targetAmount: Float!) {
-    createGoal(title: $title, targetAmount: $targetAmount) {
+  mutation CreateGoal($title: String!, $targetAmount: Float!, $initialAmount: Float) {
+    createGoal(title: $title, targetAmount: $targetAmount, initialAmount: $initialAmount) {
       id
     }
   }
 `;
 
 export const UPDATE_GOAL_PROGRESS = gql`
-  mutation UpdateGoalProgress($goalId: ID!, $type: OperationType!, $amount: Float!, $note: String) {
-    updateGoalProgress(goalId: $goalId, type: $type, amount: $amount, note: $note) {
+  mutation UpdateGoalProgress($goalId: ID!, $type: OperationType!, $amount: Float!, $note: String, $operationDate: String) {
+    updateGoalProgress(goalId: $goalId, type: $type, amount: $amount, note: $note, operationDate: $operationDate) {
       id
     }
   }

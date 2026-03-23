@@ -18,6 +18,7 @@ type RegisterArgs = {
 type GoalArgs = {
   title: string;
   targetAmount: number;
+  initialAmount?: number;
 };
 
 type GoalOperationArgs = {
@@ -25,6 +26,7 @@ type GoalOperationArgs = {
   type: OperationType;
   amount: number;
   note?: string;
+  operationDate?: string;
 };
 
 type GoalLookupArgs = {
@@ -64,6 +66,7 @@ export const schema = buildSchema(`
     type: OperationType!
     amount: Float!
     note: String
+    operationDate: String!
     createdAt: String!
   }
 
@@ -71,6 +74,7 @@ export const schema = buildSchema(`
     id: ID!
     title: String!
     targetAmount: Float!
+    initialAmount: Float!
     currentAmount: Float!
     progress: Float!
     createdAt: String!
@@ -86,8 +90,8 @@ export const schema = buildSchema(`
   type Mutation {
     register(email: String!, password: String!): AuthPayload!
     login(email: String!, password: String!): AuthPayload!
-    createGoal(title: String!, targetAmount: Float!): Goal!
-    updateGoalProgress(goalId: ID!, type: OperationType!, amount: Float!, note: String): Goal!
+    createGoal(title: String!, targetAmount: Float!, initialAmount: Float): Goal!
+    updateGoalProgress(goalId: ID!, type: OperationType!, amount: Float!, note: String, operationDate: String): Goal!
   }
 `);
 
@@ -140,19 +144,25 @@ export const rootValue = {
       user: toSafeUser(user),
     };
   },
-  createGoal: async ({ title, targetAmount }: GoalArgs, context: Context) => {
+  createGoal: async ({ title, targetAmount, initialAmount = 0 }: GoalArgs, context: Context) => {
     const userId = ensureAuthed(context);
     if (targetAmount <= 0) {
       throw new Error("Target amount should be greater than 0");
     }
+    if (initialAmount < 0) {
+      throw new Error("Initial amount cannot be negative");
+    }
 
-    const goal = await createGoal(userId, title.trim(), targetAmount);
+    const goal = await createGoal(userId, title.trim(), targetAmount, initialAmount);
     return buildGoalView(userId, goal);
   },
-  updateGoalProgress: async ({ goalId, type, amount, note }: GoalOperationArgs, context: Context) => {
+  updateGoalProgress: async ({ goalId, type, amount, note, operationDate }: GoalOperationArgs, context: Context) => {
     const userId = ensureAuthed(context);
     if (amount <= 0) {
       throw new Error("Amount should be greater than 0");
+    }
+    if (operationDate && !/^\d{4}-\d{2}-\d{2}$/.test(operationDate)) {
+      throw new Error("Operation date must be in YYYY-MM-DD format");
     }
 
     const goal = await getGoalById(userId, goalId);
@@ -160,7 +170,7 @@ export const rootValue = {
       throw new Error("Goal not found");
     }
 
-    await createGoalOperation(userId, goalId, type, amount, note?.trim());
+    await createGoalOperation(userId, goalId, type, amount, note?.trim(), operationDate);
     return buildGoalView(userId, goal);
   },
 };

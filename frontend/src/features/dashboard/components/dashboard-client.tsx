@@ -14,6 +14,7 @@ import type { Goal, GoalDetails } from "@/features/dashboard/types";
 import { APP_ROUTES } from "@/shared/constants/routes";
 import { AUTH_TOKEN_KEY } from "@/shared/constants/storage";
 import type { OperationType } from "@/shared/gql/__generated__/schema-types";
+import { getTodayDateValue } from "@/shared/utils/date";
 
 export const DashboardClient = () => {
   const router = useRouter();
@@ -23,9 +24,11 @@ export const DashboardClient = () => {
 
   const [goalTitle, setGoalTitle] = useState("");
   const [goalTarget, setGoalTarget] = useState<number | "">(0);
+  const [goalInitialAmount, setGoalInitialAmount] = useState<number | "">(0);
   const [operationType, setOperationType] = useState<OperationType>("INCREASE");
   const [operationAmount, setOperationAmount] = useState<number | "">(0);
   const [operationNote, setOperationNote] = useState("");
+  const [operationDate, setOperationDate] = useState(getTodayDateValue);
 
   useEffect(() => {
     const token = window.localStorage.getItem(AUTH_TOKEN_KEY);
@@ -70,11 +73,13 @@ export const DashboardClient = () => {
       variables: {
         title: goalTitle.trim(),
         targetAmount: Number(goalTarget),
+        initialAmount: Number(goalInitialAmount || 0),
       },
     });
 
     setGoalTitle("");
     setGoalTarget(0);
+    setGoalInitialAmount(0);
     await refetchGoals();
   };
 
@@ -89,11 +94,13 @@ export const DashboardClient = () => {
         type: operationType,
         amount: Number(operationAmount),
         note: operationNote.trim() || undefined,
+        operationDate,
       },
     });
 
     setOperationAmount(0);
     setOperationNote("");
+    setOperationDate(getTodayDateValue());
     await Promise.all([refetchGoals(), refetchGoalDetails()]);
   };
 
@@ -116,10 +123,12 @@ export const DashboardClient = () => {
         <CreateGoalForm
           goalTitle={goalTitle}
           goalTarget={goalTarget}
+          goalInitialAmount={goalInitialAmount}
           isCreatingGoal={isCreatingGoal}
           isAddDisabled={isAddDisabled}
           setGoalTitle={setGoalTitle}
           setGoalTarget={setGoalTarget}
+          setGoalInitialAmount={setGoalInitialAmount}
           onCreateGoal={handleCreateGoal}
         />
 
@@ -133,11 +142,13 @@ export const DashboardClient = () => {
               operationType={operationType}
               operationAmount={operationAmount}
               operationNote={operationNote}
+              operationDate={operationDate}
               isUpdatingProgress={isUpdatingProgress}
               isUpdateDisabled={isUpdateDisabled}
               setOperationType={setOperationType}
               setOperationAmount={setOperationAmount}
               setOperationNote={setOperationNote}
+              setOperationDate={setOperationDate}
               onUpdateProgress={handleUpdateProgress}
             />
           </Grid.Col>

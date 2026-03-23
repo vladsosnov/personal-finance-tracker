@@ -9,13 +9,14 @@ export const calculateCurrentAmount = async (userId: string, goalId: string): Pr
 };
 
 export const buildGoalView = async (userId: string, goal: Goal): Promise<GoalView> => {
-  const currentAmount = await calculateCurrentAmount(userId, goal.id);
+  const currentAmount = goal.initialAmount + (await calculateCurrentAmount(userId, goal.id));
   const progress = goal.targetAmount > 0 ? Math.min((currentAmount / goal.targetAmount) * 100, 100) : 0;
 
   return {
     id: goal.id,
     title: goal.title,
     targetAmount: goal.targetAmount,
+    initialAmount: goal.initialAmount,
     currentAmount,
     progress,
     createdAt: goal.createdAt,

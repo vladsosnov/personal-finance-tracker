@@ -4,6 +4,7 @@ export type Goal = {
   id: string;
   title: string;
   targetAmount: number;
+  initialAmount: number;
   currentAmount: number;
   progress: number;
   createdAt: string;
@@ -14,6 +15,7 @@ export type GoalOperation = {
   type: OperationType;
   amount: number;
   note?: string;
+  operationDate: string;
   createdAt: string;
 };
 
