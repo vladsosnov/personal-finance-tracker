@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Badge, Button, Card, Group, Modal, NumberInput, ScrollArea, SegmentedControl, Skeleton, Stack, Table, Text, TextInput, Tooltip, Title } from "@mantine/core";
-import { GoalColorPicker } from "@/features/dashboard/components/goal-color-picker";
+import { Badge, Button, Card, Group, Modal, NumberInput, ScrollArea, Select, Skeleton, Stack, Table, Text, TextInput, Tooltip, Title } from "@mantine/core";
 import { GoalChart } from "@/features/dashboard/components/goal-chart";
 import type { GoalDetails } from "@/features/dashboard/types";
 import type { OperationType } from "@/shared/gql/__generated__/schema-types";
@@ -38,6 +37,14 @@ const ExpandIcon = () => (
   </svg>
 );
 
+const CHART_RANGE_OPTIONS = [
+  { label: "All time", value: "all" },
+  { label: "7D", value: "7d" },
+  { label: "1M", value: "1m" },
+  { label: "6M", value: "6m" },
+  { label: "12M", value: "12m" },
+] as const;
+
 type GoalDetailsPanelProps = {
   selectedGoal: GoalDetails | null;
   isLoadingGoalDetails: boolean;
@@ -47,16 +54,12 @@ type GoalDetailsPanelProps = {
   operationDate: string;
   editingOperationId: string | null;
   deletingOperationId: string | null;
-  isDeletingGoal: boolean;
-  isEditingGoal: boolean;
   isUpdatingProgress: boolean;
   isUpdateDisabled: boolean;
   setOperationType: (value: OperationType) => void;
   setOperationAmount: (value: number | "") => void;
   setOperationNote: (value: string) => void;
   setOperationDate: (value: string) => void;
-  onEditGoal: (input: { title: string; targetAmount: number; initialAmount: number; color: string }) => Promise<void>;
-  onDeleteGoal: () => Promise<void>;
   onStartEditOperation: (operationId: string) => void;
   onDeleteOperation: (operationId: string) => Promise<void>;
   onCancelEditOperation: () => void;
@@ -72,31 +75,21 @@ export const GoalDetailsPanel = ({
   operationDate,
   editingOperationId,
   deletingOperationId,
-  isDeletingGoal,
-  isEditingGoal,
   isUpdatingProgress,
   isUpdateDisabled,
   setOperationType,
   setOperationAmount,
   setOperationNote,
   setOperationDate,
-  onEditGoal,
-  onDeleteGoal,
   onStartEditOperation,
   onDeleteOperation,
   onCancelEditOperation,
   onUpdateProgress,
 }: GoalDetailsPanelProps) => {
   const [pendingDeleteOperationId, setPendingDeleteOperationId] = useState<string | null>(null);
-  const [isDeleteGoalModalOpen, setIsDeleteGoalModalOpen] = useState(false);
-  const [isEditGoalModalOpen, setIsEditGoalModalOpen] = useState(false);
   const [isOperationModalOpen, setIsOperationModalOpen] = useState(false);
   const [isChartModalOpen, setIsChartModalOpen] = useState(false);
   const [chartRange, setChartRange] = useState<"all" | "7d" | "1m" | "6m" | "12m">("all");
-  const [editedGoalTitle, setEditedGoalTitle] = useState("");
-  const [editedGoalTarget, setEditedGoalTarget] = useState<number | "">("");
-  const [editedGoalInitialAmount, setEditedGoalInitialAmount] = useState<number | "">("");
-  const [editedGoalColor, setEditedGoalColor] = useState("");
   const pendingDeleteOperation = useMemo(
     () => selectedGoal?.operations.find((operation) => operation.id === pendingDeleteOperationId) ?? null,
     [pendingDeleteOperationId, selectedGoal]
@@ -118,41 +111,6 @@ export const GoalDetailsPanel = ({
     } finally {
       setPendingDeleteOperationId(null);
     }
-  };
-
-  const handleConfirmGoalDelete = async () => {
-    try {
-      await onDeleteGoal();
-    } finally {
-      setIsDeleteGoalModalOpen(false);
-    }
-  };
-
-  const openEditGoalModal = () => {
-    if (!selectedGoal) {
-      return;
-    }
-
-    setEditedGoalTitle(selectedGoal.title);
-    setEditedGoalTarget(selectedGoal.targetAmount);
-    setEditedGoalInitialAmount(selectedGoal.initialAmount > 0 ? selectedGoal.initialAmount : "");
-    setEditedGoalColor(selectedGoal.color);
-    setIsEditGoalModalOpen(true);
-  };
-
-  const handleConfirmGoalEdit = async () => {
-    if (!editedGoalTitle.trim() || !editedGoalTarget || editedGoalTarget <= 0) {
-      return;
-    }
-
-    await onEditGoal({
-      title: editedGoalTitle.trim(),
-      targetAmount: Number(editedGoalTarget),
-      initialAmount: Number(editedGoalInitialAmount || 0),
-      color: editedGoalColor,
-    });
-
-    setIsEditGoalModalOpen(false);
   };
 
   const handleOpenCreateOperationModal = () => {
@@ -194,45 +152,32 @@ export const GoalDetailsPanel = ({
       ) : (
         <ScrollArea h={610} offsetScrollbars scrollbarSize={8}>
           <Stack gap="md" pr={4}>
-          <Group justify="space-between" align="flex-start">
-            <Title order={4}>{selectedGoal.title}</Title>
-            <Group gap="xs" wrap="nowrap">
-              <Button variant="light" onClick={openEditGoalModal} loading={isEditingGoal}>
-                Edit
-              </Button>
-              <Button color="red" variant="light" onClick={() => setIsDeleteGoalModalOpen(true)} loading={isDeletingGoal}>
-                Remove
-              </Button>
-            </Group>
-          </Group>
+          <Title order={4}>{selectedGoal.title}</Title>
 
           <Stack gap="xs">
-            <Group justify="space-between" align="center">
-              <Title order={5}>Progress over time</Title>
-              <Group gap="xs" wrap="nowrap">
-                <SegmentedControl
-                  size="xs"
-                  value={chartRange}
-                  onChange={(value) => setChartRange(value as "all" | "7d" | "1m" | "6m" | "12m")}
-                  data={[
-                    { label: "All time", value: "all" },
-                    { label: "7D", value: "7d" },
-                    { label: "1M", value: "1m" },
-                    { label: "6M", value: "6m" },
-                    { label: "12M", value: "12m" },
-                  ]}
-                />
-                <Button variant="light" px={10} aria-label="Expand chart" onClick={() => setIsChartModalOpen(true)}>
-                  <ExpandIcon />
-                </Button>
-              </Group>
+            <Group gap="xs" wrap="nowrap" justify="flex-end">
+              <Select
+                value={chartRange}
+                data={CHART_RANGE_OPTIONS}
+                allowDeselect={false}
+                aria-label="Select chart time range"
+                onChange={(value) => {
+                  if (value) {
+                    setChartRange(value as "all" | "7d" | "1m" | "6m" | "12m");
+                  }
+                }}
+                w={120}
+              />
+              <Button variant="light" px={10} aria-label="Expand chart" onClick={() => setIsChartModalOpen(true)}>
+                <ExpandIcon />
+              </Button>
             </Group>
             <GoalChart operations={selectedGoal.operations} color={selectedGoal.color} range={chartRange} />
           </Stack>
 
           <Group justify="space-between" align="center">
             <Title order={5}>Operations</Title>
-            <Button onClick={handleOpenCreateOperationModal}>Add operation</Button>
+            <Button onClick={handleOpenCreateOperationModal}>Add</Button>
           </Group>
           <Table striped highlightOnHover>
             <Table.Thead>
@@ -279,9 +224,16 @@ export const GoalDetailsPanel = ({
                   <Table.Td>
                     <Group gap={4} wrap="nowrap">
                       <Button
-                        variant="subtle"
+                        variant="light"
                         size="compact-sm"
                         px={8}
+                        styles={{
+                          root: {
+                            minHeight: 28,
+                            backgroundColor: "rgba(15, 23, 42, 0.06)",
+                            color: "var(--mantine-color-gray-8)",
+                          },
+                        }}
                         aria-label="Edit operation"
                         onClick={() => onStartEditOperation(operation.id)}
                       >
@@ -289,9 +241,14 @@ export const GoalDetailsPanel = ({
                       </Button>
                       <Button
                         color="red"
-                        variant="subtle"
+                        variant="light"
                         size="compact-sm"
                         px={8}
+                        styles={{
+                          root: {
+                            minHeight: 28,
+                          },
+                        }}
                         aria-label="Delete operation"
                         loading={deletingOperationId === operation.id}
                         onClick={() => setPendingDeleteOperationId(operation.id)}
@@ -315,25 +272,28 @@ export const GoalDetailsPanel = ({
           <Modal
             opened={isOperationModalOpen}
             onClose={handleCloseOperationModal}
-            title={editingOperationId ? "Edit operation" : "Add operation"}
+            title={editingOperationId ? "Edit" : "Add"}
             centered
           >
             <Stack gap="md">
-              <SegmentedControl
-                fullWidth
-                data={[
-                  {
-                    label: <span style={{ color: "var(--mantine-color-teal-6)", fontWeight: 600 }}>Increase</span>,
-                    value: "INCREASE",
-                  },
-                  {
-                    label: <span style={{ color: "var(--mantine-color-red-6)", fontWeight: 600 }}>Decrease</span>,
-                    value: "DECREASE",
-                  },
-                ]}
-                value={operationType}
-                onChange={(value) => setOperationType(value as OperationType)}
-              />
+              <Group gap="xs" wrap="nowrap">
+                <Button
+                  fullWidth
+                  color="teal"
+                  variant={operationType === "INCREASE" ? "light" : "subtle"}
+                  onClick={() => setOperationType("INCREASE")}
+                >
+                  Increase
+                </Button>
+                <Button
+                  fullWidth
+                  color="red"
+                  variant={operationType === "DECREASE" ? "light" : "subtle"}
+                  onClick={() => setOperationType("DECREASE")}
+                >
+                  Decrease
+                </Button>
+              </Group>
               <NumberInput
                 label="Amount"
                 placeholder="500"
@@ -397,97 +357,28 @@ export const GoalDetailsPanel = ({
             </Stack>
           </Modal>
 
-          <Modal
-            opened={isEditGoalModalOpen}
-            onClose={() => {
-              if (!isEditingGoal) {
-                setIsEditGoalModalOpen(false);
-              }
-            }}
-            title="Edit goal"
-            centered
-          >
-            <Stack gap="md">
-              <TextInput
-                label="Goal title"
-                value={editedGoalTitle}
-                onChange={(event) => setEditedGoalTitle(event.currentTarget.value)}
-              />
-              <NumberInput
-                label="Target amount"
-                placeholder="25000"
-                {...MONEY_INPUT_PROPS}
-                value={editedGoalTarget}
-                onChange={(value) => setEditedGoalTarget(numberOrZero(value))}
-              />
-              <NumberInput
-                label="Starting amount"
-                placeholder="5000"
-                {...MONEY_INPUT_PROPS}
-                min={0}
-                value={editedGoalInitialAmount}
-                onChange={(value) => setEditedGoalInitialAmount(numberOrZero(value))}
-              />
-              <GoalColorPicker label="Goal color" value={editedGoalColor} onChange={setEditedGoalColor} disabled={isEditingGoal} />
-              <Group justify="flex-end">
-                <Button variant="default" onClick={() => setIsEditGoalModalOpen(false)} disabled={isEditingGoal}>
-                  Cancel
-                </Button>
-                <Button
-                  onClick={() => void handleConfirmGoalEdit()}
-                  loading={isEditingGoal}
-                  disabled={!editedGoalTitle.trim() || !editedGoalTarget || editedGoalTarget <= 0}
-                >
-                  Save
-                </Button>
-              </Group>
-            </Stack>
-          </Modal>
-
           <Modal opened={isChartModalOpen} onClose={() => setIsChartModalOpen(false)} title="Progress over time" centered size="calc(100vw - 96px)">
             <Stack gap="md">
               <Group justify="space-between" align="center">
-                <SegmentedControl
+                <div />
+                <Select
                   value={chartRange}
-                  onChange={(value) => setChartRange(value as "all" | "7d" | "1m" | "6m" | "12m")}
-                  data={[
-                    { label: "All time", value: "all" },
-                    { label: "7D", value: "7d" },
-                    { label: "1M", value: "1m" },
-                    { label: "6M", value: "6m" },
-                    { label: "12M", value: "12m" },
-                  ]}
+                  data={CHART_RANGE_OPTIONS}
+                  allowDeselect={false}
+                  aria-label="Select chart time range"
+                  onChange={(value) => {
+                    if (value) {
+                      setChartRange(value as "all" | "7d" | "1m" | "6m" | "12m");
+                    }
+                  }}
+                  w={120}
                 />
               </Group>
               <GoalChart operations={selectedGoal.operations} color={selectedGoal.color} range={chartRange} height={520} />
             </Stack>
           </Modal>
 
-          <Modal
-            opened={isDeleteGoalModalOpen}
-            onClose={() => {
-              if (!isDeletingGoal) {
-                setIsDeleteGoalModalOpen(false);
-              }
-            }}
-            title="Delete goal?"
-            centered
-          >
-            <Stack gap="md">
-              <Text>
-                Delete <strong>{selectedGoal.title}</strong> and all of its operations? This action cannot be undone.
-              </Text>
-              <Group justify="flex-end">
-                <Button variant="default" onClick={() => setIsDeleteGoalModalOpen(false)} disabled={isDeletingGoal}>
-                  Cancel
-                </Button>
-                <Button color="red" onClick={() => void handleConfirmGoalDelete()} loading={isDeletingGoal}>
-                  Delete
-                </Button>
-              </Group>
-            </Stack>
-          </Modal>
-          </Stack>
+        </Stack>
         </ScrollArea>
       )}
     </Card>

@@ -3,10 +3,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery } from "@apollo/client/react";
-import { Container, Grid, Group, Stack, Text, Title } from "@mantine/core";
+import { Button, Container, Grid, Group, Modal, NumberInput, Stack, Text, TextInput, Title } from "@mantine/core";
 import { CreateGoalForm } from "@/features/dashboard/components/create-goal-form";
 import { DashboardOverviewStats } from "@/features/dashboard/components/dashboard-overview-stats";
 import { DashboardSkeleton } from "@/features/dashboard/components/dashboard-skeleton";
+import { GoalColorPicker } from "@/features/dashboard/components/goal-color-picker";
 import { GoalDetailsPanel } from "@/features/dashboard/components/goal-details-panel";
 import { GoalsList } from "@/features/dashboard/components/goals-list";
 import {
@@ -27,6 +28,7 @@ import { APP_ROUTES } from "@/shared/constants/routes";
 import { AUTH_TOKEN_KEY } from "@/shared/constants/storage";
 import type { OperationType } from "@/shared/gql/__generated__/schema-types";
 import { getTodayDateValue } from "@/shared/utils/date";
+import { MONEY_INPUT_PROPS, numberOrZero } from "@/shared/utils/number";
 
 export const DashboardClient = () => {
   const router = useRouter();
@@ -44,7 +46,14 @@ export const DashboardClient = () => {
   const [operationDate, setOperationDate] = useState(getTodayDateValue);
   const [editingOperationId, setEditingOperationId] = useState<string | null>(null);
   const [deletingOperationId, setDeletingOperationId] = useState<string | null>(null);
+  const [isManageMode, setIsManageMode] = useState(false);
   const [isDeletingGoal, setIsDeletingGoal] = useState(false);
+  const [editingGoalId, setEditingGoalId] = useState<string | null>(null);
+  const [deletingGoalId, setDeletingGoalId] = useState<string | null>(null);
+  const [editedGoalTitle, setEditedGoalTitle] = useState("");
+  const [editedGoalTarget, setEditedGoalTarget] = useState<number | "">("");
+  const [editedGoalInitialAmount, setEditedGoalInitialAmount] = useState<number | "">("");
+  const [editedGoalColor, setEditedGoalColor] = useState<string>(DEFAULT_GOAL_COLOR);
   const [draggingGoalId, setDraggingGoalId] = useState<string | null>(null);
   const [dragOverGoalId, setDragOverGoalId] = useState<string | null>(null);
   const [optimisticGoals, setOptimisticGoals] = useState<Goal[] | null>(null);
@@ -105,6 +114,8 @@ export const DashboardClient = () => {
   const [updateGoalProgress, { loading: isUpdatingProgress }] = useMutation(UPDATE_GOAL_PROGRESS);
 
   const goals = optimisticGoals ?? serverGoals;
+  const managingGoal = useMemo(() => goals.find((goal) => goal.id === editingGoalId) ?? null, [editingGoalId, goals]);
+  const deletingGoal = useMemo(() => goals.find((goal) => goal.id === deletingGoalId) ?? null, [deletingGoalId, goals]);
   const selectedGoal =
     goalDetailsData?.goal?.id === selectedGoalId
       ? goalDetailsData.goal
@@ -255,8 +266,8 @@ export const DashboardClient = () => {
     }
   };
 
-  const handleDeleteGoal = async () => {
-    if (!selectedGoalId) {
+  const handleDeleteGoal = async (goalId: string) => {
+    if (!goalId) {
       return;
     }
 
@@ -265,11 +276,14 @@ export const DashboardClient = () => {
     try {
       await deleteGoalMutation({
         variables: {
-          goalId: selectedGoalId,
+          goalId,
         },
       });
 
-      setSelectedGoalId(null);
+      if (selectedGoalId === goalId) {
+        setSelectedGoalId(null);
+      }
+      setDeletingGoalId(null);
       resetOperationForm();
       await refetchGoals();
     } finally {
@@ -277,14 +291,14 @@ export const DashboardClient = () => {
     }
   };
 
-  const handleEditGoal = async (input: { title: string; targetAmount: number; initialAmount: number; color: string }) => {
-    if (!selectedGoalId) {
+  const handleEditGoal = async (goalId: string, input: { title: string; targetAmount: number; initialAmount: number; color: string }) => {
+    if (!goalId) {
       return;
     }
 
     await editGoalMutation({
       variables: {
-        goalId: selectedGoalId,
+        goalId,
         title: input.title,
         targetAmount: input.targetAmount,
         initialAmount: input.initialAmount,
@@ -292,7 +306,40 @@ export const DashboardClient = () => {
       },
     });
 
-    await Promise.all([refetchGoals(), refetchGoalDetails()]);
+    setEditingGoalId(null);
+
+    if (selectedGoalId === goalId) {
+      await Promise.all([refetchGoals(), refetchGoalDetails()]);
+      return;
+    }
+
+    await refetchGoals();
+  };
+
+  const handleStartEditGoal = (goalId: string) => {
+    const goal = goals.find((item) => item.id === goalId);
+    if (!goal) {
+      return;
+    }
+
+    setEditedGoalTitle(goal.title);
+    setEditedGoalTarget(goal.targetAmount);
+    setEditedGoalInitialAmount(goal.initialAmount > 0 ? goal.initialAmount : "");
+    setEditedGoalColor(goal.color);
+    setEditingGoalId(goal.id);
+  };
+
+  const handleConfirmEditGoal = async () => {
+    if (!editingGoalId || !editedGoalTitle.trim() || !editedGoalTarget || editedGoalTarget <= 0) {
+      return;
+    }
+
+    await handleEditGoal(editingGoalId, {
+      title: editedGoalTitle.trim(),
+      targetAmount: Number(editedGoalTarget),
+      initialAmount: Number(editedGoalInitialAmount || 0),
+      color: editedGoalColor,
+    });
   };
 
   const handleDragStart = (goalId: string) => {
@@ -387,7 +434,11 @@ export const DashboardClient = () => {
               goals={goals}
               isLoadingGoals={shouldShowGoalsSkeleton}
               selectedGoalId={selectedGoalId}
+              isManageMode={isManageMode}
               onSelectGoal={setSelectedGoalId}
+              onToggleManageMode={() => setIsManageMode((current) => !current)}
+              onStartEditGoal={handleStartEditGoal}
+              onStartDeleteGoal={setDeletingGoalId}
               draggingGoalId={draggingGoalId}
               dragOverGoalId={dragOverGoalId}
               onDragStart={handleDragStart}
@@ -406,16 +457,12 @@ export const DashboardClient = () => {
               operationDate={operationDate}
               editingOperationId={editingOperationId}
               deletingOperationId={deletingOperationId}
-              isDeletingGoal={isDeletingGoal}
-              isEditingGoal={isEditingGoal}
               isUpdatingProgress={isUpdatingProgress || isEditingOperation}
               isUpdateDisabled={isUpdateDisabled}
               setOperationType={setOperationType}
               setOperationAmount={setOperationAmount}
               setOperationNote={setOperationNote}
               setOperationDate={setOperationDate}
-              onEditGoal={handleEditGoal}
-              onDeleteGoal={handleDeleteGoal}
               onStartEditOperation={handleStartEditOperation}
               onDeleteOperation={handleDeleteOperation}
               onCancelEditOperation={resetOperationForm}
@@ -423,6 +470,74 @@ export const DashboardClient = () => {
             />
           </Grid.Col>
         </Grid>
+
+        <Modal
+          opened={Boolean(editingGoalId)}
+          onClose={() => {
+            if (!isEditingGoal) {
+              setEditingGoalId(null);
+            }
+          }}
+          title="Edit goal"
+          centered
+        >
+          <Stack gap="md">
+            <TextInput label="Goal title" value={editedGoalTitle} onChange={(event) => setEditedGoalTitle(event.currentTarget.value)} />
+            <NumberInput
+              label="Target amount"
+              placeholder="25000"
+              {...MONEY_INPUT_PROPS}
+              value={editedGoalTarget}
+              onChange={(value) => setEditedGoalTarget(numberOrZero(value))}
+            />
+            <NumberInput
+              label="Starting amount"
+              placeholder="5000"
+              {...MONEY_INPUT_PROPS}
+              min={0}
+              value={editedGoalInitialAmount}
+              onChange={(value) => setEditedGoalInitialAmount(numberOrZero(value))}
+            />
+            <GoalColorPicker label="Goal color" value={editedGoalColor} onChange={setEditedGoalColor} disabled={isEditingGoal} />
+            <Group justify="flex-end">
+              <Button variant="default" onClick={() => setEditingGoalId(null)} disabled={isEditingGoal}>
+                Cancel
+              </Button>
+              <Button
+                onClick={() => void handleConfirmEditGoal()}
+                loading={isEditingGoal}
+                disabled={!editedGoalTitle.trim() || !editedGoalTarget || editedGoalTarget <= 0}
+              >
+                Save
+              </Button>
+            </Group>
+          </Stack>
+        </Modal>
+
+        <Modal
+          opened={Boolean(deletingGoalId)}
+          onClose={() => {
+            if (!isDeletingGoal) {
+              setDeletingGoalId(null);
+            }
+          }}
+          title="Remove goal?"
+          centered
+        >
+          <Stack gap="md">
+            <Text>
+              Remove <strong>{deletingGoal?.title ?? "this goal"}</strong> and all of its operations? This action cannot be undone.
+            </Text>
+            <Group justify="flex-end">
+              <Button variant="default" onClick={() => setDeletingGoalId(null)} disabled={isDeletingGoal}>
+                Cancel
+              </Button>
+              <Button color="red" onClick={() => deletingGoalId && void handleDeleteGoal(deletingGoalId)} loading={isDeletingGoal}>
+                Remove
+              </Button>
+            </Group>
+          </Stack>
+        </Modal>
       </Stack>
     </Container>
   );

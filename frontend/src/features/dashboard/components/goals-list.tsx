@@ -1,13 +1,48 @@
-import { Badge, Card, Group, Progress, ScrollArea, Skeleton, Stack, Text, Title } from "@mantine/core";
+import { Badge, Button, Card, Group, Progress, ScrollArea, Skeleton, Stack, Text, Title } from "@mantine/core";
 import type { Goal } from "@/features/dashboard/types";
 import { hexToRgba } from "@/shared/utils/color";
 import { formatMoney, getProgressPercentage } from "@/shared/utils/number";
+
+const EditIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <path
+      d="M4 20h4l10.5-10.5a2.12 2.12 0 0 0-3-3L5 17v3Z"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path d="m13.5 6.5 4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
+const DeleteIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <path d="M3 6h18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    <path d="M8 6V4h8v2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M19 6l-1 14H6L5 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M10 11v6M14 11v6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+  </svg>
+);
+
+const ManageIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    <circle cx="7" cy="7" r="1.5" fill="currentColor" />
+    <circle cx="17" cy="12" r="1.5" fill="currentColor" />
+    <circle cx="10" cy="17" r="1.5" fill="currentColor" />
+  </svg>
+);
 
 type GoalsListProps = {
   goals: Goal[];
   isLoadingGoals: boolean;
   selectedGoalId: string | null;
+  isManageMode: boolean;
   onSelectGoal: (goalId: string) => void;
+  onToggleManageMode: () => void;
+  onStartEditGoal: (goalId: string) => void;
+  onStartDeleteGoal: (goalId: string) => void;
   draggingGoalId: string | null;
   dragOverGoalId: string | null;
   onDragStart: (goalId: string) => void;
@@ -20,7 +55,11 @@ export const GoalsList = ({
   goals,
   isLoadingGoals,
   selectedGoalId,
+  isManageMode,
   onSelectGoal,
+  onToggleManageMode,
+  onStartEditGoal,
+  onStartDeleteGoal,
   draggingGoalId,
   dragOverGoalId,
   onDragStart,
@@ -30,8 +69,13 @@ export const GoalsList = ({
 }: GoalsListProps) => {
   return (
     <Card withBorder radius="md" p="lg">
-      <Stack gap="sm">
-        <Title order={4}>Goal cards</Title>
+      <Stack gap={6}>
+        <Group justify="space-between" align="center">
+          <Title order={4}>Goal cards</Title>
+          <Button variant={isManageMode ? "light" : "subtle"} px={10} aria-label="Manage goals" onClick={onToggleManageMode}>
+            <ManageIcon />
+          </Button>
+        </Group>
         <Text size="sm" c="dimmed">
           Drag and drop cards to change their order.
         </Text>
@@ -88,17 +132,62 @@ export const GoalsList = ({
                   <Stack gap="xs">
                     <Group justify="space-between">
                       <Text fw={700}>{goal.title}</Text>
-                      <Badge
-                        variant="light"
-                        styles={{
-                          root: {
-                            backgroundColor: hexToRgba(goal.color, 0.14),
-                            color: goal.color,
-                          },
-                        }}
-                      >
-                        {goalProgress.toFixed(1)}%
-                      </Badge>
+                      {isManageMode ? (
+                        <Group gap={4} wrap="nowrap" style={{ minHeight: 28 }}>
+                          <Button
+                            variant="light"
+                            size="compact-sm"
+                            px={8}
+                            styles={{
+                              root: {
+                                minHeight: 28,
+                                backgroundColor: "rgba(15, 23, 42, 0.06)",
+                                color: "var(--mantine-color-gray-8)",
+                              },
+                            }}
+                            aria-label={`Edit ${goal.title}`}
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              onStartEditGoal(goal.id);
+                            }}
+                          >
+                            <EditIcon />
+                          </Button>
+                          <Button
+                            color="red"
+                            variant="light"
+                            size="compact-sm"
+                            px={8}
+                            styles={{
+                              root: {
+                                minHeight: 28,
+                              },
+                            }}
+                            aria-label={`Remove ${goal.title}`}
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              onStartDeleteGoal(goal.id);
+                            }}
+                          >
+                            <DeleteIcon />
+                          </Button>
+                        </Group>
+                      ) : (
+                        <Badge
+                          variant="light"
+                          styles={{
+                            root: {
+                              minHeight: 28,
+                              display: "flex",
+                              alignItems: "center",
+                              backgroundColor: hexToRgba(goal.color, 0.14),
+                              color: goal.color,
+                            },
+                          }}
+                        >
+                          {goalProgress.toFixed(1)}%
+                        </Badge>
+                      )}
                     </Group>
                     <Text size="sm" c="dimmed">
                       {formatMoney(goal.currentAmount)} / {formatMoney(goal.targetAmount)}
