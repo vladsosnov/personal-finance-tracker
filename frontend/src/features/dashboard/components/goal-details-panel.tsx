@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Badge, Button, Card, Group, Modal, NumberInput, Popover, ScrollArea, Skeleton, Stack, Table, Text, TextInput, Tooltip, Title } from "@mantine/core";
+import { Badge, Button, Card, Group, Modal, NumberInput, Pagination, Popover, ScrollArea, Skeleton, Stack, Table, Text, TextInput, Tooltip, Title } from "@mantine/core";
 import { GoalChart } from "@/features/dashboard/components/goal-chart";
 import type { GoalDetails } from "@/features/dashboard/types";
 import type { OperationType } from "@/shared/gql/__generated__/schema-types";
@@ -51,6 +51,8 @@ const CHART_RANGE_OPTIONS = [
   { label: "12M", value: "12m" },
 ] as const;
 
+const OPERATIONS_PER_PAGE = 10;
+
 type GoalDetailsPanelProps = {
   hasGoals: boolean;
   selectedGoal: GoalDetails | null;
@@ -100,16 +102,36 @@ export const GoalDetailsPanel = ({
   const [isRangePickerOpen, setIsRangePickerOpen] = useState(false);
   const [isExpandedRangePickerOpen, setIsExpandedRangePickerOpen] = useState(false);
   const [chartRange, setChartRange] = useState<"all" | "7d" | "1m" | "6m" | "12m">("all");
+  const [operationsPage, setOperationsPage] = useState(1);
   const pendingDeleteOperation = useMemo(
     () => selectedGoal?.operations.find((operation) => operation.id === pendingDeleteOperationId) ?? null,
     [pendingDeleteOperationId, selectedGoal]
   );
+  const totalOperationPages = Math.max(1, Math.ceil((selectedGoal?.operations.length ?? 0) / OPERATIONS_PER_PAGE));
+  const paginatedOperations = useMemo(() => {
+    if (!selectedGoal) {
+      return [];
+    }
+
+    const startIndex = (operationsPage - 1) * OPERATIONS_PER_PAGE;
+    return selectedGoal.operations.slice(startIndex, startIndex + OPERATIONS_PER_PAGE);
+  }, [operationsPage, selectedGoal]);
 
   useEffect(() => {
     if (editingOperationId) {
       setIsOperationModalOpen(true);
     }
   }, [editingOperationId]);
+
+  useEffect(() => {
+    setOperationsPage(1);
+  }, [selectedGoal?.id]);
+
+  useEffect(() => {
+    if (operationsPage > totalOperationPages) {
+      setOperationsPage(totalOperationPages);
+    }
+  }, [operationsPage, totalOperationPages]);
 
   const handleConfirmDelete = async () => {
     if (!pendingDeleteOperationId) {
@@ -246,7 +268,7 @@ export const GoalDetailsPanel = ({
               </Table.Tr>
             </Table.Thead>
             <Table.Tbody>
-              {selectedGoal.operations.map((operation) => (
+              {paginatedOperations.map((operation) => (
                 <Table.Tr key={operation.id}>
                   <Table.Td>{formatDay(operation.operationDate)}</Table.Td>
                   <Table.Td>
@@ -324,6 +346,15 @@ export const GoalDetailsPanel = ({
               )}
             </Table.Tbody>
           </Table>
+          {selectedGoal.operations.length > OPERATIONS_PER_PAGE && (
+            <Group justify="space-between" align="center">
+              <Text size="sm" c="dimmed">
+                Showing {(operationsPage - 1) * OPERATIONS_PER_PAGE + 1}-
+                {Math.min(operationsPage * OPERATIONS_PER_PAGE, selectedGoal.operations.length)} of {selectedGoal.operations.length}
+              </Text>
+              <Pagination total={totalOperationPages} value={operationsPage} onChange={setOperationsPage} size="sm" />
+            </Group>
+          )}
 
           <Modal
             opened={isOperationModalOpen}
