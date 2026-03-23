@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery } from "@apollo/client/react";
-import { Button, Card, Container, Grid, Group, Modal, NumberInput, Stack, Text, TextInput, Title } from "@mantine/core";
+import { Button, Card, Container, Grid, Group, Modal, NumberInput, Stack, Tabs, Text, TextInput, Title } from "@mantine/core";
 import { CreateGoalForm } from "@/features/dashboard/components/create-goal-form";
 import { DashboardOverviewStats } from "@/features/dashboard/components/dashboard-overview-stats";
 import { DashboardSkeleton } from "@/features/dashboard/components/dashboard-skeleton";
@@ -59,6 +59,7 @@ export const DashboardClient = () => {
   const [dragOverGoalId, setDragOverGoalId] = useState<string | null>(null);
   const [optimisticGoals, setOptimisticGoals] = useState<Goal[] | null>(null);
   const [pendingCompletionGoal, setPendingCompletionGoal] = useState<Goal | null>(null);
+  const [goalStatusTab, setGoalStatusTab] = useState<"active" | "completed">("active");
 
   useEffect(() => {
     const token = window.localStorage.getItem(AUTH_TOKEN_KEY);
@@ -135,6 +136,12 @@ export const DashboardClient = () => {
     }
   }, [goals.length, isManageMode]);
 
+  useEffect(() => {
+    if (!completedGoals.length && goalStatusTab === "completed") {
+      setGoalStatusTab("active");
+    }
+  }, [completedGoals.length, goalStatusTab]);
+
   const totalTarget = useMemo(() => activeGoals.reduce((sum: number, goal: Goal) => sum + goal.targetAmount, 0), [activeGoals]);
   const totalCurrent = useMemo(() => activeGoals.reduce((sum: number, goal: Goal) => sum + goal.currentAmount, 0), [activeGoals]);
   const isAddDisabled = !goalTitle.trim() || !goalTarget || goalTarget <= 0;
@@ -167,7 +174,7 @@ export const DashboardClient = () => {
 
     await createGoal({
       variables: {
-        title: goalTitle.trim().slice(0, 100),
+        title: goalTitle.trim().slice(0, 80),
         targetAmount: Number(goalTarget),
         initialAmount: Number(goalInitialAmount || 0),
         color: goalColor,
@@ -361,7 +368,7 @@ export const DashboardClient = () => {
       return;
     }
 
-    setEditedGoalTitle(goal.title.slice(0, 100));
+    setEditedGoalTitle(goal.title.slice(0, 80));
     setEditedGoalTarget(goal.targetAmount);
     setEditedGoalInitialAmount(goal.initialAmount > 0 ? goal.initialAmount : "");
     setEditedGoalColor(goal.color);
@@ -374,7 +381,7 @@ export const DashboardClient = () => {
     }
 
     await handleEditGoal(editingGoalId, {
-      title: editedGoalTitle.trim().slice(0, 100),
+      title: editedGoalTitle.trim().slice(0, 80),
       targetAmount: Number(editedGoalTarget),
       initialAmount: Number(editedGoalInitialAmount || 0),
       color: editedGoalColor,
@@ -445,6 +452,9 @@ export const DashboardClient = () => {
     return <DashboardSkeleton />;
   }
 
+  const visibleGoals = goalStatusTab === "completed" ? completedGoals : activeGoals;
+  const isCompletedTab = goalStatusTab === "completed";
+
   return (
     <Container size="xl" py={24}>
       <Stack gap="lg">
@@ -483,57 +493,45 @@ export const DashboardClient = () => {
         ) : (
           <Grid>
             <Grid.Col span={{ base: 12, md: 4 }}>
+              <Tabs value={goalStatusTab} onChange={(value) => setGoalStatusTab((value as "active" | "completed") ?? "active")}>
+                <Tabs.List mb="sm">
+                  <Tabs.Tab value="active">In progress ({activeGoals.length})</Tabs.Tab>
+                  <Tabs.Tab value="completed" disabled={!completedGoals.length}>
+                    Completed ({completedGoals.length})
+                  </Tabs.Tab>
+                </Tabs.List>
+              </Tabs>
               <GoalsList
-                title="Goals"
-                goals={activeGoals}
+                goals={visibleGoals}
                 isLoadingGoals={shouldShowGoalsSkeleton}
                 selectedGoalId={selectedGoalId}
                 isManageMode={isManageMode}
                 showManageToggle
                 canManage={goals.length > 0}
-                showDragHint
-                allowDrag
-                emptyTitle={completedGoals.length > 0 ? "No active goals" : "No goals yet"}
+                allowDrag={!isCompletedTab}
+                emptyTitle={isCompletedTab ? "No completed goals" : completedGoals.length > 0 ? "No active goals" : "No goals yet"}
                 emptyDescription={
-                  completedGoals.length > 0
-                    ? "Completed goals are moved below. Add a new goal to keep tracking."
-                    : "Create your first goal to start tracking progress."
+                  isCompletedTab
+                    ? "Completed goals will appear here once you finish one."
+                    : completedGoals.length > 0
+                      ? "Completed goals are moved to the completed tab. Add a new goal to keep tracking."
+                      : "Create your first goal to start tracking progress."
                 }
-                onSelectGoal={setSelectedGoalId}
+                onSelectGoal={(goalId) => {
+                  const goal = goals.find((item) => item.id === goalId);
+                  setSelectedGoalId(goalId);
+                  setGoalStatusTab(goal?.isCompleted ? "completed" : "active");
+                }}
                 onToggleManageMode={() => setIsManageMode((current) => !current)}
                 onStartEditGoal={handleStartEditGoal}
                 onStartDeleteGoal={setDeletingGoalId}
-                draggingGoalId={draggingGoalId}
-                dragOverGoalId={dragOverGoalId}
+                draggingGoalId={isCompletedTab ? null : draggingGoalId}
+                dragOverGoalId={isCompletedTab ? null : dragOverGoalId}
                 onDragStart={handleDragStart}
                 onDragOver={handleDragOver}
                 onDrop={handleDrop}
                 onDragEnd={handleDragEnd}
               />
-              {completedGoals.length > 0 && (
-                <Stack mt="md">
-                  <GoalsList
-                    title="Completed goals"
-                    goals={completedGoals}
-                    isLoadingGoals={false}
-                    selectedGoalId={selectedGoalId}
-                    isManageMode={isManageMode}
-                    showManageToggle={false}
-                    showDragHint={false}
-                    allowDrag={false}
-                    onSelectGoal={setSelectedGoalId}
-                    onToggleManageMode={() => setIsManageMode((current) => !current)}
-                    onStartEditGoal={handleStartEditGoal}
-                    onStartDeleteGoal={setDeletingGoalId}
-                    draggingGoalId={null}
-                    dragOverGoalId={null}
-                    onDragStart={() => undefined}
-                    onDragOver={() => undefined}
-                    onDrop={() => undefined}
-                    onDragEnd={() => undefined}
-                  />
-                </Stack>
-              )}
             </Grid.Col>
             <Grid.Col span={{ base: 12, md: 8 }}>
               <GoalDetailsPanel
@@ -575,7 +573,7 @@ export const DashboardClient = () => {
             <TextInput
               label="Title"
               value={editedGoalTitle}
-              maxLength={100}
+              maxLength={80}
               onChange={(event) => setEditedGoalTitle(event.currentTarget.value)}
             />
             <NumberInput

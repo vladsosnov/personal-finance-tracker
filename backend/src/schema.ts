@@ -262,8 +262,8 @@ export const rootValue = {
     if (!title.trim()) {
       throw new Error("Goal title is required");
     }
-    if (title.trim().length > 100) {
-      throw new Error("Goal title must be at most 100 characters");
+    if (title.trim().length > 80) {
+      throw new Error("Goal title must be at most 80 characters");
     }
     if (targetAmount < 0) {
       throw new Error("Target amount cannot be negative");
@@ -283,8 +283,8 @@ export const rootValue = {
     if (!title.trim()) {
       throw new Error("Goal title is required");
     }
-    if (title.trim().length > 100) {
-      throw new Error("Goal title must be at most 100 characters");
+    if (title.trim().length > 80) {
+      throw new Error("Goal title must be at most 80 characters");
     }
     if (targetAmount < 0) {
       throw new Error("Target amount cannot be negative");

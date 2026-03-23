@@ -41,14 +41,12 @@ const ManageActiveIcon = () => (
 );
 
 type GoalsListProps = {
-  title: string;
   goals: Goal[];
   isLoadingGoals: boolean;
   selectedGoalId: string | null;
   isManageMode: boolean;
   showManageToggle?: boolean;
   canManage?: boolean;
-  showDragHint?: boolean;
   allowDrag?: boolean;
   emptyTitle?: string;
   emptyDescription?: string;
@@ -65,14 +63,12 @@ type GoalsListProps = {
 };
 
 export const GoalsList = ({
-  title,
   goals,
   isLoadingGoals,
   selectedGoalId,
   isManageMode,
   showManageToggle = true,
   canManage = goals.length > 0,
-  showDragHint = true,
   allowDrag = true,
   emptyTitle = "No goals yet",
   emptyDescription = "Create your first goal to start tracking progress.",
@@ -91,20 +87,17 @@ export const GoalsList = ({
     <Card withBorder radius="md" p="lg">
       <Stack gap={6}>
         <Group justify="space-between" align="center">
-          <Title order={4}>
-            {title} ({goals.length})
-          </Title>
+          {goals.length > 0 && (
+            <Text size="sm" c="dimmed">
+              Drag and drop cards to change their order.
+            </Text>
+          )}
           {showManageToggle && canManage && (
             <Button variant={isManageMode ? "light" : "subtle"} px={10} aria-label="Manage goals" onClick={onToggleManageMode}>
               {isManageMode ? <ManageActiveIcon /> : <ManageIcon />}
             </Button>
           )}
         </Group>
-        {showDragHint && goals.length > 0 && (
-          <Text size="sm" c="dimmed">
-            Drag and drop cards to change their order.
-          </Text>
-        )}
         <ScrollArea h={540} offsetScrollbars scrollbarSize={8}>
           <Stack gap="sm" pr={4}>
             {isLoadingGoals

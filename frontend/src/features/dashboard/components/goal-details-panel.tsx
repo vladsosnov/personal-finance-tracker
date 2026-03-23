@@ -413,7 +413,7 @@ export const GoalDetailsPanel = ({
             </Stack>
           </Modal>
 
-          <Modal opened={isChartModalOpen} onClose={() => setIsChartModalOpen(false)} title="Progress over time" centered size="calc(100vw - 96px)">
+          <Modal opened={isChartModalOpen} onClose={() => setIsChartModalOpen(false)} title="Progress" centered size="calc(100vw - 96px)">
             <Stack gap="md">
               <Group justify="space-between" align="center">
                 <div />
