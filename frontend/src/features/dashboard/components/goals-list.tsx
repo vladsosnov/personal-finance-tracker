@@ -1,10 +1,11 @@
-import { Badge, Card, Group, Progress, ScrollArea, Stack, Text, Title } from "@mantine/core";
+import { Badge, Card, Group, Progress, ScrollArea, Skeleton, Stack, Text, Title } from "@mantine/core";
 import type { Goal } from "@/features/dashboard/types";
 import { hexToRgba } from "@/shared/utils/color";
 import { formatMoney, getProgressPercentage } from "@/shared/utils/number";
 
 type GoalsListProps = {
   goals: Goal[];
+  isLoadingGoals: boolean;
   selectedGoalId: string | null;
   onSelectGoal: (goalId: string) => void;
   draggingGoalId: string | null;
@@ -17,6 +18,7 @@ type GoalsListProps = {
 
 export const GoalsList = ({
   goals,
+  isLoadingGoals,
   selectedGoalId,
   onSelectGoal,
   draggingGoalId,
@@ -33,9 +35,22 @@ export const GoalsList = ({
         <Text size="sm" c="dimmed">
           Drag and drop cards to change their order.
         </Text>
-        <ScrollArea h={500}>
-          <Stack gap="sm">
-            {goals.map((goal) => {
+        <ScrollArea h={540} offsetScrollbars scrollbarSize={8}>
+          <Stack gap="sm" pr={4}>
+            {isLoadingGoals
+              ? Array.from({ length: 5 }).map((_, index) => (
+                  <Card key={index} withBorder radius="md" p="md">
+                    <Stack gap="xs">
+                      <Group justify="space-between">
+                        <Skeleton height={20} width="42%" />
+                        <Skeleton height={24} width={64} radius="xl" />
+                      </Group>
+                      <Skeleton height={16} width="58%" />
+                      <Skeleton height={12} radius="xl" />
+                    </Stack>
+                  </Card>
+                ))
+              : goals.map((goal) => {
               const goalProgress = getProgressPercentage(goal.currentAmount, goal.targetAmount);
               const isDragged = draggingGoalId === goal.id;
               const isDropTarget = dragOverGoalId === goal.id && draggingGoalId !== goal.id;
@@ -100,7 +115,7 @@ export const GoalsList = ({
                 </Card>
               );
             })}
-            {!goals.length && <Text c="dimmed">No goals yet. Add your first one above.</Text>}
+            {!isLoadingGoals && !goals.length && <Text c="dimmed">No goals yet. Add your first one above.</Text>}
           </Stack>
         </ScrollArea>
       </Stack>

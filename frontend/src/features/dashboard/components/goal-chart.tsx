@@ -38,7 +38,7 @@ export const GoalChart = ({ operations, color }: GoalChartProps) => {
     () => ({
       title: { text: "Progress over time" },
       xAxis: { type: "datetime" },
-      yAxis: { title: { text: "Current Amount ($)" } },
+      yAxis: { title: { text: "Current amount" } },
       series: [
         {
           type: "line",

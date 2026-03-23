@@ -139,6 +139,22 @@ export const DELETE_GOAL_OPERATION = gql`
   mutation DeleteGoalOperation($operationId: ID!) {
     deleteGoalOperation(operationId: $operationId) {
       id
+      title
+      targetAmount
+      initialAmount
+      color
+      sortOrder
+      currentAmount
+      progress
+      createdAt
+      operations {
+        id
+        type
+        amount
+        note
+        operationDate
+        createdAt
+      }
     }
   }
 `;

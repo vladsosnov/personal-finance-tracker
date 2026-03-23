@@ -19,7 +19,6 @@ import {
   GET_GOALS,
   GET_ME,
   REORDER_GOALS,
-  UPDATE_GOAL_COLOR,
   UPDATE_GOAL_PROGRESS,
 } from "@/features/dashboard/gql/dashboard";
 import type { Goal, GoalDetails } from "@/features/dashboard/types";
@@ -36,8 +35,8 @@ export const DashboardClient = () => {
   const [isAuthed, setIsAuthed] = useState(false);
 
   const [goalTitle, setGoalTitle] = useState("");
-  const [goalTarget, setGoalTarget] = useState<number | "">(0);
-  const [goalInitialAmount, setGoalInitialAmount] = useState<number | "">(0);
+  const [goalTarget, setGoalTarget] = useState<number | "">("");
+  const [goalInitialAmount, setGoalInitialAmount] = useState<number | "">("");
   const [goalColor, setGoalColor] = useState<string>(DEFAULT_GOAL_COLOR);
   const [operationType, setOperationType] = useState<OperationType>("INCREASE");
   const [operationAmount, setOperationAmount] = useState<number | "">(0);
@@ -65,15 +64,23 @@ export const DashboardClient = () => {
   const { data: meData } = useQuery<{ me: { id: string; email: string } | null }>(GET_ME, {
     skip: !isHydrated || !isAuthed,
   });
-  const { data: goalsData, refetch: refetchGoals } = useQuery<{ goals: Goal[] }>(GET_GOALS, {
-    skip: !isHydrated || !isAuthed,
-  });
-  const { data: goalDetailsData, refetch: refetchGoalDetails } = useQuery<{ goal: GoalDetails | null }>(GET_GOAL_DETAILS, {
+  const { data: goalsData, previousData: previousGoalsData, loading: isLoadingGoals, refetch: refetchGoals } = useQuery<{ goals: Goal[] }>(
+    GET_GOALS,
+    {
+      skip: !isHydrated || !isAuthed,
+    }
+  );
+  const {
+    data: goalDetailsData,
+    previousData: previousGoalDetailsData,
+    loading: isLoadingGoalDetails,
+    refetch: refetchGoalDetails,
+  } = useQuery<{ goal: GoalDetails | null }>(GET_GOAL_DETAILS, {
     variables: { id: selectedGoalId },
     skip: !isHydrated || !isAuthed || !selectedGoalId,
   });
 
-  const serverGoals = useMemo(() => goalsData?.goals ?? [], [goalsData]);
+  const serverGoals = useMemo(() => goalsData?.goals ?? previousGoalsData?.goals ?? [], [goalsData, previousGoalsData]);
 
   useEffect(() => {
     if (!optimisticGoals) {
@@ -95,11 +102,17 @@ export const DashboardClient = () => {
   const [reorderGoalsMutation] = useMutation(REORDER_GOALS);
   const [deleteGoalOperationMutation] = useMutation(DELETE_GOAL_OPERATION);
   const [editGoalOperation, { loading: isEditingOperation }] = useMutation(EDIT_GOAL_OPERATION);
-  const [updateGoalColorMutation, { loading: isUpdatingGoalColor }] = useMutation(UPDATE_GOAL_COLOR);
   const [updateGoalProgress, { loading: isUpdatingProgress }] = useMutation(UPDATE_GOAL_PROGRESS);
 
   const goals = optimisticGoals ?? serverGoals;
-  const selectedGoal = goalDetailsData?.goal ?? null;
+  const selectedGoal =
+    goalDetailsData?.goal?.id === selectedGoalId
+      ? goalDetailsData.goal
+      : previousGoalDetailsData?.goal?.id === selectedGoalId
+        ? previousGoalDetailsData.goal
+        : null;
+  const shouldShowGoalsSkeleton = isLoadingGoals && !goals.length;
+  const shouldShowGoalDetailsSkeleton = Boolean(selectedGoalId) && isLoadingGoalDetails && !selectedGoal;
 
   const totalTarget = useMemo(() => goals.reduce((sum: number, goal: Goal) => sum + goal.targetAmount, 0), [goals]);
   const totalCurrent = useMemo(() => goals.reduce((sum: number, goal: Goal) => sum + goal.currentAmount, 0), [goals]);
@@ -121,8 +134,8 @@ export const DashboardClient = () => {
     });
 
     setGoalTitle("");
-    setGoalTarget(0);
-    setGoalInitialAmount(0);
+    setGoalTarget("");
+    setGoalInitialAmount("");
     setGoalColor(DEFAULT_GOAL_COLOR);
     await refetchGoals();
   };
@@ -183,21 +196,6 @@ export const DashboardClient = () => {
     setOperationDate(operation.operationDate);
   };
 
-  const handleUpdateGoalColor = async (color: string) => {
-    if (!selectedGoalId || selectedGoal?.color === color) {
-      return;
-    }
-
-    await updateGoalColorMutation({
-      variables: {
-        goalId: selectedGoalId,
-        color,
-      },
-    });
-
-    await Promise.all([refetchGoals(), refetchGoalDetails()]);
-  };
-
   const handleDeleteOperation = async (operationId: string) => {
     setDeletingOperationId(operationId);
 
@@ -206,13 +204,52 @@ export const DashboardClient = () => {
         variables: {
           operationId,
         },
+        update: (cache, result) => {
+          const updatedGoal = (result.data as { deleteGoalOperation?: GoalDetails } | undefined)?.deleteGoalOperation;
+          if (!updatedGoal) {
+            return;
+          }
+
+          cache.writeQuery({
+            query: GET_GOAL_DETAILS,
+            variables: { id: updatedGoal.id },
+            data: {
+              goal: updatedGoal,
+            },
+          });
+
+          const existingGoals = cache.readQuery<{ goals: Goal[] }>({
+            query: GET_GOALS,
+          });
+
+          if (existingGoals?.goals) {
+            cache.writeQuery({
+              query: GET_GOALS,
+              data: {
+                goals: existingGoals.goals.map((goal) =>
+                  goal.id === updatedGoal.id
+                    ? {
+                        ...goal,
+                        title: updatedGoal.title,
+                        targetAmount: updatedGoal.targetAmount,
+                        initialAmount: updatedGoal.initialAmount,
+                        color: updatedGoal.color,
+                        sortOrder: updatedGoal.sortOrder,
+                        currentAmount: updatedGoal.currentAmount,
+                        progress: updatedGoal.progress,
+                        createdAt: updatedGoal.createdAt,
+                      }
+                    : goal
+                ),
+              },
+            });
+          }
+        },
       });
 
       if (editingOperationId === operationId) {
         resetOperationForm();
       }
-
-      await Promise.all([refetchGoals(), refetchGoalDetails()]);
     } finally {
       setDeletingOperationId(null);
     }
@@ -348,6 +385,7 @@ export const DashboardClient = () => {
           <Grid.Col span={{ base: 12, md: 5 }}>
             <GoalsList
               goals={goals}
+              isLoadingGoals={shouldShowGoalsSkeleton}
               selectedGoalId={selectedGoalId}
               onSelectGoal={setSelectedGoalId}
               draggingGoalId={draggingGoalId}
@@ -361,6 +399,7 @@ export const DashboardClient = () => {
           <Grid.Col span={{ base: 12, md: 7 }}>
             <GoalDetailsPanel
               selectedGoal={selectedGoal}
+              isLoadingGoalDetails={shouldShowGoalDetailsSkeleton}
               operationType={operationType}
               operationAmount={operationAmount}
               operationNote={operationNote}
@@ -369,14 +408,12 @@ export const DashboardClient = () => {
               deletingOperationId={deletingOperationId}
               isDeletingGoal={isDeletingGoal}
               isEditingGoal={isEditingGoal}
-              isUpdatingGoalColor={isUpdatingGoalColor}
               isUpdatingProgress={isUpdatingProgress || isEditingOperation}
               isUpdateDisabled={isUpdateDisabled}
               setOperationType={setOperationType}
               setOperationAmount={setOperationAmount}
               setOperationNote={setOperationNote}
               setOperationDate={setOperationDate}
-              onUpdateGoalColor={handleUpdateGoalColor}
               onEditGoal={handleEditGoal}
               onDeleteGoal={handleDeleteGoal}
               onStartEditOperation={handleStartEditOperation}

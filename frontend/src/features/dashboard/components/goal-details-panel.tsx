@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { Badge, Button, Card, Grid, Group, Modal, NumberInput, SegmentedControl, Stack, Table, Text, TextInput, Tooltip, Title } from "@mantine/core";
+import { useEffect, useMemo, useState } from "react";
+import { Badge, Button, Card, Group, Modal, NumberInput, ScrollArea, SegmentedControl, Skeleton, Stack, Table, Text, TextInput, Tooltip, Title } from "@mantine/core";
 import { GoalColorPicker } from "@/features/dashboard/components/goal-color-picker";
 import { GoalChart } from "@/features/dashboard/components/goal-chart";
 import type { GoalDetails } from "@/features/dashboard/types";
@@ -33,6 +33,7 @@ const DeleteIcon = () => (
 
 type GoalDetailsPanelProps = {
   selectedGoal: GoalDetails | null;
+  isLoadingGoalDetails: boolean;
   operationType: OperationType;
   operationAmount: number | "";
   operationNote: string;
@@ -41,14 +42,12 @@ type GoalDetailsPanelProps = {
   deletingOperationId: string | null;
   isDeletingGoal: boolean;
   isEditingGoal: boolean;
-  isUpdatingGoalColor: boolean;
   isUpdatingProgress: boolean;
   isUpdateDisabled: boolean;
   setOperationType: (value: OperationType) => void;
   setOperationAmount: (value: number | "") => void;
   setOperationNote: (value: string) => void;
   setOperationDate: (value: string) => void;
-  onUpdateGoalColor: (color: string) => Promise<void>;
   onEditGoal: (input: { title: string; targetAmount: number; initialAmount: number; color: string }) => Promise<void>;
   onDeleteGoal: () => Promise<void>;
   onStartEditOperation: (operationId: string) => void;
@@ -59,6 +58,7 @@ type GoalDetailsPanelProps = {
 
 export const GoalDetailsPanel = ({
   selectedGoal,
+  isLoadingGoalDetails,
   operationType,
   operationAmount,
   operationNote,
@@ -67,14 +67,12 @@ export const GoalDetailsPanel = ({
   deletingOperationId,
   isDeletingGoal,
   isEditingGoal,
-  isUpdatingGoalColor,
   isUpdatingProgress,
   isUpdateDisabled,
   setOperationType,
   setOperationAmount,
   setOperationNote,
   setOperationDate,
-  onUpdateGoalColor,
   onEditGoal,
   onDeleteGoal,
   onStartEditOperation,
@@ -85,6 +83,7 @@ export const GoalDetailsPanel = ({
   const [pendingDeleteOperationId, setPendingDeleteOperationId] = useState<string | null>(null);
   const [isDeleteGoalModalOpen, setIsDeleteGoalModalOpen] = useState(false);
   const [isEditGoalModalOpen, setIsEditGoalModalOpen] = useState(false);
+  const [isOperationModalOpen, setIsOperationModalOpen] = useState(false);
   const [editedGoalTitle, setEditedGoalTitle] = useState("");
   const [editedGoalTarget, setEditedGoalTarget] = useState<number | "">(0);
   const [editedGoalInitialAmount, setEditedGoalInitialAmount] = useState<number | "">(0);
@@ -93,6 +92,12 @@ export const GoalDetailsPanel = ({
     () => selectedGoal?.operations.find((operation) => operation.id === pendingDeleteOperationId) ?? null,
     [pendingDeleteOperationId, selectedGoal]
   );
+
+  useEffect(() => {
+    if (editingOperationId) {
+      setIsOperationModalOpen(true);
+    }
+  }, [editingOperationId]);
 
   const handleConfirmDelete = async () => {
     if (!pendingDeleteOperationId) {
@@ -141,97 +146,63 @@ export const GoalDetailsPanel = ({
     setIsEditGoalModalOpen(false);
   };
 
+  const handleOpenCreateOperationModal = () => {
+    onCancelEditOperation();
+    setIsOperationModalOpen(true);
+  };
+
+  const handleCloseOperationModal = () => {
+    if (!isUpdatingProgress) {
+      onCancelEditOperation();
+      setIsOperationModalOpen(false);
+    }
+  };
+
+  const handleSubmitOperation = async () => {
+    await onUpdateProgress();
+    setIsOperationModalOpen(false);
+  };
+
   return (
     <Card withBorder radius="md" p="lg">
-      {!selectedGoal ? (
+      {isLoadingGoalDetails ? (
+        <Stack gap="md">
+          <Skeleton height={28} width="45%" />
+          <Skeleton height={240} radius="md" />
+          <Group justify="space-between" align="center">
+            <Skeleton height={22} width={110} />
+            <Skeleton height={36} width={130} />
+          </Group>
+          <Stack gap="sm">
+            <Skeleton height={44} radius="md" />
+            <Skeleton height={44} radius="md" />
+            <Skeleton height={44} radius="md" />
+            <Skeleton height={44} radius="md" />
+          </Stack>
+        </Stack>
+      ) : !selectedGoal ? (
         <Text c="dimmed">Select a goal card to see details, operations, and chart.</Text>
       ) : (
-        <Stack gap="md">
+        <ScrollArea h={610} offsetScrollbars scrollbarSize={8}>
+          <Stack gap="md" pr={4}>
           <Group justify="space-between" align="flex-start">
             <Title order={4}>{selectedGoal.title}</Title>
-            <Stack gap="xs" align="flex-end">
-              <div style={{ minWidth: 220 }}>
-                <GoalColorPicker
-                  label="Goal color"
-                  value={selectedGoal.color}
-                  onChange={(color) => void onUpdateGoalColor(color)}
-                  disabled={isUpdatingGoalColor}
-                />
-              </div>
-              <Group gap="xs" wrap="nowrap">
-                <Button variant="light" onClick={openEditGoalModal} loading={isEditingGoal}>
-                  Edit goal
-                </Button>
-                <Button color="red" variant="light" onClick={() => setIsDeleteGoalModalOpen(true)} loading={isDeletingGoal}>
-                  Delete goal
-                </Button>
-              </Group>
-            </Stack>
+            <Group gap="xs" wrap="nowrap">
+              <Button variant="light" onClick={openEditGoalModal} loading={isEditingGoal}>
+                Edit
+              </Button>
+              <Button color="red" variant="light" onClick={() => setIsDeleteGoalModalOpen(true)} loading={isDeletingGoal}>
+                Remove
+              </Button>
+            </Group>
           </Group>
-          <Text c="dimmed">
-            {formatMoney(selectedGoal.currentAmount)} / {formatMoney(selectedGoal.targetAmount)}
-          </Text>
-
-          <Grid>
-            <Grid.Col span={{ base: 12, md: 3 }}>
-              <SegmentedControl
-                mt="calc(1.5rem * var(--mantine-scale))"
-                fullWidth
-                data={[
-                  {
-                    label: <span style={{ color: "var(--mantine-color-teal-6)", fontWeight: 600 }}>Increase</span>,
-                    value: "INCREASE",
-                  },
-                  {
-                    label: <span style={{ color: "var(--mantine-color-red-6)", fontWeight: 600 }}>Decrease</span>,
-                    value: "DECREASE",
-                  },
-                ]}
-                value={operationType}
-                onChange={(value) => setOperationType(value as OperationType)}
-              />
-            </Grid.Col>
-            <Grid.Col span={{ base: 12, md: 2 }}>
-              <NumberInput
-                label="Amount"
-                {...MONEY_INPUT_PROPS}
-                value={operationAmount}
-                onChange={(value) => setOperationAmount(numberOrZero(value))}
-              />
-            </Grid.Col>
-            <Grid.Col span={{ base: 12, md: 2 }}>
-              <TextInput
-                label="Date"
-                type="date"
-                value={operationDate}
-                onChange={(event) => setOperationDate(event.currentTarget.value)}
-              />
-            </Grid.Col>
-            <Grid.Col span={{ base: 12, md: 3 }}>
-              <TextInput
-                label="Note"
-                placeholder="Salary transfer..."
-                value={operationNote}
-                onChange={(event) => setOperationNote(event.currentTarget.value)}
-              />
-            </Grid.Col>
-            <Grid.Col span={{ base: 12, md: 2 }}>
-              <Group gap="xs" mt={24} wrap="nowrap" align="flex-end">
-                <Button fullWidth onClick={onUpdateProgress} loading={isUpdatingProgress} disabled={isUpdateDisabled}>
-                  {editingOperationId ? "Save" : "Update"}
-                </Button>
-                {editingOperationId && (
-                  <Button fullWidth variant="subtle" onClick={onCancelEditOperation}>
-                    Cancel
-                  </Button>
-                )}
-              </Group>
-            </Grid.Col>
-          </Grid>
 
           <GoalChart operations={selectedGoal.operations} color={selectedGoal.color} />
 
-          <Title order={5}>Operations</Title>
+          <Group justify="space-between" align="center">
+            <Title order={5}>Operations</Title>
+            <Button onClick={handleOpenCreateOperationModal}>Add operation</Button>
+          </Group>
           <Table striped highlightOnHover>
             <Table.Thead>
               <Table.Tr>
@@ -300,6 +271,57 @@ export const GoalDetailsPanel = ({
               )}
             </Table.Tbody>
           </Table>
+
+          <Modal
+            opened={isOperationModalOpen}
+            onClose={handleCloseOperationModal}
+            title={editingOperationId ? "Edit operation" : "Add operation"}
+            centered
+          >
+            <Stack gap="md">
+              <SegmentedControl
+                fullWidth
+                data={[
+                  {
+                    label: <span style={{ color: "var(--mantine-color-teal-6)", fontWeight: 600 }}>Increase</span>,
+                    value: "INCREASE",
+                  },
+                  {
+                    label: <span style={{ color: "var(--mantine-color-red-6)", fontWeight: 600 }}>Decrease</span>,
+                    value: "DECREASE",
+                  },
+                ]}
+                value={operationType}
+                onChange={(value) => setOperationType(value as OperationType)}
+              />
+              <NumberInput
+                label="Amount"
+                {...MONEY_INPUT_PROPS}
+                value={operationAmount}
+                onChange={(value) => setOperationAmount(numberOrZero(value))}
+              />
+              <TextInput
+                label="Date"
+                type="date"
+                value={operationDate}
+                onChange={(event) => setOperationDate(event.currentTarget.value)}
+              />
+              <TextInput
+                label="Note"
+                placeholder="Salary transfer..."
+                value={operationNote}
+                onChange={(event) => setOperationNote(event.currentTarget.value)}
+              />
+              <Group justify="flex-end">
+                <Button variant="default" onClick={handleCloseOperationModal} disabled={isUpdatingProgress}>
+                  Cancel
+                </Button>
+                <Button onClick={() => void handleSubmitOperation()} loading={isUpdatingProgress} disabled={isUpdateDisabled}>
+                  {editingOperationId ? "Save" : "Add"}
+                </Button>
+              </Group>
+            </Stack>
+          </Modal>
 
           <Modal
             opened={Boolean(pendingDeleteOperationId)}
@@ -403,7 +425,8 @@ export const GoalDetailsPanel = ({
               </Group>
             </Stack>
           </Modal>
-        </Stack>
+          </Stack>
+        </ScrollArea>
       )}
     </Card>
   );
