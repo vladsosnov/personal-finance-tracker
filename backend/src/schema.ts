@@ -1,7 +1,7 @@
 import { buildSchema } from "graphql";
 import { hashPassword, signJwt, verifyPassword } from "./auth";
 import { createUser, findUserByEmail, findUserById } from "./modules/auth/user.repository";
-import { createGoal, deleteGoal, getGoalById, listGoalsByUser, reorderGoals, updateGoalColor } from "./modules/goals/goal.repository";
+import { createGoal, deleteGoal, getGoalById, listGoalsByUser, reorderGoals, updateGoal, updateGoalColor } from "./modules/goals/goal.repository";
 import { createGoalOperation, deleteGoalOperation, deleteOperationsByGoal, getGoalOperationById, updateGoalOperation } from "./modules/goals/operation.repository";
 import { buildGoalView } from "./modules/goals/goal.service";
 import type { OperationType } from "./modules/goals/types";
@@ -57,6 +57,14 @@ type UpdateGoalColorArgs = {
 
 type DeleteGoalArgs = {
   goalId: string;
+};
+
+type EditGoalArgs = {
+  goalId: string;
+  title: string;
+  targetAmount: number;
+  initialAmount?: number;
+  color: string;
 };
 
 const ensureAuthed = (context: Context): string => {
@@ -119,6 +127,7 @@ export const schema = buildSchema(`
     register(email: String!, password: String!): AuthPayload!
     login(email: String!, password: String!): AuthPayload!
     createGoal(title: String!, targetAmount: Float!, initialAmount: Float, color: String): Goal!
+    editGoal(goalId: ID!, title: String!, targetAmount: Float!, initialAmount: Float, color: String!): Goal!
     updateGoalColor(goalId: ID!, color: String!): Goal!
     deleteGoal(goalId: ID!): Goal!
     reorderGoals(goalIds: [ID!]!): [Goal!]!
@@ -190,6 +199,33 @@ export const rootValue = {
     }
 
     const goal = await createGoal(userId, title.trim(), targetAmount, initialAmount, color);
+    return buildGoalView(userId, goal);
+  },
+  editGoal: async ({ goalId, title, targetAmount, initialAmount = 0, color }: EditGoalArgs, context: Context) => {
+    const userId = ensureAuthed(context);
+    if (!title.trim()) {
+      throw new Error("Goal title is required");
+    }
+    if (targetAmount <= 0) {
+      throw new Error("Target amount should be greater than 0");
+    }
+    if (initialAmount < 0) {
+      throw new Error("Initial amount cannot be negative");
+    }
+    if (!/^#[0-9A-Fa-f]{6}$/.test(color)) {
+      throw new Error("Goal color must be a valid hex color");
+    }
+
+    const goal = await updateGoal(userId, goalId, {
+      title: title.trim(),
+      targetAmount,
+      initialAmount,
+      color,
+    });
+    if (!goal) {
+      throw new Error("Goal not found");
+    }
+
     return buildGoalView(userId, goal);
   },
   updateGoalColor: async ({ goalId, color }: UpdateGoalColorArgs, context: Context) => {

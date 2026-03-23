@@ -80,6 +80,14 @@ export const CREATE_GOAL = gql`
   }
 `;
 
+export const EDIT_GOAL = gql`
+  mutation EditGoal($goalId: ID!, $title: String!, $targetAmount: Float!, $initialAmount: Float, $color: String!) {
+    editGoal(goalId: $goalId, title: $title, targetAmount: $targetAmount, initialAmount: $initialAmount, color: $color) {
+      id
+    }
+  }
+`;
+
 export const UPDATE_GOAL_COLOR = gql`
   mutation UpdateGoalColor($goalId: ID!, $color: String!) {
     updateGoalColor(goalId: $goalId, color: $color) {

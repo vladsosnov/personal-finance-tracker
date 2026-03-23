@@ -138,3 +138,42 @@ export const updateGoalColor = async (userId: string, goalId: string, color: str
       )
     : undefined;
 };
+
+export const updateGoal = async (
+  userId: string,
+  goalId: string,
+  updates: {
+    title: string;
+    targetAmount: number;
+    initialAmount: number;
+    color: string;
+  }
+): Promise<Goal | undefined> => {
+  const goal = await GoalModel.findOneAndUpdate(
+    { _id: goalId, userId },
+    {
+      $set: {
+        title: updates.title,
+        targetAmount: updates.targetAmount,
+        initialAmount: updates.initialAmount,
+        color: updates.color,
+      },
+    },
+    { new: true }
+  ).lean();
+
+  return goal
+    ? toGoal(
+        goal as unknown as {
+          _id: mongoose.Types.ObjectId;
+          userId: mongoose.Types.ObjectId;
+          title: string;
+          targetAmount: number;
+          initialAmount?: number;
+          color?: string;
+          sortOrder?: number;
+          createdAt: Date;
+        }
+      )
+    : undefined;
+};

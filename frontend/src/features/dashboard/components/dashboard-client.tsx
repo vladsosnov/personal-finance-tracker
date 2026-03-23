@@ -13,6 +13,7 @@ import {
   CREATE_GOAL,
   DELETE_GOAL,
   DELETE_GOAL_OPERATION,
+  EDIT_GOAL,
   EDIT_GOAL_OPERATION,
   GET_GOAL_DETAILS,
   GET_GOALS,
@@ -90,6 +91,7 @@ export const DashboardClient = () => {
 
   const [createGoal, { loading: isCreatingGoal }] = useMutation(CREATE_GOAL);
   const [deleteGoalMutation] = useMutation(DELETE_GOAL);
+  const [editGoalMutation, { loading: isEditingGoal }] = useMutation(EDIT_GOAL);
   const [reorderGoalsMutation] = useMutation(REORDER_GOALS);
   const [deleteGoalOperationMutation] = useMutation(DELETE_GOAL_OPERATION);
   const [editGoalOperation, { loading: isEditingOperation }] = useMutation(EDIT_GOAL_OPERATION);
@@ -238,6 +240,24 @@ export const DashboardClient = () => {
     }
   };
 
+  const handleEditGoal = async (input: { title: string; targetAmount: number; initialAmount: number; color: string }) => {
+    if (!selectedGoalId) {
+      return;
+    }
+
+    await editGoalMutation({
+      variables: {
+        goalId: selectedGoalId,
+        title: input.title,
+        targetAmount: input.targetAmount,
+        initialAmount: input.initialAmount,
+        color: input.color,
+      },
+    });
+
+    await Promise.all([refetchGoals(), refetchGoalDetails()]);
+  };
+
   const handleDragStart = (goalId: string) => {
     setDraggingGoalId(goalId);
     setDragOverGoalId(goalId);
@@ -348,6 +368,7 @@ export const DashboardClient = () => {
               editingOperationId={editingOperationId}
               deletingOperationId={deletingOperationId}
               isDeletingGoal={isDeletingGoal}
+              isEditingGoal={isEditingGoal}
               isUpdatingGoalColor={isUpdatingGoalColor}
               isUpdatingProgress={isUpdatingProgress || isEditingOperation}
               isUpdateDisabled={isUpdateDisabled}
@@ -356,6 +377,7 @@ export const DashboardClient = () => {
               setOperationNote={setOperationNote}
               setOperationDate={setOperationDate}
               onUpdateGoalColor={handleUpdateGoalColor}
+              onEditGoal={handleEditGoal}
               onDeleteGoal={handleDeleteGoal}
               onStartEditOperation={handleStartEditOperation}
               onDeleteOperation={handleDeleteOperation}

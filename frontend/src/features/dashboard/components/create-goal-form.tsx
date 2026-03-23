@@ -33,7 +33,7 @@ export const CreateGoalForm = ({
     <Card withBorder radius="md" p="lg">
       <Stack gap="sm">
         <Title order={4}>Create goal</Title>
-        <Grid>
+        <Grid align="flex-end">
           <Grid.Col span={{ base: 12, md: 4 }}>
             <TextInput
               label="Goal title"
@@ -63,7 +63,7 @@ export const CreateGoalForm = ({
             <GoalColorPicker label="Goal color" value={goalColor} onChange={setGoalColor} />
           </Grid.Col>
           <Grid.Col span={{ base: 12, md: 2 }}>
-            <Button fullWidth mt={6} onClick={onCreateGoal} loading={isCreatingGoal} disabled={isAddDisabled}>
+            <Button fullWidth onClick={onCreateGoal} loading={isCreatingGoal} disabled={isAddDisabled}>
               Add
             </Button>
           </Grid.Col>

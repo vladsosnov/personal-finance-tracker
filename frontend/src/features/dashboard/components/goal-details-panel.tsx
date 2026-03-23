@@ -1,12 +1,11 @@
 import { useMemo, useState } from "react";
-import { Badge, Button, Card, Grid, Group, Modal, NumberInput, Progress, SegmentedControl, Stack, Table, Text, TextInput, Tooltip, Title } from "@mantine/core";
+import { Badge, Button, Card, Grid, Group, Modal, NumberInput, SegmentedControl, Stack, Table, Text, TextInput, Tooltip, Title } from "@mantine/core";
 import { GoalColorPicker } from "@/features/dashboard/components/goal-color-picker";
 import { GoalChart } from "@/features/dashboard/components/goal-chart";
 import type { GoalDetails } from "@/features/dashboard/types";
 import type { OperationType } from "@/shared/gql/__generated__/schema-types";
 import { formatDay } from "@/shared/utils/date";
-import { hexToRgba } from "@/shared/utils/color";
-import { formatMoney, getProgressPercentage, MONEY_INPUT_PROPS, numberOrZero } from "@/shared/utils/number";
+import { formatMoney, MONEY_INPUT_PROPS, numberOrZero } from "@/shared/utils/number";
 
 const NOTE_PREVIEW_LENGTH = 30;
 
@@ -41,6 +40,7 @@ type GoalDetailsPanelProps = {
   editingOperationId: string | null;
   deletingOperationId: string | null;
   isDeletingGoal: boolean;
+  isEditingGoal: boolean;
   isUpdatingGoalColor: boolean;
   isUpdatingProgress: boolean;
   isUpdateDisabled: boolean;
@@ -49,6 +49,7 @@ type GoalDetailsPanelProps = {
   setOperationNote: (value: string) => void;
   setOperationDate: (value: string) => void;
   onUpdateGoalColor: (color: string) => Promise<void>;
+  onEditGoal: (input: { title: string; targetAmount: number; initialAmount: number; color: string }) => Promise<void>;
   onDeleteGoal: () => Promise<void>;
   onStartEditOperation: (operationId: string) => void;
   onDeleteOperation: (operationId: string) => Promise<void>;
@@ -65,6 +66,7 @@ export const GoalDetailsPanel = ({
   editingOperationId,
   deletingOperationId,
   isDeletingGoal,
+  isEditingGoal,
   isUpdatingGoalColor,
   isUpdatingProgress,
   isUpdateDisabled,
@@ -73,6 +75,7 @@ export const GoalDetailsPanel = ({
   setOperationNote,
   setOperationDate,
   onUpdateGoalColor,
+  onEditGoal,
   onDeleteGoal,
   onStartEditOperation,
   onDeleteOperation,
@@ -81,6 +84,11 @@ export const GoalDetailsPanel = ({
 }: GoalDetailsPanelProps) => {
   const [pendingDeleteOperationId, setPendingDeleteOperationId] = useState<string | null>(null);
   const [isDeleteGoalModalOpen, setIsDeleteGoalModalOpen] = useState(false);
+  const [isEditGoalModalOpen, setIsEditGoalModalOpen] = useState(false);
+  const [editedGoalTitle, setEditedGoalTitle] = useState("");
+  const [editedGoalTarget, setEditedGoalTarget] = useState<number | "">(0);
+  const [editedGoalInitialAmount, setEditedGoalInitialAmount] = useState<number | "">(0);
+  const [editedGoalColor, setEditedGoalColor] = useState("");
   const pendingDeleteOperation = useMemo(
     () => selectedGoal?.operations.find((operation) => operation.id === pendingDeleteOperationId) ?? null,
     [pendingDeleteOperationId, selectedGoal]
@@ -106,6 +114,33 @@ export const GoalDetailsPanel = ({
     }
   };
 
+  const openEditGoalModal = () => {
+    if (!selectedGoal) {
+      return;
+    }
+
+    setEditedGoalTitle(selectedGoal.title);
+    setEditedGoalTarget(selectedGoal.targetAmount);
+    setEditedGoalInitialAmount(selectedGoal.initialAmount);
+    setEditedGoalColor(selectedGoal.color);
+    setIsEditGoalModalOpen(true);
+  };
+
+  const handleConfirmGoalEdit = async () => {
+    if (!editedGoalTitle.trim() || !editedGoalTarget || editedGoalTarget <= 0) {
+      return;
+    }
+
+    await onEditGoal({
+      title: editedGoalTitle.trim(),
+      targetAmount: Number(editedGoalTarget),
+      initialAmount: Number(editedGoalInitialAmount || 0),
+      color: editedGoalColor,
+    });
+
+    setIsEditGoalModalOpen(false);
+  };
+
   return (
     <Card withBorder radius="md" p="lg">
       {!selectedGoal ? (
@@ -123,25 +158,19 @@ export const GoalDetailsPanel = ({
                   disabled={isUpdatingGoalColor}
                 />
               </div>
-              <Button color="red" variant="light" onClick={() => setIsDeleteGoalModalOpen(true)} loading={isDeletingGoal}>
-                Delete goal
-              </Button>
+              <Group gap="xs" wrap="nowrap">
+                <Button variant="light" onClick={openEditGoalModal} loading={isEditingGoal}>
+                  Edit goal
+                </Button>
+                <Button color="red" variant="light" onClick={() => setIsDeleteGoalModalOpen(true)} loading={isDeletingGoal}>
+                  Delete goal
+                </Button>
+              </Group>
             </Stack>
           </Group>
           <Text c="dimmed">
             {formatMoney(selectedGoal.currentAmount)} / {formatMoney(selectedGoal.targetAmount)}
           </Text>
-          <Progress
-            value={Math.max(0, Math.min(getProgressPercentage(selectedGoal.currentAmount, selectedGoal.targetAmount), 100))}
-            styles={{
-              root: {
-                backgroundColor: hexToRgba(selectedGoal.color, 0.14),
-              },
-              section: {
-                backgroundColor: selectedGoal.color,
-              },
-            }}
-          />
 
           <Grid>
             <Grid.Col span={{ base: 12, md: 3 }}>
@@ -187,7 +216,7 @@ export const GoalDetailsPanel = ({
               />
             </Grid.Col>
             <Grid.Col span={{ base: 12, md: 2 }}>
-              <Stack gap="xs" mt={24}>
+              <Group gap="xs" mt={24} wrap="nowrap" align="flex-end">
                 <Button fullWidth onClick={onUpdateProgress} loading={isUpdatingProgress} disabled={isUpdateDisabled}>
                   {editingOperationId ? "Save" : "Update"}
                 </Button>
@@ -196,7 +225,7 @@ export const GoalDetailsPanel = ({
                     Cancel
                   </Button>
                 )}
-              </Stack>
+              </Group>
             </Grid.Col>
           </Grid>
 
@@ -210,7 +239,7 @@ export const GoalDetailsPanel = ({
                 <Table.Th>Type</Table.Th>
                 <Table.Th>Amount</Table.Th>
                 <Table.Th>Note</Table.Th>
-                <Table.Th />
+                <Table.Th>Actions</Table.Th>
               </Table.Tr>
             </Table.Thead>
             <Table.Tbody>
@@ -237,7 +266,7 @@ export const GoalDetailsPanel = ({
                     )}
                   </Table.Td>
                   <Table.Td>
-                    <Stack gap={4}>
+                    <Group gap={4} wrap="nowrap">
                       <Button
                         variant="subtle"
                         size="compact-sm"
@@ -258,7 +287,7 @@ export const GoalDetailsPanel = ({
                       >
                         {deletingOperationId === operation.id ? undefined : <DeleteIcon />}
                       </Button>
-                    </Stack>
+                    </Group>
                   </Table.Td>
                 </Table.Tr>
               ))}
@@ -302,6 +331,51 @@ export const GoalDetailsPanel = ({
                   Cancel
                 </Button>
               </Stack>
+            </Stack>
+          </Modal>
+
+          <Modal
+            opened={isEditGoalModalOpen}
+            onClose={() => {
+              if (!isEditingGoal) {
+                setIsEditGoalModalOpen(false);
+              }
+            }}
+            title="Edit goal"
+            centered
+          >
+            <Stack gap="md">
+              <TextInput
+                label="Goal title"
+                value={editedGoalTitle}
+                onChange={(event) => setEditedGoalTitle(event.currentTarget.value)}
+              />
+              <NumberInput
+                label="Target amount"
+                {...MONEY_INPUT_PROPS}
+                value={editedGoalTarget}
+                onChange={(value) => setEditedGoalTarget(numberOrZero(value))}
+              />
+              <NumberInput
+                label="Starting amount"
+                {...MONEY_INPUT_PROPS}
+                min={0}
+                value={editedGoalInitialAmount}
+                onChange={(value) => setEditedGoalInitialAmount(numberOrZero(value))}
+              />
+              <GoalColorPicker label="Goal color" value={editedGoalColor} onChange={setEditedGoalColor} disabled={isEditingGoal} />
+              <Group justify="flex-end">
+                <Button variant="default" onClick={() => setIsEditGoalModalOpen(false)} disabled={isEditingGoal}>
+                  Cancel
+                </Button>
+                <Button
+                  onClick={() => void handleConfirmGoalEdit()}
+                  loading={isEditingGoal}
+                  disabled={!editedGoalTitle.trim() || !editedGoalTarget || editedGoalTarget <= 0}
+                >
+                  Save
+                </Button>
+              </Group>
             </Stack>
           </Modal>
 
