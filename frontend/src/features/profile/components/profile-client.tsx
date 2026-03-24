@@ -591,17 +591,17 @@ export const ProfileClient = () => {
                     fontFamily: "var(--font-mono)",
                   }}
                 >
-{`[
-  {
-    "title": "Emergency fund",
-    "targetValue": 10000,
-    "initialValue": 500,
-    "history": [
-      { "date": "2026-01-31T10:00:00Z", "value": 1200 },
-      { "date": "2026-02-28T10:00:00Z", "value": 1800, "note": "Monthly top-up" }
-    ]
-  }
-]`}
+                  {`[
+                    {
+                      "title": "Emergency fund",
+                      "targetValue": 10000,
+                      "initialValue": 500,
+                      "history": [
+                        { "date": "2026-01-31T10:00:00Z", "value": 1200 },
+                        { "date": "2026-02-28T10:00:00Z", "value": 1800, "note": "Monthly top-up" }
+                      ]
+                    }
+                  ]`}
                 </Text>
               </Stack>
             </Card>
