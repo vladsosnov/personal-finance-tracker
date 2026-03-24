@@ -34,6 +34,12 @@ export const GET_ME = gql`
   }
 `;
 
+export const EXPORT_ALL_DATA = gql`
+  query ExportAllData {
+    exportAllData
+  }
+`;
+
 export const GET_GOALS = gql`
   query Goals {
     goals {

@@ -173,6 +173,7 @@ export const schema = buildSchema(`
     me: User
     goals: [Goal!]!
     goal(id: ID!): Goal
+    exportAllData: String!
   }
 
   type Mutation {
@@ -227,6 +228,62 @@ export const rootValue = {
     const userId = ensureAuthed(context);
     const goal = await getGoalById(userId, id);
     return goal ? await buildGoalViewWithCompletionState(userId, goal) : null;
+  },
+  exportAllData: async (_args: unknown, context: Context) => {
+    const userId = ensureAuthed(context);
+    const goals = await listGoalsByUser(userId);
+    const goalViews = await Promise.all(goals.map((goal) => buildGoalViewWithCompletionState(userId, goal)));
+
+    const exportPayload = goalViews.map((goal) => {
+      const sortedOperations = [...goal.operations].sort((left, right) => {
+        const leftTimestamp = `${left.operationDate}T00:00:00.000Z`;
+        const rightTimestamp = `${right.operationDate}T00:00:00.000Z`;
+
+        if (leftTimestamp === rightTimestamp) {
+          return left.createdAt.localeCompare(right.createdAt);
+        }
+
+        return leftTimestamp.localeCompare(rightTimestamp);
+      });
+
+      let runningValue = goal.initialAmount;
+      const history: Array<{
+        date: string;
+        value: number;
+        note?: string;
+      }> = [
+        {
+          date: goal.createdAt,
+          value: goal.initialAmount,
+        },
+      ];
+
+      for (const operation of sortedOperations) {
+        runningValue += operation.type === "INCREASE" ? operation.amount : -operation.amount;
+        history.push({
+          date: `${operation.operationDate}T00:00:00.000Z`,
+          note: operation.note,
+          value: Number(runningValue.toFixed(2)),
+        });
+      }
+
+      return {
+        createdDate: goal.createdAt,
+        title: goal.title,
+        targetValue: goal.targetAmount,
+        initialValue: goal.initialAmount,
+        history,
+        display: {
+          bar: {
+            colors: {
+              primary: goal.color,
+            },
+          },
+        },
+      };
+    });
+
+    return JSON.stringify(exportPayload, null, 2);
   },
   register: async ({ email, password }: RegisterArgs) => {
     if (password.length < 6) {

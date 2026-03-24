@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useApolloClient, useMutation, useQuery } from "@apollo/client/react";
+import { useApolloClient, useLazyQuery, useMutation, useQuery } from "@apollo/client/react";
 import { IconDeviceDesktop, IconMoon, IconSun } from "@tabler/icons-react";
 import {
   Alert,
@@ -24,12 +24,13 @@ import {
   Title,
   useMantineColorScheme,
 } from "@mantine/core";
-import { GET_ME, IMPORT_GOALS, RESET_ALL_DATA } from "@/features/dashboard/gql/dashboard";
+import { EXPORT_ALL_DATA, GET_GOALS, GET_ME, IMPORT_GOALS, RESET_ALL_DATA } from "@/features/dashboard/gql/dashboard";
 import { DEFAULT_GOAL_COLOR } from "@/shared/constants/goal-colors";
 import { APP_ROUTES } from "@/shared/constants/routes";
 import { AUTH_TOKEN_KEY } from "@/shared/constants/storage";
 import type { OperationType } from "@/shared/gql/__generated__/schema-types";
 import type { MantineColorScheme } from "@mantine/core";
+import type { Goal } from "@/features/dashboard/types";
 
 type ImportHistoryEntry = {
   date?: string;
@@ -262,6 +263,8 @@ export const ProfileClient = () => {
   const [importSource, setImportSource] = useState<string | null>(null);
   const [preparedGoals, setPreparedGoals] = useState<PreparedImportGoal[]>([]);
   const [skippedGoals, setSkippedGoals] = useState<SkippedImportGoal[]>([]);
+  const [exportError, setExportError] = useState<string | null>(null);
+  const [exportSummary, setExportSummary] = useState<string | null>(null);
   const [importError, setImportError] = useState<string | null>(null);
   const [importSummary, setImportSummary] = useState<string | null>(null);
   const [resetError, setResetError] = useState<string | null>(null);
@@ -287,6 +290,9 @@ export const ProfileClient = () => {
   const { data: meData } = useQuery<{ me: { id: string; email: string; subscription: string } | null }>(GET_ME, {
     skip: !isHydrated || !isAuthed,
   });
+  const { data: goalsData } = useQuery<{ goals: Goal[] }>(GET_GOALS, {
+    skip: !isHydrated || !isAuthed,
+  });
   const [importGoalsMutation] = useMutation<{
     importGoals: {
       importedGoalsCount: number;
@@ -299,6 +305,9 @@ export const ProfileClient = () => {
       deletedOperationsCount: number;
     };
   }>(RESET_ALL_DATA);
+  const [exportAllDataQuery, { loading: isExportingAllData }] = useLazyQuery<{ exportAllData: string }>(EXPORT_ALL_DATA, {
+    fetchPolicy: "no-cache",
+  });
 
   const importTotals = useMemo(
     () =>
@@ -423,7 +432,6 @@ export const ProfileClient = () => {
       setImportSource(null);
       setFile(null);
       await apolloClient.clearStore();
-      router.refresh();
       setImportProgress(null);
     } catch (error) {
       setImportError(error instanceof Error ? error.message : "Import failed");
@@ -451,9 +459,38 @@ export const ProfileClient = () => {
       if ((summary?.deletedGoalsCount ?? 0) > 0 || (summary?.deletedOperationsCount ?? 0) > 0) {
         setResetSummary(`Removed ${summary?.deletedGoalsCount ?? 0} goals and ${summary?.deletedOperationsCount ?? 0} operations.`);
       }
-      router.refresh();
     } catch (error) {
       setResetError(error instanceof Error ? error.message : "Failed to reset data");
+    }
+  };
+
+  const handleExportAllData = async () => {
+    setExportError(null);
+    setExportSummary(null);
+
+    try {
+      const result = await exportAllDataQuery();
+      const payload = result.data?.exportAllData;
+
+      if (!payload) {
+        throw new Error("Nothing to export");
+      }
+
+      const blob = new Blob([payload], { type: "text/plain;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      const datePart = new Date().toISOString().slice(0, 10);
+
+      link.href = url;
+      link.download = `financial-goals-tracker-export-${datePart}.txt`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+
+      setExportSummary("Exported all goals and operations.");
+    } catch (error) {
+      setExportError(error instanceof Error ? error.message : "Failed to export data");
     }
   };
 
@@ -462,6 +499,7 @@ export const ProfileClient = () => {
   }
 
   const currentSubscription = meData?.me?.subscription ?? "Free";
+  const hasStoredData = (goalsData?.goals.length ?? 0) > 0;
 
   return (
     <Container size="xl" py={24}>
@@ -632,8 +670,16 @@ export const ProfileClient = () => {
               </Group>
             )}
 
-            {importError && <Alert color="red">{importError}</Alert>}
-            {importSummary && <Alert color="teal">{importSummary}</Alert>}
+            {importError && (
+              <Alert color="red" withCloseButton onClose={() => setImportError(null)}>
+                {importError}
+              </Alert>
+            )}
+            {importSummary && (
+              <Alert color="teal" withCloseButton onClose={() => setImportSummary(null)}>
+                {importSummary}
+              </Alert>
+            )}
             {skippedGoals.length > 0 && (
               <Alert color="yellow">
                 Skipping {skippedGoals.length} item{skippedGoals.length === 1 ? "" : "s"} during import preview.
@@ -753,13 +799,34 @@ export const ProfileClient = () => {
         <Card withBorder radius="md" p="lg">
           <Stack gap="md">
             <Stack gap={2}>
-              <Title order={4}>Reset all data</Title>
-              <Text c="dimmed">Remove all goals and operations from your account. This cannot be undone.</Text>
+              <Title order={4}>Data management</Title>
+              <Text c="dimmed">Export your goals as a `.txt` backup or permanently remove all saved goals and operations.</Text>
             </Stack>
-            {resetError && <Alert color="red">{resetError}</Alert>}
-            {resetSummary && <Alert color="teal">{resetSummary}</Alert>}
+            {exportError && (
+              <Alert color="red" withCloseButton onClose={() => setExportError(null)}>
+                {exportError}
+              </Alert>
+            )}
+            {exportSummary && (
+              <Alert color="teal" withCloseButton onClose={() => setExportSummary(null)}>
+                {exportSummary}
+              </Alert>
+            )}
+            {resetError && (
+              <Alert color="red" withCloseButton onClose={() => setResetError(null)}>
+                {resetError}
+              </Alert>
+            )}
+            {resetSummary && (
+              <Alert color="teal" withCloseButton onClose={() => setResetSummary(null)}>
+                {resetSummary}
+              </Alert>
+            )}
             <Group justify="flex-start">
-              <Button color="red" variant="light" onClick={() => setIsResetModalOpen(true)}>
+              <Button variant="light" onClick={() => handleExportAllData()} loading={isExportingAllData}>
+                Export all data
+              </Button>
+              <Button color="red" variant="light" onClick={() => setIsResetModalOpen(true)} disabled={!hasStoredData}>
                 Reset all data
               </Button>
             </Group>
