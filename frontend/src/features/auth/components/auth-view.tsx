@@ -1,4 +1,4 @@
-import { Button, Card, Container, PasswordInput, SegmentedControl, Stack, Text, TextInput, Title } from "@mantine/core";
+import { Alert, Button, Card, Container, PasswordInput, SegmentedControl, Stack, Text, TextInput, Title } from "@mantine/core";
 import type { AuthMode } from "@/shared/types/shared";
 
 type AuthViewProps = {
@@ -40,7 +40,7 @@ export const AuthView = ({
           />
           <TextInput label="Email" value={email} onChange={(event) => setEmail(event.currentTarget.value)} />
           <PasswordInput label="Password" value={password} onChange={(event) => setPassword(event.currentTarget.value)} />
-          {error ? <Text c="red">{error}</Text> : null}
+          {error ? <Alert color="red">{error}</Alert> : null}
           <Button onClick={onSubmit} loading={isLoading}>
             {authMode === "register" ? "Create Account" : "Log In"}
           </Button>

@@ -1,6 +1,7 @@
 import { IconDotsVertical, IconPencil, IconTrash, IconX } from "@tabler/icons-react";
 import { Badge, Button, Card, Group, Progress, ScrollArea, Skeleton, Stack, Text, Title } from "@mantine/core";
 import type { Goal } from "@/features/dashboard/types";
+import { StateMessage } from "@/shared/components/state-message";
 import { hexToRgba } from "@/shared/utils/color";
 import { formatMoney, getProgressPercentage } from "@/shared/utils/number";
 
@@ -14,10 +15,12 @@ type GoalsListProps = {
   allowDrag?: boolean;
   emptyTitle?: string;
   emptyDescription?: string;
+  errorMessage?: string | null;
   onSelectGoal: (goalId: string) => void;
   onToggleManageMode: () => void;
   onStartEditGoal: (goalId: string) => void;
   onStartDeleteGoal: (goalId: string) => void;
+  onRetry?: () => void;
   draggingGoalId: string | null;
   dragOverGoalId: string | null;
   onDragStart: (goalId: string) => void;
@@ -36,10 +39,12 @@ export const GoalsList = ({
   allowDrag = true,
   emptyTitle = "No goals yet",
   emptyDescription = "Create your first goal to start tracking progress.",
+  errorMessage,
   onSelectGoal,
   onToggleManageMode,
   onStartEditGoal,
   onStartDeleteGoal,
+  onRetry,
   draggingGoalId,
   dragOverGoalId,
   onDragStart,
@@ -77,7 +82,11 @@ export const GoalsList = ({
                     </Stack>
                   </Card>
                 ))
-              : goals.map((goal) => {
+              : errorMessage ? (
+                  <Card withBorder radius="md" p="xl">
+                    <StateMessage title="Couldn't load goals" description={errorMessage} actionLabel="Try again" onAction={onRetry} />
+                  </Card>
+                ) : goals.map((goal) => {
               const goalProgress = getProgressPercentage(goal.currentAmount, goal.targetAmount);
               const isDragged = draggingGoalId === goal.id;
               const isDropTarget = dragOverGoalId === goal.id && draggingGoalId !== goal.id;
@@ -201,14 +210,9 @@ export const GoalsList = ({
                 </Card>
               );
             })}
-            {!isLoadingGoals && !goals.length && (
+            {!isLoadingGoals && !errorMessage && !goals.length && (
               <Card withBorder radius="md" p="xl">
-                <Stack gap={6} align="center">
-                  <Title order={5}>{emptyTitle}</Title>
-                  <Text c="dimmed" ta="center">
-                    {emptyDescription}
-                  </Text>
-                </Stack>
+                <StateMessage title={emptyTitle} description={emptyDescription} />
               </Card>
             )}
           </Stack>

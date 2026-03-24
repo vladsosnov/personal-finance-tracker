@@ -25,6 +25,8 @@ import {
 import type { Goal, GoalDetails } from "@/features/dashboard/types";
 import { DEFAULT_GOAL_COLOR } from "@/shared/constants/goal-colors";
 import type { OperationType } from "@/shared/gql/__generated__/schema-types";
+import { showToast } from "@/shared/lib/toast-store";
+import { StateMessage } from "@/shared/components/state-message";
 import { getTodayDateValue } from "@/shared/utils/date";
 import { MONEY_INPUT_PROPS, numberOrZero } from "@/shared/utils/number";
 
@@ -55,10 +57,16 @@ export const DashboardClient = () => {
   const [pendingCompletionGoal, setPendingCompletionGoal] = useState<Goal | null>(null);
   const [goalStatusTab, setGoalStatusTab] = useState<"active" | "completed">("active");
 
-  const { data: meData } = useQuery<{ me: { id: string; email: string; subscription: string } | null }>(GET_ME, {
+  useQuery<{ me: { id: string; email: string; subscription: string } | null }>(GET_ME, {
     skip: false,
   });
-  const { data: goalsData, previousData: previousGoalsData, loading: isLoadingGoals, refetch: refetchGoals } = useQuery<{ goals: Goal[] }>(
+  const {
+    data: goalsData,
+    previousData: previousGoalsData,
+    loading: isLoadingGoals,
+    error: goalsError,
+    refetch: refetchGoals,
+  } = useQuery<{ goals: Goal[] }>(
     GET_GOALS,
     {}
   );
@@ -66,6 +74,7 @@ export const DashboardClient = () => {
     data: goalDetailsData,
     previousData: previousGoalDetailsData,
     loading: isLoadingGoalDetails,
+    error: goalDetailsError,
     refetch: refetchGoalDetails,
   } = useQuery<{ goal: GoalDetails | null }>(GET_GOAL_DETAILS, {
     variables: { id: selectedGoalId },
@@ -152,20 +161,24 @@ export const DashboardClient = () => {
       return;
     }
 
-    await createGoal({
-      variables: {
-        title: goalTitle.trim().slice(0, 80),
-        targetAmount: Number(goalTarget),
-        initialAmount: Number(goalInitialAmount || 0),
-        color: goalColor,
-      },
-    });
+    try {
+      await createGoal({
+        variables: {
+          title: goalTitle.trim().slice(0, 80),
+          targetAmount: Number(goalTarget),
+          initialAmount: Number(goalInitialAmount || 0),
+          color: goalColor,
+        },
+      });
 
-    setGoalTitle("");
-    setGoalTarget("");
-    setGoalInitialAmount("");
-    setGoalColor(DEFAULT_GOAL_COLOR);
-    await refetchGoals();
+      setGoalTitle("");
+      setGoalTarget("");
+      setGoalInitialAmount("");
+      setGoalColor(DEFAULT_GOAL_COLOR);
+      await refetchGoals();
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : "Failed to create goal", "red");
+    }
   };
 
   const resetOperationForm = () => {
@@ -181,39 +194,43 @@ export const DashboardClient = () => {
       return;
     }
 
-    let updatedGoal: GoalDetails | null = null;
+    try {
+      let updatedGoal: GoalDetails | null = null;
 
-    if (editingOperationId) {
-      const result = await editGoalOperation({
-        variables: {
-          operationId: editingOperationId,
-          type: operationType,
-          amount: Number(operationAmount),
-          note: operationNote.trim() || undefined,
-          operationDate,
-        },
-      });
-      updatedGoal = (result.data as { editGoalOperation?: GoalDetails } | undefined)?.editGoalOperation ?? null;
-    } else {
-      if (!selectedGoalId) {
-        return;
+      if (editingOperationId) {
+        const result = await editGoalOperation({
+          variables: {
+            operationId: editingOperationId,
+            type: operationType,
+            amount: Number(operationAmount),
+            note: operationNote.trim() || undefined,
+            operationDate,
+          },
+        });
+        updatedGoal = (result.data as { editGoalOperation?: GoalDetails } | undefined)?.editGoalOperation ?? null;
+      } else {
+        if (!selectedGoalId) {
+          return;
+        }
+
+        const result = await updateGoalProgress({
+          variables: {
+            goalId: selectedGoalId,
+            type: operationType,
+            amount: Number(operationAmount),
+            note: operationNote.trim() || undefined,
+            operationDate,
+          },
+        });
+        updatedGoal = (result.data as { updateGoalProgress?: GoalDetails } | undefined)?.updateGoalProgress ?? null;
       }
 
-      const result = await updateGoalProgress({
-        variables: {
-          goalId: selectedGoalId,
-          type: operationType,
-          amount: Number(operationAmount),
-          note: operationNote.trim() || undefined,
-          operationDate,
-        },
-      });
-      updatedGoal = (result.data as { updateGoalProgress?: GoalDetails } | undefined)?.updateGoalProgress ?? null;
+      resetOperationForm();
+      await Promise.all([refetchGoals(), refetchGoalDetails()]);
+      maybePromptGoalCompletion(updatedGoal);
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : "Failed to save operation", "red");
     }
-
-    resetOperationForm();
-    await Promise.all([refetchGoals(), refetchGoalDetails()]);
-    maybePromptGoalCompletion(updatedGoal);
   };
 
   const handleStartEditOperation = (operationId: string) => {
@@ -285,6 +302,8 @@ export const DashboardClient = () => {
       if (editingOperationId === operationId) {
         resetOperationForm();
       }
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : "Failed to delete operation", "red");
     } finally {
       setDeletingOperationId(null);
     }
@@ -310,6 +329,8 @@ export const DashboardClient = () => {
       setDeletingGoalId(null);
       resetOperationForm();
       await refetchGoals();
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : "Failed to remove goal", "red");
     } finally {
       setIsDeletingGoal(false);
     }
@@ -320,26 +341,30 @@ export const DashboardClient = () => {
       return;
     }
 
-    const result = await editGoalMutation({
-      variables: {
-        goalId,
-        title: input.title,
-        targetAmount: input.targetAmount,
-        initialAmount: input.initialAmount,
-        color: input.color,
-      },
-    });
-    const updatedGoal = (result.data as { editGoal?: Goal } | undefined)?.editGoal ?? null;
+    try {
+      const result = await editGoalMutation({
+        variables: {
+          goalId,
+          title: input.title,
+          targetAmount: input.targetAmount,
+          initialAmount: input.initialAmount,
+          color: input.color,
+        },
+      });
+      const updatedGoal = (result.data as { editGoal?: Goal } | undefined)?.editGoal ?? null;
 
-    setEditingGoalId(null);
+      setEditingGoalId(null);
 
-    if (selectedGoalId === goalId) {
-      await Promise.all([refetchGoals(), refetchGoalDetails()]);
-    } else {
-      await refetchGoals();
+      if (selectedGoalId === goalId) {
+        await Promise.all([refetchGoals(), refetchGoalDetails()]);
+      } else {
+        await refetchGoals();
+      }
+
+      maybePromptGoalCompletion(updatedGoal);
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : "Failed to update goal", "red");
     }
-
-    maybePromptGoalCompletion(updatedGoal);
   };
 
   const handleStartEditGoal = (goalId: string) => {
@@ -422,9 +447,10 @@ export const DashboardClient = () => {
       });
 
       await refetchGoals();
-    } catch {
+    } catch (error) {
       setOptimisticGoals(null);
       await refetchGoals();
+      showToast(error instanceof Error ? error.message : "Failed to reorder goals", "red");
     }
   };
 
@@ -450,14 +476,13 @@ export const DashboardClient = () => {
           onCreateGoal={handleCreateGoal}
         />
 
-        {!shouldShowGoalsSkeleton && !goals.length ? (
+        {!shouldShowGoalsSkeleton && goalsError && !goals.length ? (
           <Card withBorder radius="md" p="xl">
-            <Stack gap={6} align="center">
-              <Title order={4}>No goals yet</Title>
-              <Text c="dimmed" ta="center">
-                Create your first goal to start tracking progress.
-              </Text>
-            </Stack>
+            <StateMessage title="Couldn't load goals" description={goalsError.message} actionLabel="Try again" onAction={() => void refetchGoals()} />
+          </Card>
+        ) : !shouldShowGoalsSkeleton && !goals.length ? (
+          <Card withBorder radius="md" p="xl">
+            <StateMessage title="No goals yet" description="Create your first goal to start tracking progress." />
           </Card>
         ) : (
           <Grid>
@@ -478,6 +503,7 @@ export const DashboardClient = () => {
                 showManageToggle
                 canManage={goals.length > 0}
                 allowDrag={!isCompletedTab}
+                errorMessage={!visibleGoals.length && goalsError ? goalsError.message : null}
                 emptyTitle={isCompletedTab ? "No completed goals" : completedGoals.length > 0 ? "No active goals" : "No goals yet"}
                 emptyDescription={
                   isCompletedTab
@@ -494,6 +520,9 @@ export const DashboardClient = () => {
                 onToggleManageMode={() => setIsManageMode((current) => !current)}
                 onStartEditGoal={handleStartEditGoal}
                 onStartDeleteGoal={setDeletingGoalId}
+                onRetry={() => {
+                  void refetchGoals();
+                }}
                 draggingGoalId={isCompletedTab ? null : draggingGoalId}
                 dragOverGoalId={isCompletedTab ? null : dragOverGoalId}
                 onDragStart={handleDragStart}
@@ -507,6 +536,7 @@ export const DashboardClient = () => {
                 hasGoals={goals.length > 0}
                 selectedGoal={selectedGoal}
                 isLoadingGoalDetails={shouldShowGoalDetailsSkeleton}
+                goalDetailsErrorMessage={selectedGoal ? null : goalDetailsError?.message ?? null}
                 operationType={operationType}
                 operationAmount={operationAmount}
                 operationNote={operationNote}
@@ -523,6 +553,9 @@ export const DashboardClient = () => {
                 onDeleteOperation={handleDeleteOperation}
                 onCancelEditOperation={resetOperationForm}
                 onUpdateProgress={handleUpdateProgress}
+                onRetryGoalDetails={() => {
+                  void refetchGoalDetails();
+                }}
               />
             </Grid.Col>
           </Grid>
@@ -603,14 +636,18 @@ export const DashboardClient = () => {
                     return;
                   }
 
-                  await completeGoalMutation({
-                    variables: {
-                      goalId: pendingCompletionGoal.id,
-                    },
-                  });
+                  try {
+                    await completeGoalMutation({
+                      variables: {
+                        goalId: pendingCompletionGoal.id,
+                      },
+                    });
 
-                  setPendingCompletionGoal(null);
-                  await Promise.all([refetchGoals(), selectedGoalId === pendingCompletionGoal.id ? refetchGoalDetails() : Promise.resolve()]);
+                    setPendingCompletionGoal(null);
+                    await Promise.all([refetchGoals(), selectedGoalId === pendingCompletionGoal.id ? refetchGoalDetails() : Promise.resolve()]);
+                  } catch (error) {
+                    showToast(error instanceof Error ? error.message : "Failed to complete goal", "red");
+                  }
                 }}
               >
                 Complete

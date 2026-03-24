@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
 import { useApolloClient, useLazyQuery, useMutation, useQuery } from "@apollo/client/react";
 import { IconDeviceDesktop, IconMoon, IconSun } from "@tabler/icons-react";
 import {
@@ -16,6 +15,7 @@ import {
   Progress,
   SegmentedControl,
   SimpleGrid,
+  Skeleton,
   Stack,
   Table,
   Text,
@@ -25,9 +25,9 @@ import {
 } from "@mantine/core";
 import { EXPORT_ALL_DATA, GET_GOALS, GET_ME, IMPORT_GOALS, RESET_ALL_DATA } from "@/features/dashboard/gql/dashboard";
 import { DEFAULT_GOAL_COLOR } from "@/shared/constants/goal-colors";
-import { APP_ROUTES } from "@/shared/constants/routes";
 import type { OperationType } from "@/shared/gql/__generated__/schema-types";
 import { showToast } from "@/shared/lib/toast-store";
+import { StateMessage } from "@/shared/components/state-message";
 import type { MantineColorScheme } from "@mantine/core";
 import type { Goal } from "@/features/dashboard/types";
 
@@ -253,7 +253,6 @@ const prepareImportGoals = (source: string, includedZeroTargetGoalIndexes: Set<n
 };
 
 export const ProfileClient = () => {
-  const router = useRouter();
   const apolloClient = useApolloClient();
   const { colorScheme, setColorScheme } = useMantineColorScheme();
   const [file, setFile] = useState<File | null>(null);
@@ -266,10 +265,20 @@ export const ProfileClient = () => {
   const [includedZeroTargetGoalIndexes, setIncludedZeroTargetGoalIndexes] = useState<number[]>([]);
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
 
-  const { data: meData } = useQuery<{ me: { id: string; email: string; subscription: string } | null }>(GET_ME, {
+  const {
+    data: meData,
+    loading: isLoadingMe,
+    error: meError,
+    refetch: refetchMe,
+  } = useQuery<{ me: { id: string; email: string; subscription: string } | null }>(GET_ME, {
     skip: false,
   });
-  const { data: goalsData, refetch: refetchGoals } = useQuery<{ goals: Goal[] }>(GET_GOALS, {
+  const {
+    data: goalsData,
+    loading: isLoadingGoals,
+    error: goalsError,
+    refetch: refetchGoals,
+  } = useQuery<{ goals: Goal[] }>(GET_GOALS, {
     skip: false,
   });
   const [importGoalsMutation] = useMutation<{
@@ -477,11 +486,20 @@ export const ProfileClient = () => {
         <Card withBorder radius="md" p="lg">
           <Stack gap="md">
             <Title order={4}>Personal information</Title>
-            <Text>
-              Email: {meData?.me?.email ?? "Loading..."}
-              <br />
-              Subscription: {currentSubscription}
-            </Text>
+            {isLoadingMe ? (
+              <Stack gap="xs">
+                <Skeleton height={18} width="42%" />
+                <Skeleton height={18} width="28%" />
+              </Stack>
+            ) : meError ? (
+              <StateMessage title="Couldn't load profile" description={meError.message} actionLabel="Try again" onAction={() => void refetchMe()} />
+            ) : (
+              <Text>
+                Email: {meData?.me?.email ?? "-"}
+                <br />
+                Subscription: {currentSubscription}
+              </Text>
+            )}
           </Stack>
         </Card>
 
@@ -752,11 +770,24 @@ export const ProfileClient = () => {
               <Title order={4}>Data management</Title>
               <Text c="dimmed">Export your goals as a `.txt` backup or permanently remove all saved goals and operations.</Text>
             </Stack>
+            {goalsError ? (
+              <StateMessage title="Couldn't load saved data" description={goalsError.message} actionLabel="Try again" onAction={() => void refetchGoals()} />
+            ) : null}
             <Group justify="flex-start">
-              <Button variant="light" onClick={() => handleExportAllData()} loading={isExportingAllData} disabled={!hasStoredData}>
+              <Button
+                variant="light"
+                onClick={() => handleExportAllData()}
+                loading={isExportingAllData}
+                disabled={!hasStoredData || isLoadingGoals || Boolean(goalsError)}
+              >
                 Export all data
               </Button>
-              <Button color="red" variant="light" onClick={() => setIsResetModalOpen(true)} disabled={!hasStoredData}>
+              <Button
+                color="red"
+                variant="light"
+                onClick={() => setIsResetModalOpen(true)}
+                disabled={!hasStoredData || isLoadingGoals || Boolean(goalsError)}
+              >
                 Reset all data
               </Button>
             </Group>

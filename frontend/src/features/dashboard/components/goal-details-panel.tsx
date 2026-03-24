@@ -3,6 +3,7 @@ import { IconChevronDown, IconMaximize, IconPencil, IconTrash } from "@tabler/ic
 import { Badge, Button, Card, Group, Modal, NumberInput, Pagination, Popover, ScrollArea, Skeleton, Stack, Table, Text, TextInput, Tooltip, Title } from "@mantine/core";
 import { GoalChart } from "@/features/dashboard/components/goal-chart";
 import type { GoalDetails } from "@/features/dashboard/types";
+import { StateMessage } from "@/shared/components/state-message";
 import type { OperationType } from "@/shared/gql/__generated__/schema-types";
 import { formatDay } from "@/shared/utils/date";
 import { formatMoney, MONEY_INPUT_PROPS, numberOrZero } from "@/shared/utils/number";
@@ -21,6 +22,7 @@ type GoalDetailsPanelProps = {
   hasGoals: boolean;
   selectedGoal: GoalDetails | null;
   isLoadingGoalDetails: boolean;
+  goalDetailsErrorMessage?: string | null;
   operationType: OperationType;
   operationAmount: number | "";
   operationNote: string;
@@ -37,12 +39,14 @@ type GoalDetailsPanelProps = {
   onDeleteOperation: (operationId: string) => Promise<void>;
   onCancelEditOperation: () => void;
   onUpdateProgress: () => Promise<void>;
+  onRetryGoalDetails?: () => void;
 };
 
 export const GoalDetailsPanel = ({
   hasGoals,
   selectedGoal,
   isLoadingGoalDetails,
+  goalDetailsErrorMessage,
   operationType,
   operationAmount,
   operationNote,
@@ -59,6 +63,7 @@ export const GoalDetailsPanel = ({
   onDeleteOperation,
   onCancelEditOperation,
   onUpdateProgress,
+  onRetryGoalDetails,
 }: GoalDetailsPanelProps) => {
   const [pendingDeleteOperationId, setPendingDeleteOperationId] = useState<string | null>(null);
   const [isOperationModalOpen, setIsOperationModalOpen] = useState(false);
@@ -143,25 +148,13 @@ export const GoalDetailsPanel = ({
             <Skeleton height={44} radius="md" />
           </Stack>
         </Stack>
+      ) : goalDetailsErrorMessage ? (
+        <StateMessage title="Couldn't load goal details" description={goalDetailsErrorMessage} actionLabel="Try again" onAction={onRetryGoalDetails} />
       ) : !selectedGoal ? (
         hasGoals ? (
-          <Card withBorder radius="md" p="xl">
-            <Stack gap={6} align="center">
-              <Title order={5}>Choose a goal</Title>
-              <Text c="dimmed" ta="center">
-                Select a goal to view details, operations, and chart.
-              </Text>
-            </Stack>
-          </Card>
+          <StateMessage title="Choose a goal" description="Select a goal to view details, operations, and chart." />
         ) : (
-          <Card withBorder radius="md" p="xl">
-            <Stack gap={6} align="center">
-              <Title order={5}>No goals yet</Title>
-              <Text c="dimmed" ta="center">
-                Create your first goal to start tracking progress.
-              </Text>
-            </Stack>
-          </Card>
+          <StateMessage title="No goals yet" description="Create your first goal to start tracking progress." />
         )
       ) : (
         <ScrollArea h={610} offsetScrollbars scrollbarSize={8}>
