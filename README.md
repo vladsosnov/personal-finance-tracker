@@ -112,8 +112,6 @@ All GraphQL operations are sent to `POST /graphql`. Authentication is handled vi
 
 | Mutation | Description |
 |---|---|
-| `register` | Create a new account |
-| `login` | Log in (GraphQL path, sets no cookies — use REST `/auth/login` instead) |
 | `createGoal` | Create a new goal |
 | `editGoal` | Edit goal title, target, initial amount, or color |
 | `updateGoalColor` | Update only the goal color |

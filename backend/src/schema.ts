@@ -1,6 +1,5 @@
 import { buildSchema } from "graphql";
-import { hashPassword, signJwt, verifyPassword } from "./auth";
-import { createUser, findUserByEmail, findUserById } from "./modules/auth/user.repository";
+import { findUserById } from "./modules/auth/user.repository";
 import { bulkCreateGoals, createGoal, deleteAllGoalsByUser, deleteGoal, getGoalById, listGoalsByUser, reorderGoals, updateGoal, updateGoalColor, updateGoalCompletion } from "./modules/goals/goal.repository";
 import { bulkCreateGoalOperations, createGoalOperation, deleteAllOperationsByUser, deleteGoalOperation, deleteOperationsByGoal, getGoalOperationById, updateGoalOperation } from "./modules/goals/operation.repository";
 import { buildGoalView } from "./modules/goals/goal.service";
@@ -8,11 +7,6 @@ import type { OperationType } from "./modules/goals/types";
 
 type Context = {
   userId: string | null;
-};
-
-type RegisterArgs = {
-  email: string;
-  password: string;
 };
 
 type GoalArgs = {
@@ -94,7 +88,6 @@ const MAX_GOAL_TITLE_LENGTH = 80;
 const MAX_NOTE_LENGTH = 500;
 const MAX_IMPORT_GOALS = 200;
 const MAX_IMPORT_OPERATIONS_PER_GOAL = 2000;
-const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const ensureAuthed = (context: Context): string => {
   if (!context.userId) {
@@ -141,11 +134,6 @@ export const schema = buildSchema(`
     id: ID!
     email: String!
     subscription: String!
-  }
-
-  type AuthPayload {
-    token: String!
-    user: User!
   }
 
   input ImportGoalOperationInput {
@@ -205,8 +193,6 @@ export const schema = buildSchema(`
   }
 
   type Mutation {
-    register(email: String!, password: String!): AuthPayload!
-    login(email: String!, password: String!): AuthPayload!
     createGoal(title: String!, targetAmount: Float!, initialAmount: Float, color: String): Goal!
     editGoal(goalId: ID!, title: String!, targetAmount: Float!, initialAmount: Float, color: String!): Goal!
     updateGoalColor(goalId: ID!, color: String!): Goal!
@@ -312,42 +298,6 @@ export const rootValue = {
     });
 
     return JSON.stringify(exportPayload, null, 2);
-  },
-  register: async ({ email, password }: RegisterArgs) => {
-    if (!emailRegex.test(email.trim().toLowerCase())) {
-      throw new Error("Valid email is required");
-    }
-    if (password.length < 8 || password.length > 128) {
-      throw new Error("Password must be between 8 and 128 characters");
-    }
-
-    if (await findUserByEmail(email.trim().toLowerCase())) {
-      throw new Error("Email already exists");
-    }
-
-    const { hash, salt } = hashPassword(password);
-    const user = await createUser(email.trim().toLowerCase(), hash, salt);
-    const token = signJwt(user.id);
-    return {
-      token,
-      user: toSafeUser(user),
-    };
-  },
-  login: async ({ email, password }: RegisterArgs) => {
-    if (!emailRegex.test(email.trim().toLowerCase())) {
-      throw new Error("Valid email is required");
-    }
-
-    const user = await findUserByEmail(email.trim().toLowerCase());
-    if (!user || !verifyPassword(password, user.passwordHash, user.passwordSalt)) {
-      throw new Error("Invalid credentials");
-    }
-
-    const token = signJwt(user.id);
-    return {
-      token,
-      user: toSafeUser(user),
-    };
   },
   createGoal: async ({ title, targetAmount, initialAmount = 0, color = "#0F766E" }: GoalArgs, context: Context) => {
     const userId = ensureAuthed(context);

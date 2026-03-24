@@ -50,6 +50,9 @@ type RateBucket = {
   windowStart: number;
 };
 
+// NOTE: This rate limiter is in-memory and single-process only.
+// State resets on every server restart and is not shared across multiple instances.
+// For multi-instance deployments, replace with a distributed solution (e.g. Redis).
 const rateBuckets = new Map<string, RateBucket>();
 
 const createRateLimit = (keyPrefix: string, limit: number, windowMs: number) => {
