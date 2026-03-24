@@ -11,12 +11,13 @@ import { GoalsList } from "@/features/dashboard/components/goals-list";
 import { EditGoalModal } from "@/features/dashboard/components/modals/EditGoalModal";
 import { DeleteGoalModal } from "@/features/dashboard/components/modals/DeleteGoalModal";
 import { CompleteGoalModal } from "@/features/dashboard/components/modals/CompleteGoalModal";
-import { useGoals, buildGoalFromDetails } from "@/features/dashboard/hooks/useGoals";
+import { useGoals } from "@/features/dashboard/hooks/useGoals";
+import { buildGoalFromDetails } from "@/features/dashboard/utils/goalUtils";
 import { useGoalDetails } from "@/features/dashboard/hooks/useGoalDetails";
 import { useGoalDrag } from "@/features/dashboard/hooks/useGoalDrag";
 import { useGoalForm } from "@/features/dashboard/hooks/useGoalForm";
 import { useOperationForm } from "@/features/dashboard/hooks/useOperationForm";
-import { GET_ME } from "@/features/dashboard/gql/dashboard";
+import { GET_ME } from "@/shared/gql/queries";
 import type { Goal, GoalDetails } from "@/features/dashboard/types";
 import { StateMessage } from "@/shared/components/state-message";
 

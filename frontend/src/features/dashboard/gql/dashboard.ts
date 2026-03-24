@@ -24,16 +24,6 @@ export const LOGIN = gql`
   }
 `;
 
-export const GET_ME = gql`
-  query Me {
-    me {
-      id
-      email
-      subscription
-    }
-  }
-`;
-
 export const EXPORT_ALL_DATA = gql`
   query ExportAllData {
     exportAllData

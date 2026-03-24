@@ -8,7 +8,7 @@ import {
   GET_GOALS,
   REORDER_GOALS,
 } from "@/features/dashboard/gql/dashboard";
-import type { Goal, GoalDetails } from "@/features/dashboard/types";
+import type { Goal } from "@/features/dashboard/types";
 import { showToast } from "@/shared/lib/toast-store";
 
 export const useGoals = () => {
@@ -156,16 +156,3 @@ export const useGoals = () => {
   };
 };
 
-export const buildGoalFromDetails = (goal: GoalDetails): Goal => ({
-  id: goal.id,
-  title: goal.title,
-  targetAmount: goal.targetAmount,
-  initialAmount: goal.initialAmount,
-  color: goal.color,
-  sortOrder: goal.sortOrder,
-  isCompleted: goal.isCompleted,
-  completedAt: goal.completedAt,
-  currentAmount: goal.currentAmount,
-  progress: goal.progress,
-  createdAt: goal.createdAt,
-});

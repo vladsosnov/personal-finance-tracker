@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useApolloClient, useLazyQuery, useMutation, useQuery } from "@apollo/client/react";
-import { EXPORT_ALL_DATA, GET_GOALS, GET_ME, IMPORT_GOALS, RESET_ALL_DATA } from "@/features/dashboard/gql/dashboard";
+import { EXPORT_ALL_DATA, GET_GOALS, IMPORT_GOALS, RESET_ALL_DATA } from "@/features/dashboard/gql/dashboard";
+import { GET_ME } from "@/shared/gql/queries";
 import type { Goal } from "@/features/dashboard/types";
 import type { ImportProgressState, PreparedImportGoal, SkippedImportGoal } from "@/features/profile/types";
 import { prepareImportGoals } from "@/features/profile/utils/prepareImport";

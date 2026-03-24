@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useQuery } from "@apollo/client/react";
 import { Button, Group } from "@mantine/core";
-import { GET_ME } from "@/features/dashboard/gql/dashboard";
+import { GET_ME } from "@/shared/gql/queries";
 import { APP_ROUTES } from "@/shared/constants/routes";
 
 export const SignInCta = () => {

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useApolloClient, useQuery } from "@apollo/client/react";
 import { Button, Container, Group, Text } from "@mantine/core";
-import { GET_ME } from "@/features/dashboard/gql/dashboard";
+import { GET_ME } from "@/shared/gql/queries";
 import { API_BASE_URL } from "@/shared/constants/auth";
 import { APP_ROUTES } from "@/shared/constants/routes";
 
@@ -47,14 +47,14 @@ export const Header = () => {
               Dashboard
             </Button>
             {isAuthed && (
-              <Button component={Link} href={APP_ROUTES.profile} variant={pathname === APP_ROUTES.profile ? "light" : "subtle"}>
-                Profile
-              </Button>
-            )}
-            {isAuthed && (
-              <Button onClick={() => handleLogout()} color="red" variant="subtle">
-                Log Out
-              </Button>
+              <>
+                <Button component={Link} href={APP_ROUTES.profile} variant={pathname === APP_ROUTES.profile ? "light" : "subtle"}>
+                  Profile
+                </Button>
+                <Button onClick={handleLogout} color="red" variant="subtle">
+                  Log Out
+                </Button>
+              </>
             )}
           </Group>
         </Group>

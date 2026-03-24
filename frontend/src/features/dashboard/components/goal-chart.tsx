@@ -5,19 +5,11 @@ import Highcharts from "highcharts";
 import HighchartsReact from "highcharts-react-official";
 import { useComputedColorScheme } from "@mantine/core";
 import type { Options } from "highcharts";
-import type { OperationType } from "@/shared/gql/__generated__/schema-types";
+import type { GoalOperation } from "@/features/dashboard/types";
 import { dateStringToUtcTimestamp } from "@/shared/utils/date";
 
-type Operation = {
-  id: string;
-  type: OperationType;
-  amount: number;
-  operationDate: string;
-  createdAt: string;
-};
-
 type GoalChartProps = {
-  operations: Operation[];
+  operations: GoalOperation[];
   color: string;
   height?: number;
   range: "all" | "7d" | "1m" | "6m" | "12m";
