@@ -1,456 +1,184 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { useMutation, useQuery } from "@apollo/client/react";
-import { Button, Card, Container, Grid, Group, Modal, NumberInput, Stack, Tabs, Text, TextInput, Title } from "@mantine/core";
+import { useMemo, useEffect, useState } from "react";
+import { useQuery } from "@apollo/client/react";
+import { Card, Container, Grid, Stack, Tabs } from "@mantine/core";
 import { CreateGoalForm } from "@/features/dashboard/components/create-goal-form";
 import { DashboardOverviewStats } from "@/features/dashboard/components/dashboard-overview-stats";
-import { DashboardSkeleton } from "@/features/dashboard/components/dashboard-skeleton";
-import { GoalColorPicker } from "@/features/dashboard/components/goal-color-picker";
 import { GoalDetailsPanel } from "@/features/dashboard/components/goal-details-panel";
 import { GoalsList } from "@/features/dashboard/components/goals-list";
-import {
-  COMPLETE_GOAL,
-  CREATE_GOAL,
-  DELETE_GOAL,
-  DELETE_GOAL_OPERATION,
-  EDIT_GOAL,
-  EDIT_GOAL_OPERATION,
-  GET_GOAL_DETAILS,
-  GET_GOALS,
-  GET_ME,
-  REORDER_GOALS,
-  UPDATE_GOAL_PROGRESS,
-} from "@/features/dashboard/gql/dashboard";
+import { EditGoalModal } from "@/features/dashboard/components/modals/EditGoalModal";
+import { DeleteGoalModal } from "@/features/dashboard/components/modals/DeleteGoalModal";
+import { CompleteGoalModal } from "@/features/dashboard/components/modals/CompleteGoalModal";
+import { useGoals, buildGoalFromDetails } from "@/features/dashboard/hooks/useGoals";
+import { useGoalDetails } from "@/features/dashboard/hooks/useGoalDetails";
+import { useGoalDrag } from "@/features/dashboard/hooks/useGoalDrag";
+import { useGoalForm } from "@/features/dashboard/hooks/useGoalForm";
+import { useOperationForm } from "@/features/dashboard/hooks/useOperationForm";
+import { GET_ME } from "@/features/dashboard/gql/dashboard";
 import type { Goal, GoalDetails } from "@/features/dashboard/types";
-import { DEFAULT_GOAL_COLOR } from "@/shared/constants/goal-colors";
-import type { OperationType } from "@/shared/gql/__generated__/schema-types";
-import { showToast } from "@/shared/lib/toast-store";
 import { StateMessage } from "@/shared/components/state-message";
-import { getTodayDateValue } from "@/shared/utils/date";
-import { MONEY_INPUT_PROPS, numberOrZero } from "@/shared/utils/number";
 
 export const DashboardClient = () => {
   const [selectedGoalId, setSelectedGoalId] = useState<string | null>(null);
-
-  const [goalTitle, setGoalTitle] = useState("");
-  const [goalTarget, setGoalTarget] = useState<number | "">("");
-  const [goalInitialAmount, setGoalInitialAmount] = useState<number | "">("");
-  const [goalColor, setGoalColor] = useState<string>(DEFAULT_GOAL_COLOR);
-  const [operationType, setOperationType] = useState<OperationType>("INCREASE");
-  const [operationAmount, setOperationAmount] = useState<number | "">("");
-  const [operationNote, setOperationNote] = useState("");
-  const [operationDate, setOperationDate] = useState(getTodayDateValue);
-  const [editingOperationId, setEditingOperationId] = useState<string | null>(null);
-  const [deletingOperationId, setDeletingOperationId] = useState<string | null>(null);
-  const [isManageMode, setIsManageMode] = useState(false);
-  const [isDeletingGoal, setIsDeletingGoal] = useState(false);
-  const [editingGoalId, setEditingGoalId] = useState<string | null>(null);
-  const [deletingGoalId, setDeletingGoalId] = useState<string | null>(null);
-  const [editedGoalTitle, setEditedGoalTitle] = useState("");
-  const [editedGoalTarget, setEditedGoalTarget] = useState<number | "">("");
-  const [editedGoalInitialAmount, setEditedGoalInitialAmount] = useState<number | "">("");
-  const [editedGoalColor, setEditedGoalColor] = useState<string>(DEFAULT_GOAL_COLOR);
-  const [draggingGoalId, setDraggingGoalId] = useState<string | null>(null);
-  const [dragOverGoalId, setDragOverGoalId] = useState<string | null>(null);
-  const [optimisticGoals, setOptimisticGoals] = useState<Goal[] | null>(null);
-  const [pendingCompletionGoal, setPendingCompletionGoal] = useState<Goal | null>(null);
   const [goalStatusTab, setGoalStatusTab] = useState<"active" | "completed">("active");
+  const [isManageMode, setIsManageMode] = useState(false);
+  const [editingGoalId, setEditingGoalId] = useState<string | null>(null);
+  const [deletingGoalTitle, setDeletingGoalTitle] = useState<string | null>(null);
+  const [deletingGoalId, setDeletingGoalId] = useState<string | null>(null);
+  const [isDeletingGoal, setIsDeletingGoal] = useState(false);
+  const [pendingCompletionGoal, setPendingCompletionGoal] = useState<Goal | null>(null);
+  const [deletingOperationId, setDeletingOperationId] = useState<string | null>(null);
 
-  useQuery<{ me: { id: string; email: string; subscription: string } | null }>(GET_ME, {
-    skip: false,
-  });
+  useQuery<{ me: { id: string; email: string; subscription: string } | null }>(GET_ME);
+
   const {
-    data: goalsData,
-    previousData: previousGoalsData,
-    loading: isLoadingGoals,
-    error: goalsError,
-    refetch: refetchGoals,
-  } = useQuery<{ goals: Goal[] }>(
-    GET_GOALS,
-    {}
-  );
+    goals,
+    activeGoals,
+    completedGoals,
+    isLoadingGoals,
+    goalsError,
+    refetchGoals,
+    isCreatingGoal,
+    isEditingGoal,
+    isCompletingGoal,
+    createGoal,
+    editGoal,
+    deleteGoal,
+    completeGoal,
+    reorderGoals,
+  } = useGoals();
+
   const {
-    data: goalDetailsData,
-    previousData: previousGoalDetailsData,
-    loading: isLoadingGoalDetails,
-    error: goalDetailsError,
-    refetch: refetchGoalDetails,
-  } = useQuery<{ goal: GoalDetails | null }>(GET_GOAL_DETAILS, {
-    variables: { id: selectedGoalId },
-    skip: !selectedGoalId,
-  });
+    selectedGoal,
+    isLoadingGoalDetails,
+    goalDetailsError,
+    refetchGoalDetails,
+    isUpdatingProgress,
+    addOperation,
+    editOperation,
+    deleteOperation,
+  } = useGoalDetails(selectedGoalId);
 
-  const serverGoals = useMemo(() => goalsData?.goals ?? previousGoalsData?.goals ?? [], [goalsData, previousGoalsData]);
+  const operationForm = useOperationForm();
+  const createGoalForm = useGoalForm();
+  const editGoalForm = useGoalForm();
 
-  useEffect(() => {
-    if (!optimisticGoals) {
-      return;
-    }
+  const drag = useGoalDrag(reorderGoals);
 
-    const hasSameOrder =
-      optimisticGoals.length === serverGoals.length &&
-      optimisticGoals.every((goal, index) => goal.id === serverGoals[index]?.id);
-
-    if (hasSameOrder) {
-      setOptimisticGoals(null);
-    }
-  }, [optimisticGoals, serverGoals]);
-
-  const [createGoal, { loading: isCreatingGoal }] = useMutation(CREATE_GOAL);
-  const [completeGoalMutation, { loading: isCompletingGoal }] = useMutation(COMPLETE_GOAL);
-  const [deleteGoalMutation] = useMutation(DELETE_GOAL);
-  const [editGoalMutation, { loading: isEditingGoal }] = useMutation(EDIT_GOAL);
-  const [reorderGoalsMutation] = useMutation(REORDER_GOALS);
-  const [deleteGoalOperationMutation] = useMutation(DELETE_GOAL_OPERATION);
-  const [editGoalOperation, { loading: isEditingOperation }] = useMutation(EDIT_GOAL_OPERATION);
-  const [updateGoalProgress, { loading: isUpdatingProgress }] = useMutation(UPDATE_GOAL_PROGRESS);
-
-  const goals = optimisticGoals ?? serverGoals;
-  const activeGoals = useMemo(() => goals.filter((goal) => !goal.isCompleted), [goals]);
-  const completedGoals = useMemo(() => goals.filter((goal) => goal.isCompleted), [goals]);
-  const deletingGoal = useMemo(() => goals.find((goal) => goal.id === deletingGoalId) ?? null, [deletingGoalId, goals]);
-  const selectedGoal =
-    goalDetailsData?.goal?.id === selectedGoalId
-      ? goalDetailsData.goal
-      : previousGoalDetailsData?.goal?.id === selectedGoalId
-        ? previousGoalDetailsData.goal
-        : null;
   const shouldShowGoalsSkeleton = isLoadingGoals && !goals.length;
   const shouldShowGoalDetailsSkeleton = Boolean(selectedGoalId) && isLoadingGoalDetails && !selectedGoal;
 
+  const totalTarget = useMemo(() => activeGoals.reduce((sum, g) => sum + g.targetAmount, 0), [activeGoals]);
+  const totalCurrent = useMemo(() => activeGoals.reduce((sum, g) => sum + g.currentAmount, 0), [activeGoals]);
+
+  const isOperationSubmitDisabled = !selectedGoalId || !operationForm.operationAmount || Number(operationForm.operationAmount) <= 0;
+
   useEffect(() => {
-    if (!goals.length && isManageMode) {
-      setIsManageMode(false);
-    }
+    if (!goals.length && isManageMode) setIsManageMode(false);
   }, [goals.length, isManageMode]);
 
   useEffect(() => {
-    if (!completedGoals.length && goalStatusTab === "completed") {
-      setGoalStatusTab("active");
-    }
+    if (!completedGoals.length && goalStatusTab === "completed") setGoalStatusTab("active");
   }, [completedGoals.length, goalStatusTab]);
 
-  const totalTarget = useMemo(() => activeGoals.reduce((sum: number, goal: Goal) => sum + goal.targetAmount, 0), [activeGoals]);
-  const totalCurrent = useMemo(() => activeGoals.reduce((sum: number, goal: Goal) => sum + goal.currentAmount, 0), [activeGoals]);
-  const isAddDisabled = !goalTitle.trim() || !goalTarget || goalTarget <= 0;
-  const isUpdateDisabled = !selectedGoalId || !operationAmount || operationAmount <= 0;
+  const maybePromptCompletion = (goal: Goal | GoalDetails | null | undefined) => {
+    if (!goal || goal.isCompleted || goal.targetAmount <= 0 || goal.currentAmount < goal.targetAmount) return;
+    setPendingCompletionGoal(buildGoalFromDetails(goal as GoalDetails));
+  };
 
-  const maybePromptGoalCompletion = (goal: Goal | GoalDetails | null | undefined) => {
-    if (!goal || goal.isCompleted || goal.targetAmount <= 0 || goal.currentAmount < goal.targetAmount) {
-      return;
-    }
-
-    setPendingCompletionGoal({
-      id: goal.id,
-      title: goal.title,
-      targetAmount: goal.targetAmount,
-      initialAmount: goal.initialAmount,
-      color: goal.color,
-      sortOrder: goal.sortOrder,
-      isCompleted: goal.isCompleted,
-      completedAt: goal.completedAt,
-      currentAmount: goal.currentAmount,
-      progress: goal.progress,
-      createdAt: goal.createdAt,
+  const handleCreateGoal = async (input: { title: string; targetAmount: number | ""; initialAmount: number | ""; color: string }) => {
+    if (!input.title.trim() || !input.targetAmount || Number(input.targetAmount) <= 0) return;
+    await createGoal({
+      title: input.title,
+      targetAmount: Number(input.targetAmount),
+      initialAmount: Number(input.initialAmount || 0),
+      color: input.color,
     });
   };
 
-  const handleCreateGoal = async () => {
-    if (!goalTitle.trim() || !goalTarget || goalTarget <= 0) {
-      return;
-    }
-
-    try {
-      await createGoal({
-        variables: {
-          title: goalTitle.trim().slice(0, 80),
-          targetAmount: Number(goalTarget),
-          initialAmount: Number(goalInitialAmount || 0),
-          color: goalColor,
-        },
-      });
-
-      setGoalTitle("");
-      setGoalTarget("");
-      setGoalInitialAmount("");
-      setGoalColor(DEFAULT_GOAL_COLOR);
-      await refetchGoals();
-    } catch (error) {
-      showToast(error instanceof Error ? error.message : "Failed to create goal", "red");
-    }
-  };
-
-  const resetOperationForm = () => {
-    setOperationType("INCREASE");
-    setOperationAmount("");
-    setOperationNote("");
-    setOperationDate(getTodayDateValue());
-    setEditingOperationId(null);
-  };
-
   const handleUpdateProgress = async () => {
-    if (!operationAmount || operationAmount <= 0) {
-      return;
+    if (!operationForm.operationAmount || Number(operationForm.operationAmount) <= 0) return;
+
+    const sharedInput = {
+      type: operationForm.operationType,
+      amount: Number(operationForm.operationAmount),
+      note: operationForm.operationNote.trim() || undefined,
+      operationDate: operationForm.operationDate,
+    };
+
+    let updatedGoal: GoalDetails | null = null;
+
+    if (operationForm.editingOperationId) {
+      updatedGoal = await editOperation({ operationId: operationForm.editingOperationId, ...sharedInput });
+    } else {
+      if (!selectedGoalId) return;
+      updatedGoal = await addOperation({ goalId: selectedGoalId, ...sharedInput });
     }
 
-    try {
-      let updatedGoal: GoalDetails | null = null;
-
-      if (editingOperationId) {
-        const result = await editGoalOperation({
-          variables: {
-            operationId: editingOperationId,
-            type: operationType,
-            amount: Number(operationAmount),
-            note: operationNote.trim() || undefined,
-            operationDate,
-          },
-        });
-        updatedGoal = (result.data as { editGoalOperation?: GoalDetails } | undefined)?.editGoalOperation ?? null;
-      } else {
-        if (!selectedGoalId) {
-          return;
-        }
-
-        const result = await updateGoalProgress({
-          variables: {
-            goalId: selectedGoalId,
-            type: operationType,
-            amount: Number(operationAmount),
-            note: operationNote.trim() || undefined,
-            operationDate,
-          },
-        });
-        updatedGoal = (result.data as { updateGoalProgress?: GoalDetails } | undefined)?.updateGoalProgress ?? null;
-      }
-
-      resetOperationForm();
-      await Promise.all([refetchGoals(), refetchGoalDetails()]);
-      maybePromptGoalCompletion(updatedGoal);
-    } catch (error) {
-      showToast(error instanceof Error ? error.message : "Failed to save operation", "red");
-    }
+    operationForm.reset();
+    await Promise.all([refetchGoals(), refetchGoalDetails()]);
+    maybePromptCompletion(updatedGoal);
   };
 
-  const handleStartEditOperation = (operationId: string) => {
-    const operation = selectedGoal?.operations.find((item) => item.id === operationId);
-    if (!operation) {
-      return;
-    }
-
-    setEditingOperationId(operation.id);
-    setOperationType(operation.type);
-    setOperationAmount(operation.amount);
-    setOperationNote(operation.note ?? "");
-    setOperationDate(operation.operationDate);
+  const handleStartEditGoal = (goalId: string) => {
+    const goal = goals.find((g) => g.id === goalId);
+    if (!goal) return;
+    editGoalForm.loadFromGoal(goal);
+    setEditingGoalId(goalId);
   };
 
-  const handleDeleteOperation = async (operationId: string) => {
-    setDeletingOperationId(operationId);
-
-    try {
-      await deleteGoalOperationMutation({
-        variables: {
-          operationId,
-        },
-        update: (cache, result) => {
-          const updatedGoal = (result.data as { deleteGoalOperation?: GoalDetails } | undefined)?.deleteGoalOperation;
-          if (!updatedGoal) {
-            return;
-          }
-
-          cache.writeQuery({
-            query: GET_GOAL_DETAILS,
-            variables: { id: updatedGoal.id },
-            data: {
-              goal: updatedGoal,
-            },
-          });
-
-          const existingGoals = cache.readQuery<{ goals: Goal[] }>({
-            query: GET_GOALS,
-          });
-
-          if (existingGoals?.goals) {
-            cache.writeQuery({
-              query: GET_GOALS,
-              data: {
-                goals: existingGoals.goals.map((goal) =>
-                  goal.id === updatedGoal.id
-                    ? {
-                        ...goal,
-                        title: updatedGoal.title,
-                        targetAmount: updatedGoal.targetAmount,
-                        initialAmount: updatedGoal.initialAmount,
-                        color: updatedGoal.color,
-                        sortOrder: updatedGoal.sortOrder,
-                        isCompleted: updatedGoal.isCompleted,
-                        completedAt: updatedGoal.completedAt,
-                        currentAmount: updatedGoal.currentAmount,
-                        progress: updatedGoal.progress,
-                        createdAt: updatedGoal.createdAt,
-                      }
-                    : goal
-                ),
-              },
-            });
-          }
-        },
-      });
-
-      if (editingOperationId === operationId) {
-        resetOperationForm();
-      }
-    } catch (error) {
-      showToast(error instanceof Error ? error.message : "Failed to delete operation", "red");
-    } finally {
-      setDeletingOperationId(null);
-    }
+  const handleConfirmEditGoal = async () => {
+    if (!editingGoalId || !editGoalForm.isValid) return;
+    const updatedGoal = await editGoal(editingGoalId, {
+      title: editGoalForm.title,
+      targetAmount: Number(editGoalForm.targetAmount),
+      initialAmount: Number(editGoalForm.initialAmount || 0),
+      color: editGoalForm.color,
+    });
+    setEditingGoalId(null);
+    if (selectedGoalId === editingGoalId) await refetchGoalDetails();
+    maybePromptCompletion(updatedGoal);
   };
 
-  const handleDeleteGoal = async (goalId: string) => {
-    if (!goalId) {
-      return;
-    }
+  const handleStartDeleteGoal = (goalId: string) => {
+    const goal = goals.find((g) => g.id === goalId);
+    setDeletingGoalId(goalId);
+    setDeletingGoalTitle(goal?.title ?? null);
+  };
 
+  const handleConfirmDeleteGoal = async () => {
+    if (!deletingGoalId) return;
     setIsDeletingGoal(true);
-
     try {
-      await deleteGoalMutation({
-        variables: {
-          goalId,
-        },
-      });
-
-      if (selectedGoalId === goalId) {
-        setSelectedGoalId(null);
-      }
+      await deleteGoal(deletingGoalId);
+      if (selectedGoalId === deletingGoalId) setSelectedGoalId(null);
       setDeletingGoalId(null);
-      resetOperationForm();
-      await refetchGoals();
-    } catch (error) {
-      showToast(error instanceof Error ? error.message : "Failed to remove goal", "red");
+      setDeletingGoalTitle(null);
+      operationForm.reset();
     } finally {
       setIsDeletingGoal(false);
     }
   };
 
-  const handleEditGoal = async (goalId: string, input: { title: string; targetAmount: number; initialAmount: number; color: string }) => {
-    if (!goalId) {
-      return;
-    }
-
+  const handleConfirmComplete = async () => {
+    if (!pendingCompletionGoal) return;
     try {
-      const result = await editGoalMutation({
-        variables: {
-          goalId,
-          title: input.title,
-          targetAmount: input.targetAmount,
-          initialAmount: input.initialAmount,
-          color: input.color,
-        },
-      });
-      const updatedGoal = (result.data as { editGoal?: Goal } | undefined)?.editGoal ?? null;
-
-      setEditingGoalId(null);
-
-      if (selectedGoalId === goalId) {
-        await Promise.all([refetchGoals(), refetchGoalDetails()]);
-      } else {
-        await refetchGoals();
-      }
-
-      maybePromptGoalCompletion(updatedGoal);
-    } catch (error) {
-      showToast(error instanceof Error ? error.message : "Failed to update goal", "red");
+      await completeGoal(pendingCompletionGoal.id);
+      setPendingCompletionGoal(null);
+      if (selectedGoalId === pendingCompletionGoal.id) await refetchGoalDetails();
+    } catch {
+      // toast shown in hook
     }
   };
 
-  const handleStartEditGoal = (goalId: string) => {
-    const goal = goals.find((item) => item.id === goalId);
-    if (!goal) {
-      return;
-    }
-
-    setEditedGoalTitle(goal.title.slice(0, 80));
-    setEditedGoalTarget(goal.targetAmount);
-    setEditedGoalInitialAmount(goal.initialAmount > 0 ? goal.initialAmount : "");
-    setEditedGoalColor(goal.color);
-    setEditingGoalId(goal.id);
-  };
-
-  const handleConfirmEditGoal = async () => {
-    if (!editingGoalId || !editedGoalTitle.trim() || !editedGoalTarget || editedGoalTarget <= 0) {
-      return;
-    }
-
-    await handleEditGoal(editingGoalId, {
-      title: editedGoalTitle.trim().slice(0, 80),
-      targetAmount: Number(editedGoalTarget),
-      initialAmount: Number(editedGoalInitialAmount || 0),
-      color: editedGoalColor,
-    });
-  };
-
-  const handleDragStart = (goalId: string) => {
-    setDraggingGoalId(goalId);
-    setDragOverGoalId(goalId);
-  };
-
-  const handleDragOver = (goalId: string) => {
-    if (!draggingGoalId || draggingGoalId === goalId) {
-      return;
-    }
-
-    setDragOverGoalId(goalId);
-  };
-
-  const handleDragEnd = () => {
-    setDraggingGoalId(null);
-    setDragOverGoalId(null);
-  };
-
-  const handleDrop = async (goalId: string) => {
-    if (!draggingGoalId || draggingGoalId === goalId) {
-      handleDragEnd();
-      return;
-    }
-
-    const nextGoals = [...activeGoals];
-    const fromIndex = nextGoals.findIndex((goal) => goal.id === draggingGoalId);
-    const toIndex = nextGoals.findIndex((goal) => goal.id === goalId);
-    if (fromIndex < 0 || toIndex < 0) {
-      handleDragEnd();
-      return;
-    }
-
-    const [movedGoal] = nextGoals.splice(fromIndex, 1);
-    nextGoals.splice(toIndex, 0, movedGoal);
-    const reorderedActiveGoals = nextGoals.map((goal, index) => ({
-      ...goal,
-      sortOrder: index,
-    }));
-    const reorderedGoals = [...reorderedActiveGoals, ...completedGoals.map((goal, index) => ({
-      ...goal,
-      sortOrder: reorderedActiveGoals.length + index,
-    }))];
-
-    setOptimisticGoals(reorderedGoals);
-    handleDragEnd();
-
+  const handleDeleteOperation = async (operationId: string) => {
+    setDeletingOperationId(operationId);
     try {
-      await reorderGoalsMutation({
-        variables: {
-          goalIds: reorderedGoals.map((goal) => goal.id),
-        },
-      });
-
-      await refetchGoals();
-    } catch (error) {
-      setOptimisticGoals(null);
-      await refetchGoals();
-      showToast(error instanceof Error ? error.message : "Failed to reorder goals", "red");
+      await deleteOperation(operationId);
+      if (operationForm.editingOperationId === operationId) operationForm.reset();
+    } finally {
+      setDeletingOperationId(null);
     }
   };
 
@@ -463,17 +191,25 @@ export const DashboardClient = () => {
         <DashboardOverviewStats totalTarget={totalTarget} totalCurrent={totalCurrent} />
 
         <CreateGoalForm
-          goalTitle={goalTitle}
-          goalTarget={goalTarget}
-          goalInitialAmount={goalInitialAmount}
-          goalColor={goalColor}
+          goalTitle={createGoalForm.title}
+          goalTarget={createGoalForm.targetAmount}
+          goalInitialAmount={createGoalForm.initialAmount}
+          goalColor={createGoalForm.color}
           isCreatingGoal={isCreatingGoal}
-          isAddDisabled={isAddDisabled}
-          setGoalTitle={setGoalTitle}
-          setGoalTarget={setGoalTarget}
-          setGoalInitialAmount={setGoalInitialAmount}
-          setGoalColor={setGoalColor}
-          onCreateGoal={handleCreateGoal}
+          isAddDisabled={!createGoalForm.isValid}
+          setGoalTitle={createGoalForm.setTitle}
+          setGoalTarget={createGoalForm.setTargetAmount}
+          setGoalInitialAmount={createGoalForm.setInitialAmount}
+          setGoalColor={createGoalForm.setColor}
+          onCreateGoal={async () => {
+            await handleCreateGoal({
+              title: createGoalForm.title,
+              targetAmount: createGoalForm.targetAmount,
+              initialAmount: createGoalForm.initialAmount,
+              color: createGoalForm.color,
+            });
+            createGoalForm.reset();
+          }}
         />
 
         {!shouldShowGoalsSkeleton && goalsError && !goals.length ? (
@@ -513,22 +249,20 @@ export const DashboardClient = () => {
                       : "Create your first goal to start tracking progress."
                 }
                 onSelectGoal={(goalId) => {
-                  const goal = goals.find((item) => item.id === goalId);
+                  const goal = goals.find((g) => g.id === goalId);
                   setSelectedGoalId(goalId);
                   setGoalStatusTab(goal?.isCompleted ? "completed" : "active");
                 }}
-                onToggleManageMode={() => setIsManageMode((current) => !current)}
+                onToggleManageMode={() => setIsManageMode((v) => !v)}
                 onStartEditGoal={handleStartEditGoal}
-                onStartDeleteGoal={setDeletingGoalId}
-                onRetry={() => {
-                  refetchGoals();
-                }}
-                draggingGoalId={isCompletedTab ? null : draggingGoalId}
-                dragOverGoalId={isCompletedTab ? null : dragOverGoalId}
-                onDragStart={handleDragStart}
-                onDragOver={handleDragOver}
-                onDrop={handleDrop}
-                onDragEnd={handleDragEnd}
+                onStartDeleteGoal={handleStartDeleteGoal}
+                onRetry={refetchGoals}
+                draggingGoalId={isCompletedTab ? null : drag.draggingGoalId}
+                dragOverGoalId={isCompletedTab ? null : drag.dragOverGoalId}
+                onDragStart={drag.handleDragStart}
+                onDragOver={drag.handleDragOver}
+                onDrop={drag.handleDrop}
+                onDragEnd={drag.handleDragEnd}
               />
             </Grid.Col>
             <Grid.Col span={{ base: 12, md: 8 }}>
@@ -537,149 +271,52 @@ export const DashboardClient = () => {
                 selectedGoal={selectedGoal}
                 isLoadingGoalDetails={shouldShowGoalDetailsSkeleton}
                 goalDetailsErrorMessage={selectedGoal ? null : goalDetailsError?.message ?? null}
-                operationType={operationType}
-                operationAmount={operationAmount}
-                operationNote={operationNote}
-                operationDate={operationDate}
-                editingOperationId={editingOperationId}
+                operationType={operationForm.operationType}
+                operationAmount={operationForm.operationAmount}
+                operationNote={operationForm.operationNote}
+                operationDate={operationForm.operationDate}
+                editingOperationId={operationForm.editingOperationId}
                 deletingOperationId={deletingOperationId}
-                isUpdatingProgress={isUpdatingProgress || isEditingOperation}
-                isUpdateDisabled={isUpdateDisabled}
-                setOperationType={setOperationType}
-                setOperationAmount={setOperationAmount}
-                setOperationNote={setOperationNote}
-                setOperationDate={setOperationDate}
-                onStartEditOperation={handleStartEditOperation}
-                onDeleteOperation={handleDeleteOperation}
-                onCancelEditOperation={resetOperationForm}
-                onUpdateProgress={handleUpdateProgress}
-                onRetryGoalDetails={() => {
-                  refetchGoalDetails();
+                isUpdatingProgress={isUpdatingProgress}
+                isUpdateDisabled={isOperationSubmitDisabled}
+                onChangeOperationType={operationForm.setOperationType}
+                onChangeOperationAmount={operationForm.setOperationAmount}
+                onChangeOperationNote={operationForm.setOperationNote}
+                onChangeOperationDate={operationForm.setOperationDate}
+                onStartEditOperation={(operationId) => {
+                  const op = selectedGoal?.operations.find((o) => o.id === operationId);
+                  if (op) operationForm.startEdit(op);
                 }}
+                onDeleteOperation={handleDeleteOperation}
+                onCancelEditOperation={operationForm.reset}
+                onUpdateProgress={handleUpdateProgress}
+                onRetryGoalDetails={refetchGoalDetails}
               />
             </Grid.Col>
           </Grid>
         )}
 
-        <Modal
+        <EditGoalModal
           opened={Boolean(editingGoalId)}
-          onClose={() => {
-            if (!isEditingGoal) {
-              setEditingGoalId(null);
-            }
-          }}
-          title="Edit goal"
-          centered
-        >
-          <Stack gap="md">
-            <TextInput
-              label="Title"
-              value={editedGoalTitle}
-              maxLength={80}
-              onChange={(event) => setEditedGoalTitle(event.currentTarget.value)}
-            />
-            <NumberInput
-              label="Target amount"
-              placeholder="25000"
-              {...MONEY_INPUT_PROPS}
-              value={editedGoalTarget}
-              onChange={(value) => setEditedGoalTarget(numberOrZero(value))}
-            />
-            <NumberInput
-              label="Starting amount"
-              placeholder="5000"
-              {...MONEY_INPUT_PROPS}
-              min={0}
-              value={editedGoalInitialAmount}
-              onChange={(value) => setEditedGoalInitialAmount(numberOrZero(value))}
-            />
-            <GoalColorPicker label="Color" value={editedGoalColor} onChange={setEditedGoalColor} disabled={isEditingGoal} />
-            <Group justify="flex-end">
-              <Button variant="default" onClick={() => setEditingGoalId(null)} disabled={isEditingGoal}>
-                Cancel
-              </Button>
-              <Button
-                onClick={() => handleConfirmEditGoal()}
-                loading={isEditingGoal}
-                disabled={!editedGoalTitle.trim() || !editedGoalTarget || editedGoalTarget <= 0}
-              >
-                Save
-              </Button>
-            </Group>
-          </Stack>
-        </Modal>
+          isLoading={isEditingGoal}
+          form={editGoalForm}
+          onConfirm={handleConfirmEditGoal}
+          onClose={() => { if (!isEditingGoal) setEditingGoalId(null); }}
+        />
 
-        <Modal
-          opened={Boolean(pendingCompletionGoal)}
-          onClose={() => {
-            if (!isCompletingGoal) {
-              setPendingCompletionGoal(null);
-            }
-          }}
-          title="Complete goal?"
-          centered
-        >
-          <Stack gap="md">
-            <Text>
-              <strong>{pendingCompletionGoal?.title ?? "This goal"}</strong> has reached its target. Do you want to move it to
-              completed goals?
-            </Text>
-            <Group justify="flex-end">
-              <Button variant="default" onClick={() => setPendingCompletionGoal(null)} disabled={isCompletingGoal}>
-                Keep active
-              </Button>
-              <Button
-                color="teal"
-                loading={isCompletingGoal}
-                onClick={async () => {
-                  if (!pendingCompletionGoal) {
-                    return;
-                  }
+        <CompleteGoalModal
+          goal={pendingCompletionGoal}
+          isLoading={isCompletingGoal}
+          onConfirm={handleConfirmComplete}
+          onClose={() => setPendingCompletionGoal(null)}
+        />
 
-                  try {
-                    await completeGoalMutation({
-                      variables: {
-                        goalId: pendingCompletionGoal.id,
-                      },
-                    });
-
-                    setPendingCompletionGoal(null);
-                    await Promise.all([refetchGoals(), selectedGoalId === pendingCompletionGoal.id ? refetchGoalDetails() : Promise.resolve()]);
-                  } catch (error) {
-                    showToast(error instanceof Error ? error.message : "Failed to complete goal", "red");
-                  }
-                }}
-              >
-                Complete
-              </Button>
-            </Group>
-          </Stack>
-        </Modal>
-
-        <Modal
-          opened={Boolean(deletingGoalId)}
-          onClose={() => {
-            if (!isDeletingGoal) {
-              setDeletingGoalId(null);
-            }
-          }}
-          title="Remove goal?"
-          centered
-        >
-          <Stack gap="md">
-            <Text>
-              Remove <strong>{deletingGoal?.title ?? "this goal"}</strong> and all of its operations? This action cannot be undone.
-            </Text>
-            <Group justify="flex-end">
-              <Button variant="default" onClick={() => setDeletingGoalId(null)} disabled={isDeletingGoal}>
-                Cancel
-              </Button>
-              <Button color="red" onClick={() => deletingGoalId && handleDeleteGoal(deletingGoalId)} loading={isDeletingGoal}>
-                Remove
-              </Button>
-            </Group>
-          </Stack>
-        </Modal>
+        <DeleteGoalModal
+          goalTitle={deletingGoalTitle}
+          isLoading={isDeletingGoal}
+          onConfirm={handleConfirmDeleteGoal}
+          onClose={() => { if (!isDeletingGoal) { setDeletingGoalId(null); setDeletingGoalTitle(null); } }}
+        />
       </Stack>
     </Container>
   );
