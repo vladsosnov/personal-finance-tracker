@@ -1,57 +1,53 @@
-import { IconDotsVertical, IconPencil, IconTrash, IconX } from "@tabler/icons-react";
-import { Badge, Button, Card, Group, Progress, ScrollArea, Skeleton, Stack, Text, Title } from "@mantine/core";
+import { IconDotsVertical, IconX } from "@tabler/icons-react";
+import { Button, Card, Group, ScrollArea, Skeleton, Stack, Text } from "@mantine/core";
 import type { Goal } from "@/features/dashboard/types";
+import type { useGoalDrag } from "@/features/dashboard/hooks/useGoalDrag";
+import { GoalCard } from "@/features/dashboard/components/GoalCard";
 import { StateMessage } from "@/shared/components/state-message";
-import { hexToRgba } from "@/shared/utils/color";
-import { formatMoney, getProgressPercentage } from "@/shared/utils/number";
+
+export type GoalManageMode = {
+  isActive: boolean;
+  showToggle?: boolean;
+  canManage?: boolean;
+  onToggle: () => void;
+  onEdit: (goalId: string) => void;
+  onDelete: (goalId: string) => void;
+};
+
+export type GoalEmptyState = {
+  title?: string;
+  description?: string;
+};
 
 type GoalsListProps = {
   goals: Goal[];
   isLoadingGoals: boolean;
   selectedGoalId: string | null;
-  isManageMode: boolean;
-  showManageToggle?: boolean;
-  canManage?: boolean;
-  allowDrag?: boolean;
-  emptyTitle?: string;
-  emptyDescription?: string;
+  manageMode: GoalManageMode;
+  emptyState?: GoalEmptyState;
   errorMessage?: string | null;
+  allowDrag?: boolean;
+  drag: ReturnType<typeof useGoalDrag>;
   onSelectGoal: (goalId: string) => void;
-  onToggleManageMode: () => void;
-  onStartEditGoal: (goalId: string) => void;
-  onStartDeleteGoal: (goalId: string) => void;
   onRetry?: () => void;
-  draggingGoalId: string | null;
-  dragOverGoalId: string | null;
-  onDragStart: (goalId: string) => void;
-  onDragOver: (goalId: string) => void;
-  onDrop: (goalId: string) => void;
-  onDragEnd: () => void;
 };
 
 export const GoalsList = ({
   goals,
   isLoadingGoals,
   selectedGoalId,
-  isManageMode,
-  showManageToggle = true,
-  canManage = goals.length > 0,
-  allowDrag = true,
-  emptyTitle = "No goals yet",
-  emptyDescription = "Create your first goal to start tracking progress.",
+  manageMode,
+  emptyState,
   errorMessage,
+  allowDrag = true,
+  drag,
   onSelectGoal,
-  onToggleManageMode,
-  onStartEditGoal,
-  onStartDeleteGoal,
   onRetry,
-  draggingGoalId,
-  dragOverGoalId,
-  onDragStart,
-  onDragOver,
-  onDrop,
-  onDragEnd,
 }: GoalsListProps) => {
+  const emptyTitle = emptyState?.title ?? "No goals yet";
+  const emptyDescription = emptyState?.description ?? "Create your first goal to start tracking progress.";
+  const isDraggable = allowDrag && !manageMode.isActive;
+
   return (
     <Card withBorder radius="md" p="lg">
       <Stack gap={6}>
@@ -61,155 +57,45 @@ export const GoalsList = ({
               Drag and drop cards to change their order.
             </Text>
           )}
-          {showManageToggle && canManage && (
-            <Button variant={isManageMode ? "light" : "subtle"} px={10} aria-label="Manage goals" onClick={onToggleManageMode}>
-              {isManageMode ? <IconX size={16} stroke={2} /> : <IconDotsVertical size={16} stroke={2} />}
+          {manageMode.showToggle !== false && (manageMode.canManage ?? goals.length > 0) && (
+            <Button
+              variant={manageMode.isActive ? "light" : "subtle"}
+              px={10}
+              aria-label="Manage goals"
+              onClick={manageMode.onToggle}
+            >
+              {manageMode.isActive ? <IconX size={16} stroke={2} /> : <IconDotsVertical size={16} stroke={2} />}
             </Button>
           )}
         </Group>
         <ScrollArea h={540} offsetScrollbars scrollbarSize={8}>
           <Stack gap="sm" pr={4}>
-            {isLoadingGoals
-              ? Array.from({ length: 5 }).map((_, index) => (
-                  <Card key={index} withBorder radius="md" p="md">
-                    <Stack gap="xs">
-                      <Group justify="space-between">
-                        <Skeleton height={20} width="42%" />
-                        <Skeleton height={24} width={64} radius="xl" />
-                      </Group>
-                      <Skeleton height={16} width="58%" />
-                      <Skeleton height={12} radius="xl" />
-                    </Stack>
-                  </Card>
-                ))
-              : errorMessage ? (
-                  <Card withBorder radius="md" p="xl">
-                    <StateMessage title="Couldn't load goals" description={errorMessage} actionLabel="Try again" onAction={onRetry} />
-                  </Card>
-                ) : goals.map((goal) => {
-              const goalProgress = getProgressPercentage(goal.currentAmount, goal.targetAmount);
-              const isDragged = draggingGoalId === goal.id;
-              const isDropTarget = dragOverGoalId === goal.id && draggingGoalId !== goal.id;
-
-              return (
-                <Card
+            {isLoadingGoals ? (
+              <GoalsLoadingSkeleton />
+            ) : errorMessage ? (
+              <Card withBorder radius="md" p="xl">
+                <StateMessage title="Couldn't load goals" description={errorMessage} actionLabel="Try again" onAction={onRetry} />
+              </Card>
+            ) : (
+              goals.map((goal) => (
+                <GoalCard
                   key={goal.id}
-                  withBorder
-                  radius="md"
-                  p="md"
-                  draggable={allowDrag && !isManageMode}
-                  style={{
-                    cursor: allowDrag && !isManageMode ? (isDragged ? "grabbing" : "grab") : "pointer",
-                    borderColor: isDropTarget
-                      ? goal.color
-                      : selectedGoalId === goal.id
-                        ? goal.color
-                        : undefined,
-                    boxShadow: selectedGoalId === goal.id ? `0 0 0 1px ${hexToRgba(goal.color, 0.2)}` : undefined,
-                    backgroundColor: selectedGoalId === goal.id ? hexToRgba(goal.color, 0.05) : undefined,
-                    opacity: isDragged ? 0.55 : 1,
-                  }}
-                  onDragStart={() => {
-                    if (allowDrag && !isManageMode) {
-                      onDragStart(goal.id);
-                    }
-                  }}
-                  onDragOver={(event) => {
-                    if (allowDrag && !isManageMode) {
-                      event.preventDefault();
-                      onDragOver(goal.id);
-                    }
-                  }}
-                  onDrop={(event) => {
-                    if (allowDrag && !isManageMode) {
-                      event.preventDefault();
-                      onDrop(goal.id);
-                    }
-                  }}
-                  onDragEnd={() => {
-                    if (allowDrag && !isManageMode) {
-                      onDragEnd();
-                    }
-                  }}
-                  onClick={() => onSelectGoal(goal.id)}
-                >
-                  <Stack gap="xs">
-                    <Group justify="space-between" align="flex-start" wrap="nowrap">
-                      <Text fw={700} style={{ flex: 1, minWidth: 0 }}>
-                        {goal.title}
-                      </Text>
-                      {isManageMode ? (
-                        <Group gap={4} wrap="nowrap" style={{ minHeight: 28 }}>
-                          <Button
-                            variant="light"
-                            size="compact-sm"
-                            px={8}
-                            styles={{
-                              root: {
-                                minHeight: 28,
-                                backgroundColor: "rgba(15, 23, 42, 0.06)",
-                                color: "var(--mantine-color-text)",
-                              },
-                            }}
-                            aria-label={`Edit ${goal.title}`}
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              onStartEditGoal(goal.id);
-                            }}
-                          >
-                            <IconPencil size={16} stroke={2} />
-                          </Button>
-                          <Button
-                            color="red"
-                            variant="light"
-                            size="compact-sm"
-                            px={8}
-                            styles={{
-                              root: {
-                                minHeight: 28,
-                              },
-                            }}
-                            aria-label={`Remove ${goal.title}`}
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              onStartDeleteGoal(goal.id);
-                            }}
-                          >
-                            <IconTrash size={16} stroke={2} />
-                          </Button>
-                        </Group>
-                      ) : (
-                        <Badge
-                          variant="light"
-                          styles={{
-                            root: {
-                              minHeight: 28,
-                              display: "flex",
-                              alignItems: "center",
-                              backgroundColor: hexToRgba(goal.color, 0.14),
-                              color: goal.color,
-                            },
-                          }}
-                        >
-                          {goal.isCompleted ? "Completed" : `${goalProgress.toFixed(1)}%`}
-                        </Badge>
-                      )}
-                    </Group>
-                    <Text size="sm" c="dimmed">
-                      {formatMoney(goal.currentAmount)} / {formatMoney(goal.targetAmount)}
-                    </Text>
-                    <Progress
-                      value={Math.max(0, Math.min(goalProgress, 100))}
-                      styles={{
-                        section: {
-                          backgroundColor: goal.color,
-                        },
-                      }}
-                    />
-                  </Stack>
-                </Card>
-              );
-            })}
+                  goal={goal}
+                  isSelected={selectedGoalId === goal.id}
+                  isDraggable={isDraggable}
+                  isDragged={drag.draggingGoalId === goal.id}
+                  isDropTarget={drag.dragOverGoalId === goal.id && drag.draggingGoalId !== goal.id}
+                  isManageMode={manageMode.isActive}
+                  onSelect={() => onSelectGoal(goal.id)}
+                  onEdit={() => manageMode.onEdit(goal.id)}
+                  onDelete={() => manageMode.onDelete(goal.id)}
+                  onDragStart={() => { if (isDraggable) drag.handleDragStart(goal.id); }}
+                  onDragOver={(e) => { if (isDraggable) { e.preventDefault(); drag.handleDragOver(goal.id); } }}
+                  onDrop={(e) => { if (isDraggable) { e.preventDefault(); drag.handleDrop(goal.id); } }}
+                  onDragEnd={() => { if (isDraggable) drag.handleDragEnd(); }}
+                />
+              ))
+            )}
             {!isLoadingGoals && !errorMessage && !goals.length && (
               <Card withBorder radius="md" p="xl">
                 <StateMessage title={emptyTitle} description={emptyDescription} />
@@ -221,3 +107,21 @@ export const GoalsList = ({
     </Card>
   );
 };
+
+
+const GoalsLoadingSkeleton = () => (
+  <>
+    {Array.from({ length: 5 }).map((_, i) => (
+      <Card key={i} withBorder radius="md" p="md">
+        <Stack gap="xs">
+          <Group justify="space-between">
+            <Skeleton height={20} width="42%" />
+            <Skeleton height={24} width={64} radius="xl" />
+          </Group>
+          <Skeleton height={16} width="58%" />
+          <Skeleton height={12} radius="xl" />
+        </Stack>
+      </Card>
+    ))}
+  </>
+);

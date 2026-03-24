@@ -6,31 +6,26 @@ import { GoalChart } from "@/features/dashboard/components/goal-chart";
 import { GoalOperationsTable } from "@/features/dashboard/components/GoalOperationsTable";
 import { DeleteOperationModal } from "@/features/dashboard/components/modals/DeleteOperationModal";
 import { OperationModal } from "@/features/dashboard/components/modals/OperationModal";
+import type { useOperationForm } from "@/features/dashboard/hooks/useOperationForm";
 import type { GoalDetails, GoalOperation } from "@/features/dashboard/types";
 import { StateMessage } from "@/shared/components/state-message";
-import type { OperationType } from "@/shared/gql/__generated__/schema-types";
+
+export type GoalOperationActions = {
+  form: ReturnType<typeof useOperationForm>;
+  deletingOperationId: string | null;
+  isUpdatingProgress: boolean;
+  isSubmitDisabled: boolean;
+  onStartEdit: (operationId: string) => void;
+  onDelete: (operationId: string) => Promise<void>;
+  onSubmit: () => Promise<void>;
+};
 
 type GoalDetailsPanelProps = {
   hasGoals: boolean;
   selectedGoal: GoalDetails | null;
   isLoadingGoalDetails: boolean;
   goalDetailsErrorMessage?: string | null;
-  operationType: OperationType;
-  operationAmount: number | "";
-  operationNote: string;
-  operationDate: string;
-  editingOperationId: string | null;
-  deletingOperationId: string | null;
-  isUpdatingProgress: boolean;
-  isUpdateDisabled: boolean;
-  onChangeOperationType: (value: OperationType) => void;
-  onChangeOperationAmount: (value: number | "") => void;
-  onChangeOperationNote: (value: string) => void;
-  onChangeOperationDate: (value: string) => void;
-  onStartEditOperation: (operationId: string) => void;
-  onDeleteOperation: (operationId: string) => Promise<void>;
-  onCancelEditOperation: () => void;
-  onUpdateProgress: () => Promise<void>;
+  operationActions: GoalOperationActions;
   onRetryGoalDetails?: () => void;
 };
 
@@ -39,22 +34,7 @@ export const GoalDetailsPanel = ({
   selectedGoal,
   isLoadingGoalDetails,
   goalDetailsErrorMessage,
-  operationType,
-  operationAmount,
-  operationNote,
-  operationDate,
-  editingOperationId,
-  deletingOperationId,
-  isUpdatingProgress,
-  isUpdateDisabled,
-  onChangeOperationType,
-  onChangeOperationAmount,
-  onChangeOperationNote,
-  onChangeOperationDate,
-  onStartEditOperation,
-  onDeleteOperation,
-  onCancelEditOperation,
-  onUpdateProgress,
+  operationActions,
   onRetryGoalDetails,
 }: GoalDetailsPanelProps) => {
   const [isOperationModalOpen, setIsOperationModalOpen] = useState(false);
@@ -64,32 +44,35 @@ export const GoalDetailsPanel = ({
   const [chartRange, setChartRange] = useState<ChartRange>("all");
   const [pendingDeleteOperation, setPendingDeleteOperation] = useState<GoalOperation | null>(null);
 
+  const { form, deletingOperationId, isUpdatingProgress, isSubmitDisabled, onStartEdit, onDelete, onSubmit } =
+    operationActions;
+
   const handleOpenAddOperation = () => {
-    onCancelEditOperation();
+    form.reset();
     setIsOperationModalOpen(true);
   };
 
   const handleCloseOperationModal = () => {
     if (!isUpdatingProgress) {
-      onCancelEditOperation();
+      form.reset();
       setIsOperationModalOpen(false);
     }
   };
 
   const handleStartEditOperation = (operationId: string) => {
-    onStartEditOperation(operationId);
+    onStartEdit(operationId);
     setIsOperationModalOpen(true);
   };
 
   const handleSubmitOperation = async () => {
-    await onUpdateProgress();
+    await onSubmit();
     setIsOperationModalOpen(false);
   };
 
   const handleConfirmDeleteOperation = async () => {
     if (!pendingDeleteOperation) return;
     try {
-      await onDeleteOperation(pendingDeleteOperation.id);
+      await onDelete(pendingDeleteOperation.id);
     } finally {
       setPendingDeleteOperation(null);
     }
@@ -138,25 +121,22 @@ export const GoalDetailsPanel = ({
               operations={selectedGoal.operations}
               deletingOperationId={deletingOperationId}
               onEdit={handleStartEditOperation}
-              onDelete={(id) => {
-                const op = selectedGoal.operations.find((o) => o.id === id) ?? null;
-                setPendingDeleteOperation(op);
-              }}
+              onDelete={(id) => setPendingDeleteOperation(selectedGoal.operations.find((o) => o.id === id) ?? null)}
             />
 
             <OperationModal
               opened={isOperationModalOpen}
-              isEditing={Boolean(editingOperationId)}
+              isEditing={Boolean(form.editingOperationId)}
               isLoading={isUpdatingProgress}
-              isSubmitDisabled={isUpdateDisabled}
-              operationType={operationType}
-              operationAmount={operationAmount}
-              operationNote={operationNote}
-              operationDate={operationDate}
-              onChangeType={onChangeOperationType}
-              onChangeAmount={onChangeOperationAmount}
-              onChangeNote={onChangeOperationNote}
-              onChangeDate={onChangeOperationDate}
+              isSubmitDisabled={isSubmitDisabled}
+              operationType={form.operationType}
+              operationAmount={form.operationAmount}
+              operationNote={form.operationNote}
+              operationDate={form.operationDate}
+              onChangeType={form.setOperationType}
+              onChangeAmount={form.setOperationAmount}
+              onChangeNote={form.setOperationNote}
+              onChangeDate={form.setOperationDate}
               onSubmit={handleSubmitOperation}
               onClose={handleCloseOperationModal}
             />

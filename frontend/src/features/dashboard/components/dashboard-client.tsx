@@ -182,8 +182,14 @@ export const DashboardClient = () => {
     }
   };
 
-  const visibleGoals = goalStatusTab === "completed" ? completedGoals : activeGoals;
   const isCompletedTab = goalStatusTab === "completed";
+  const visibleGoals = isCompletedTab? completedGoals : activeGoals;
+
+  const goalsEmptyState = isCompletedTab
+    ? { title: "No completed goals", description: "Completed goals will appear here once you finish one." }
+    : completedGoals.length > 0
+      ? { title: "No active goals", description: "Completed goals are moved to the completed tab. Add a new goal to keep tracking." }
+      : { title: "No goals yet", description: "Create your first goal to start tracking progress." };
 
   return (
     <Container size="xl" py={24}>
@@ -235,34 +241,24 @@ export const DashboardClient = () => {
                 goals={visibleGoals}
                 isLoadingGoals={shouldShowGoalsSkeleton}
                 selectedGoalId={selectedGoalId}
-                isManageMode={isManageMode}
-                showManageToggle
-                canManage={goals.length > 0}
                 allowDrag={!isCompletedTab}
                 errorMessage={!visibleGoals.length && goalsError ? goalsError.message : null}
-                emptyTitle={isCompletedTab ? "No completed goals" : completedGoals.length > 0 ? "No active goals" : "No goals yet"}
-                emptyDescription={
-                  isCompletedTab
-                    ? "Completed goals will appear here once you finish one."
-                    : completedGoals.length > 0
-                      ? "Completed goals are moved to the completed tab. Add a new goal to keep tracking."
-                      : "Create your first goal to start tracking progress."
-                }
+                emptyState={goalsEmptyState}
+                manageMode={{
+                  isActive: isManageMode,
+                  showToggle: true,
+                  canManage: goals.length > 0,
+                  onToggle: () => setIsManageMode((v) => !v),
+                  onEdit: handleStartEditGoal,
+                  onDelete: handleStartDeleteGoal,
+                }}
+                drag={isCompletedTab ? { ...drag, draggingGoalId: null, dragOverGoalId: null } : drag}
                 onSelectGoal={(goalId) => {
                   const goal = goals.find((g) => g.id === goalId);
                   setSelectedGoalId(goalId);
                   setGoalStatusTab(goal?.isCompleted ? "completed" : "active");
                 }}
-                onToggleManageMode={() => setIsManageMode((v) => !v)}
-                onStartEditGoal={handleStartEditGoal}
-                onStartDeleteGoal={handleStartDeleteGoal}
                 onRetry={refetchGoals}
-                draggingGoalId={isCompletedTab ? null : drag.draggingGoalId}
-                dragOverGoalId={isCompletedTab ? null : drag.dragOverGoalId}
-                onDragStart={drag.handleDragStart}
-                onDragOver={drag.handleDragOver}
-                onDrop={drag.handleDrop}
-                onDragEnd={drag.handleDragEnd}
               />
             </Grid.Col>
             <Grid.Col span={{ base: 12, md: 8 }}>
@@ -271,25 +267,18 @@ export const DashboardClient = () => {
                 selectedGoal={selectedGoal}
                 isLoadingGoalDetails={shouldShowGoalDetailsSkeleton}
                 goalDetailsErrorMessage={selectedGoal ? null : goalDetailsError?.message ?? null}
-                operationType={operationForm.operationType}
-                operationAmount={operationForm.operationAmount}
-                operationNote={operationForm.operationNote}
-                operationDate={operationForm.operationDate}
-                editingOperationId={operationForm.editingOperationId}
-                deletingOperationId={deletingOperationId}
-                isUpdatingProgress={isUpdatingProgress}
-                isUpdateDisabled={isOperationSubmitDisabled}
-                onChangeOperationType={operationForm.setOperationType}
-                onChangeOperationAmount={operationForm.setOperationAmount}
-                onChangeOperationNote={operationForm.setOperationNote}
-                onChangeOperationDate={operationForm.setOperationDate}
-                onStartEditOperation={(operationId) => {
-                  const op = selectedGoal?.operations.find((o) => o.id === operationId);
-                  if (op) operationForm.startEdit(op);
+                operationActions={{
+                  form: operationForm,
+                  deletingOperationId,
+                  isUpdatingProgress,
+                  isSubmitDisabled: isOperationSubmitDisabled,
+                  onStartEdit: (operationId) => {
+                    const op = selectedGoal?.operations.find((o) => o.id === operationId);
+                    if (op) operationForm.startEdit(op);
+                  },
+                  onDelete: handleDeleteOperation,
+                  onSubmit: handleUpdateProgress,
                 }}
-                onDeleteOperation={handleDeleteOperation}
-                onCancelEditOperation={operationForm.reset}
-                onUpdateProgress={handleUpdateProgress}
                 onRetryGoalDetails={refetchGoalDetails}
               />
             </Grid.Col>
