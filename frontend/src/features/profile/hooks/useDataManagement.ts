@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useApolloClient, useLazyQuery, useMutation, useQuery } from "@apollo/client/react";
 import { EXPORT_ALL_DATA, GET_GOALS, IMPORT_GOALS, RESET_ALL_DATA } from "@/features/dashboard/gql/dashboard";
 import { GET_ME } from "@/shared/gql/queries";
@@ -6,9 +7,12 @@ import type { Goal } from "@/features/dashboard/types";
 import type { ImportProgressState, PreparedImportGoal, SkippedImportGoal } from "@/features/profile/types";
 import { prepareImportGoals } from "@/features/profile/utils/prepareImport";
 import { showToast } from "@/shared/lib/toast-store";
+import { API_BASE_URL } from "@/shared/constants/auth";
+import { APP_ROUTES } from "@/shared/constants/routes";
 
 export const useDataManagement = () => {
   const apolloClient = useApolloClient();
+  const router = useRouter();
 
   const [file, setFile] = useState<File | null>(null);
   const [importSource, setImportSource] = useState<string | null>(null);
@@ -19,6 +23,8 @@ export const useDataManagement = () => {
   const [importProgress, setImportProgress] = useState<ImportProgressState | null>(null);
   const [includedZeroTargetGoalIndexes, setIncludedZeroTargetGoalIndexes] = useState<number[]>([]);
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
+  const [isDeleteAccountModalOpen, setIsDeleteAccountModalOpen] = useState(false);
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
 
   const { data: meData, loading: isLoadingMe, error: meError, refetch: refetchMe } =
     useQuery<{ me: { id: string; email: string; subscription: string } | null }>(GET_ME);
@@ -170,6 +176,27 @@ export const useDataManagement = () => {
     }
   };
 
+  const handleDeleteAccount = async () => {
+    setIsDeletingAccount(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/delete-account`, {
+        method: "POST",
+        credentials: "include",
+      });
+      if (!response.ok) {
+        const payload = (await response.json().catch(() => null)) as { error?: string } | null;
+        throw new Error(payload?.error ?? "Failed to delete account");
+      }
+      await apolloClient.clearStore();
+      router.replace(APP_ROUTES.home);
+      router.refresh();
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : "Failed to delete account", "red");
+    } finally {
+      setIsDeletingAccount(false);
+    }
+  };
+
   const handleExportAllData = async () => {
     try {
       const result = await exportAllDataQuery();
@@ -227,5 +254,11 @@ export const useDataManagement = () => {
     openResetModal: () => setIsResetModalOpen(true),
     closeResetModal: () => setIsResetModalOpen(false),
     handleResetAllData,
+    // delete account
+    isDeleteAccountModalOpen,
+    isDeletingAccount,
+    openDeleteAccountModal: () => setIsDeleteAccountModalOpen(true),
+    closeDeleteAccountModal: () => setIsDeleteAccountModalOpen(false),
+    handleDeleteAccount,
   };
 };

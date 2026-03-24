@@ -7,6 +7,7 @@ import { ImportProgressCard } from "@/features/profile/components/ImportProgress
 import { ProfileInfoCard } from "@/features/profile/components/ProfileInfoCard";
 import { SubscriptionCard } from "@/features/profile/components/SubscriptionCard";
 import { ThemeCard } from "@/features/profile/components/ThemeCard";
+import { DeleteAccountModal } from "@/features/profile/components/modals/DeleteAccountModal";
 import { ResetDataModal } from "@/features/profile/components/modals/ResetDataModal";
 import { useDataManagement } from "@/features/profile/hooks/useDataManagement";
 
@@ -27,6 +28,7 @@ export const ProfileClient = () => {
           isLoading={dm.isLoadingMe}
           error={dm.meError}
           onRetry={dm.refetchMe}
+          onDeleteAccount={dm.openDeleteAccountModal}
         />
 
         <SubscriptionCard currentSubscription={dm.meData?.me?.subscription ?? "Free"} />
@@ -65,6 +67,13 @@ export const ProfileClient = () => {
         isLoading={dm.isResettingAllData}
         onConfirm={dm.handleResetAllData}
         onClose={dm.closeResetModal}
+      />
+
+      <DeleteAccountModal
+        opened={dm.isDeleteAccountModalOpen}
+        isLoading={dm.isDeletingAccount}
+        onConfirm={dm.handleDeleteAccount}
+        onClose={dm.closeDeleteAccountModal}
       />
     </PageContainer>
   );

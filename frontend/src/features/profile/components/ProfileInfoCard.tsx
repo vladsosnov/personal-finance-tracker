@@ -1,16 +1,15 @@
-import { Card, Skeleton, Stack, Text, Title } from "@mantine/core";
+import { Button, Card, Group, Skeleton, Stack, Text, Title } from "@mantine/core";
 import { StateMessage } from "@/shared/components/state-message";
-import type { ApolloError } from "@apollo/client";
-
 type ProfileInfoCardProps = {
   email?: string;
   subscription?: string;
   isLoading: boolean;
-  error?: ApolloError;
+  error?: Error;
   onRetry: () => void;
+  onDeleteAccount: () => void;
 };
 
-export const ProfileInfoCard = ({ email, subscription, isLoading, error, onRetry }: ProfileInfoCardProps) => (
+export const ProfileInfoCard = ({ email, subscription, isLoading, error, onRetry, onDeleteAccount }: ProfileInfoCardProps) => (
   <Card withBorder radius="md" p="lg">
     <Stack gap="md">
       <Title order={4}>Personal information</Title>
@@ -27,6 +26,13 @@ export const ProfileInfoCard = ({ email, subscription, isLoading, error, onRetry
           <br />
           Subscription: {subscription ?? "Free"}
         </Text>
+      )}
+      {!isLoading && !error && (
+        <Group>
+          <Button color="red" variant="subtle" size="xs" onClick={onDeleteAccount}>
+            Delete account
+          </Button>
+        </Group>
       )}
     </Stack>
   </Card>

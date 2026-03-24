@@ -12,7 +12,9 @@ import {
   verifyRefreshJwt,
 } from "./auth";
 import { graphQlDocsHtml } from "./graphql-docs";
-import { createUser, findUserByEmail, findUserById } from "./modules/auth/user.repository";
+import { createUser, deleteUserById, findUserByEmail, findUserById } from "./modules/auth/user.repository";
+import { deleteAllGoalsByUser } from "./modules/goals/goal.repository";
+import { deleteAllOperationsByUser } from "./modules/goals/operation.repository";
 import { rootValue, schema } from "./schema";
 import { hashPassword, verifyPassword } from "./auth";
 
@@ -127,9 +129,11 @@ app.get("/healthcheck", async (_req, res) => {
   }
 });
 
-app.get("/graphql", (_req, res) => {
-  res.type("html").send(graphQlDocsHtml);
-});
+if (process.env.NODE_ENV !== "production") {
+  app.get("/graphql", (_req, res) => {
+    res.type("html").send(graphQlDocsHtml);
+  });
+}
 
 app.post("/auth/register", createRateLimit("auth-register", 10, 15 * 60 * 1000), async (req, res) => {
   try {
@@ -205,6 +209,27 @@ app.post("/auth/refresh", createRateLimit("auth-refresh", 30, 15 * 60 * 1000), a
 app.post("/auth/logout", (_req, res) => {
   clearAuthCookies(res);
   res.json({ ok: true });
+});
+
+app.post("/auth/delete-account", createRateLimit("auth-delete-account", 5, 15 * 60 * 1000), async (req, res) => {
+  try {
+    const cookies = parseCookies(req.headers.cookie);
+    const userId = verifyJwt(cookies[AUTH_ACCESS_COOKIE]);
+
+    if (!userId) {
+      res.status(401).json({ error: "Unauthorized" });
+      return;
+    }
+
+    await deleteAllOperationsByUser(userId);
+    await deleteAllGoalsByUser(userId);
+    await deleteUserById(userId);
+
+    clearAuthCookies(res);
+    res.json({ ok: true });
+  } catch {
+    res.status(500).json({ error: "Failed to delete account" });
+  }
 });
 
 app.post(

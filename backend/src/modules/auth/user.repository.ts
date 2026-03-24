@@ -64,3 +64,8 @@ export const findUserById = async (id: string): Promise<User | undefined> => {
       )
     : undefined;
 };
+
+export const deleteUserById = async (id: string): Promise<boolean> => {
+  const result = await UserModel.deleteOne({ _id: id });
+  return result.deletedCount === 1;
+};

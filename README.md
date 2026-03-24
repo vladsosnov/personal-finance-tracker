@@ -92,7 +92,7 @@ cd frontend && yarn dev
 
 - Frontend: `http://localhost:3000`
 - GraphQL API: `http://localhost:4000/graphql`
-- GraphQL docs (GraphiQL): `http://localhost:4000/graphql`
+- GraphQL docs (GraphiQL): `http://localhost:4000/graphql` (development only)
 - Health: `http://localhost:4000/health`
 
 ## GraphQL API Overview

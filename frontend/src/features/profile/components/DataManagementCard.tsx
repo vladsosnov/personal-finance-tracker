@@ -1,11 +1,9 @@
 import { Button, Card, Group, Stack, Text, Title } from "@mantine/core";
 import { StateMessage } from "@/shared/components/state-message";
-import type { ApolloError } from "@apollo/client";
-
 type DataManagementCardProps = {
   hasStoredData: boolean;
   isLoadingGoals: boolean;
-  goalsError?: ApolloError;
+  goalsError?: Error;
   isExportingAllData: boolean;
   onExport: () => void;
   onOpenResetModal: () => void;
