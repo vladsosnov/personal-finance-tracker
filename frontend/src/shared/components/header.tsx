@@ -1,26 +1,27 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
+import { useQuery } from "@apollo/client/react";
 import { Button, Container, Group, Text } from "@mantine/core";
+import { GET_ME } from "@/features/dashboard/gql/dashboard";
+import { API_BASE_URL } from "@/shared/constants/auth";
 import { APP_ROUTES } from "@/shared/constants/routes";
-import { AUTH_TOKEN_KEY } from "@/shared/constants/storage";
 
 export const Header = () => {
   const router = useRouter();
   const pathname = usePathname();
-  const [isAuthed, setIsAuthed] = useState(false);
-
-  useEffect(() => {
-    setIsAuthed(Boolean(window.localStorage.getItem(AUTH_TOKEN_KEY)));
-  }, [pathname]);
+  const { data: meData } = useQuery<{ me: { id: string } | null }>(GET_ME);
+  const isAuthed = Boolean(meData?.me);
 
   const handleLogout = () => {
-    window.localStorage.removeItem(AUTH_TOKEN_KEY);
-    setIsAuthed(false);
-    router.push(APP_ROUTES.home);
-    router.refresh();
+    void fetch(`${API_BASE_URL}/auth/logout`, {
+      method: "POST",
+      credentials: "include",
+    }).finally(() => {
+      router.push(APP_ROUTES.home);
+      router.refresh();
+    });
   };
 
   return (

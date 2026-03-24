@@ -3,10 +3,16 @@ import { createHmac, pbkdf2Sync, randomBytes, timingSafeEqual } from "crypto";
 type JwtPayload = {
   sub: string;
   exp: number;
+  type: "access" | "refresh";
 };
 
 const JWT_SECRET = process.env.JWT_SECRET ?? "local-dev-jwt-secret";
 const PASSWORD_ITERATIONS = 100_000;
+const ACCESS_TOKEN_TTL_SEC = 60 * 15;
+const REFRESH_TOKEN_TTL_SEC = 60 * 60 * 24 * 30;
+
+export const AUTH_ACCESS_COOKIE = "fgt_access";
+export const AUTH_REFRESH_COOKIE = "fgt_refresh";
 
 const toBase64Url = (input: Buffer | string): string => {
   const source = Buffer.isBuffer(input) ? input : Buffer.from(input);
@@ -33,12 +39,13 @@ export const verifyPassword = (password: string, hash: string, salt: string): bo
   return timingSafeEqual(Buffer.from(hash, "hex"), Buffer.from(computed, "hex"));
 };
 
-export const signJwt = (userId: string): string => {
+const signToken = (userId: string, type: JwtPayload["type"], ttlSec: number): string => {
   const header = toBase64Url(JSON.stringify({ alg: "HS256", typ: "JWT" }));
   const payload = toBase64Url(
     JSON.stringify({
       sub: userId,
-      exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7,
+      exp: Math.floor(Date.now() / 1000) + ttlSec,
+      type,
     } satisfies JwtPayload)
   );
   const content = `${header}.${payload}`;
@@ -46,7 +53,11 @@ export const signJwt = (userId: string): string => {
   return `${content}.${signature}`;
 };
 
-export const verifyJwt = (token?: string): string | null => {
+export const signJwt = (userId: string): string => signToken(userId, "access", ACCESS_TOKEN_TTL_SEC);
+
+export const signRefreshJwt = (userId: string): string => signToken(userId, "refresh", REFRESH_TOKEN_TTL_SEC);
+
+const verifyToken = (token: string | undefined, expectedType: JwtPayload["type"]): string | null => {
   if (!token) {
     return null;
   }
@@ -69,9 +80,28 @@ export const verifyJwt = (token?: string): string | null => {
   }
 
   const decoded = JSON.parse(fromBase64Url(payload).toString("utf8")) as JwtPayload;
-  if (!decoded.sub || decoded.exp < Math.floor(Date.now() / 1000)) {
+  if (!decoded.sub || decoded.type !== expectedType || decoded.exp < Math.floor(Date.now() / 1000)) {
     return null;
   }
 
   return decoded.sub;
 };
+
+export const verifyJwt = (token?: string): string | null => verifyToken(token, "access");
+
+export const verifyRefreshJwt = (token?: string): string | null => verifyToken(token, "refresh");
+
+export const buildCookie = (name: string, value: string, maxAgeSec: number): string => {
+  const secure = process.env.NODE_ENV === "production" ? "; Secure" : "";
+  return `${name}=${value}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${maxAgeSec}${secure}`;
+};
+
+export const buildExpiredCookie = (name: string): string => {
+  const secure = process.env.NODE_ENV === "production" ? "; Secure" : "";
+  return `${name}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0${secure}`;
+};
+
+export const authCookieHeaders = (userId: string): string[] => [
+  buildCookie(AUTH_ACCESS_COOKIE, signJwt(userId), ACCESS_TOKEN_TTL_SEC),
+  buildCookie(AUTH_REFRESH_COOKIE, signRefreshJwt(userId), REFRESH_TOKEN_TTL_SEC),
+];

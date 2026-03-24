@@ -90,6 +90,12 @@ type ImportGoalsArgs = {
   goals: ImportGoalInput[];
 };
 
+const MAX_GOAL_TITLE_LENGTH = 80;
+const MAX_NOTE_LENGTH = 500;
+const MAX_IMPORT_GOALS = 200;
+const MAX_IMPORT_OPERATIONS_PER_GOAL = 2000;
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 const ensureAuthed = (context: Context): string => {
   if (!context.userId) {
     throw new Error("Unauthorized");
@@ -102,6 +108,28 @@ const toSafeUser = (user: { id: string; email: string; subscription: string }) =
   email: user.email,
   subscription: user.subscription,
 });
+
+const assertFiniteNonNegative = (value: number, label: string) => {
+  if (!Number.isFinite(value) || value < 0) {
+    throw new Error(`${label} cannot be negative`);
+  }
+};
+
+const assertValidGoalTitle = (title: string) => {
+  if (!title.trim()) {
+    throw new Error("Goal title is required");
+  }
+
+  if (title.trim().length > MAX_GOAL_TITLE_LENGTH) {
+    throw new Error(`Goal title must be at most ${MAX_GOAL_TITLE_LENGTH} characters`);
+  }
+};
+
+const assertValidNote = (note?: string) => {
+  if (note && note.trim().length > MAX_NOTE_LENGTH) {
+    throw new Error(`Note must be at most ${MAX_NOTE_LENGTH} characters`);
+  }
+};
 
 export const schema = buildSchema(`
   enum OperationType {
@@ -286,16 +314,19 @@ export const rootValue = {
     return JSON.stringify(exportPayload, null, 2);
   },
   register: async ({ email, password }: RegisterArgs) => {
-    if (password.length < 6) {
-      throw new Error("Password must be at least 6 characters");
+    if (!emailRegex.test(email.trim().toLowerCase())) {
+      throw new Error("Valid email is required");
+    }
+    if (password.length < 8 || password.length > 128) {
+      throw new Error("Password must be between 8 and 128 characters");
     }
 
-    if (await findUserByEmail(email)) {
+    if (await findUserByEmail(email.trim().toLowerCase())) {
       throw new Error("Email already exists");
     }
 
     const { hash, salt } = hashPassword(password);
-    const user = await createUser(email, hash, salt);
+    const user = await createUser(email.trim().toLowerCase(), hash, salt);
     const token = signJwt(user.id);
     return {
       token,
@@ -303,7 +334,11 @@ export const rootValue = {
     };
   },
   login: async ({ email, password }: RegisterArgs) => {
-    const user = await findUserByEmail(email);
+    if (!emailRegex.test(email.trim().toLowerCase())) {
+      throw new Error("Valid email is required");
+    }
+
+    const user = await findUserByEmail(email.trim().toLowerCase());
     if (!user || !verifyPassword(password, user.passwordHash, user.passwordSalt)) {
       throw new Error("Invalid credentials");
     }
@@ -316,18 +351,9 @@ export const rootValue = {
   },
   createGoal: async ({ title, targetAmount, initialAmount = 0, color = "#0F766E" }: GoalArgs, context: Context) => {
     const userId = ensureAuthed(context);
-    if (!title.trim()) {
-      throw new Error("Goal title is required");
-    }
-    if (title.trim().length > 80) {
-      throw new Error("Goal title must be at most 80 characters");
-    }
-    if (targetAmount < 0) {
-      throw new Error("Target amount cannot be negative");
-    }
-    if (initialAmount < 0) {
-      throw new Error("Initial amount cannot be negative");
-    }
+    assertValidGoalTitle(title);
+    assertFiniteNonNegative(targetAmount, "Target amount");
+    assertFiniteNonNegative(initialAmount, "Initial amount");
     if (!/^#[0-9A-Fa-f]{6}$/.test(color)) {
       throw new Error("Goal color must be a valid hex color");
     }
@@ -337,18 +363,9 @@ export const rootValue = {
   },
   editGoal: async ({ goalId, title, targetAmount, initialAmount = 0, color }: EditGoalArgs, context: Context) => {
     const userId = ensureAuthed(context);
-    if (!title.trim()) {
-      throw new Error("Goal title is required");
-    }
-    if (title.trim().length > 80) {
-      throw new Error("Goal title must be at most 80 characters");
-    }
-    if (targetAmount < 0) {
-      throw new Error("Target amount cannot be negative");
-    }
-    if (initialAmount < 0) {
-      throw new Error("Initial amount cannot be negative");
-    }
+    assertValidGoalTitle(title);
+    assertFiniteNonNegative(targetAmount, "Target amount");
+    assertFiniteNonNegative(initialAmount, "Initial amount");
     if (!/^#[0-9A-Fa-f]{6}$/.test(color)) {
       throw new Error("Goal color must be a valid hex color");
     }
@@ -408,27 +425,29 @@ export const rootValue = {
       };
     }
 
+    if (goals.length > MAX_IMPORT_GOALS) {
+      throw new Error(`Import is limited to ${MAX_IMPORT_GOALS} goals at a time`);
+    }
+
     for (const goal of goals) {
-      if (!goal.title.trim()) {
-        throw new Error("Goal title is required");
-      }
-      if (goal.targetAmount < 0) {
-        throw new Error("Target amount cannot be negative");
-      }
-      if ((goal.initialAmount ?? 0) < 0) {
-        throw new Error("Initial amount cannot be negative");
-      }
+      assertValidGoalTitle(goal.title);
+      assertFiniteNonNegative(goal.targetAmount, "Target amount");
+      assertFiniteNonNegative(goal.initialAmount ?? 0, "Initial amount");
       if (!/^#[0-9A-Fa-f]{6}$/.test(goal.color)) {
         throw new Error("Goal color must be a valid hex color");
       }
+      if (goal.operations.length > MAX_IMPORT_OPERATIONS_PER_GOAL) {
+        throw new Error(`Each goal import is limited to ${MAX_IMPORT_OPERATIONS_PER_GOAL} operations`);
+      }
 
       for (const operation of goal.operations) {
-        if (operation.amount <= 0) {
+        if (!Number.isFinite(operation.amount) || operation.amount <= 0) {
           throw new Error("Operation amount should be greater than 0");
         }
         if (!/^\d{4}-\d{2}-\d{2}$/.test(operation.operationDate)) {
           throw new Error("Operation date must use YYYY-MM-DD format");
         }
+        assertValidNote(operation.note);
       }
     }
 
@@ -491,12 +510,13 @@ export const rootValue = {
   },
   updateGoalProgress: async ({ goalId, type, amount, note, operationDate }: GoalOperationArgs, context: Context) => {
     const userId = ensureAuthed(context);
-    if (amount <= 0) {
+    if (!Number.isFinite(amount) || amount <= 0) {
       throw new Error("Amount should be greater than 0");
     }
     if (operationDate && !/^\d{4}-\d{2}-\d{2}$/.test(operationDate)) {
       throw new Error("Operation date must be in YYYY-MM-DD format");
     }
+    assertValidNote(note);
 
     const goal = await getGoalById(userId, goalId);
     if (!goal) {
@@ -508,12 +528,13 @@ export const rootValue = {
   },
   editGoalOperation: async ({ operationId, type, amount, note, operationDate }: EditGoalOperationArgs, context: Context) => {
     const userId = ensureAuthed(context);
-    if (amount <= 0) {
+    if (!Number.isFinite(amount) || amount <= 0) {
       throw new Error("Amount should be greater than 0");
     }
     if (operationDate && !/^\d{4}-\d{2}-\d{2}$/.test(operationDate)) {
       throw new Error("Operation date must be in YYYY-MM-DD format");
     }
+    assertValidNote(note);
 
     const operation = await getGoalOperationById(userId, operationId);
     if (!operation) {

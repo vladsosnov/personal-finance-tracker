@@ -6,6 +6,7 @@ type AuthViewProps = {
   email: string;
   password: string;
   isLoading: boolean;
+  error: string | null;
   setAuthMode: (value: AuthMode) => void;
   setEmail: (value: string) => void;
   setPassword: (value: string) => void;
@@ -17,6 +18,7 @@ export const AuthView = ({
   email,
   password,
   isLoading,
+  error,
   setAuthMode,
   setEmail,
   setPassword,
@@ -38,6 +40,7 @@ export const AuthView = ({
           />
           <TextInput label="Email" value={email} onChange={(event) => setEmail(event.currentTarget.value)} />
           <PasswordInput label="Password" value={password} onChange={(event) => setPassword(event.currentTarget.value)} />
+          {error ? <Text c="red">{error}</Text> : null}
           <Button onClick={onSubmit} loading={isLoading}>
             {authMode === "register" ? "Create Account" : "Log In"}
           </Button>

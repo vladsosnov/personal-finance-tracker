@@ -26,7 +26,6 @@ import {
 import { EXPORT_ALL_DATA, GET_GOALS, GET_ME, IMPORT_GOALS, RESET_ALL_DATA } from "@/features/dashboard/gql/dashboard";
 import { DEFAULT_GOAL_COLOR } from "@/shared/constants/goal-colors";
 import { APP_ROUTES } from "@/shared/constants/routes";
-import { AUTH_TOKEN_KEY } from "@/shared/constants/storage";
 import type { OperationType } from "@/shared/gql/__generated__/schema-types";
 import { showToast } from "@/shared/lib/toast-store";
 import type { MantineColorScheme } from "@mantine/core";
@@ -257,8 +256,6 @@ export const ProfileClient = () => {
   const router = useRouter();
   const apolloClient = useApolloClient();
   const { colorScheme, setColorScheme } = useMantineColorScheme();
-  const [isHydrated, setIsHydrated] = useState(false);
-  const [isAuthed, setIsAuthed] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [importSource, setImportSource] = useState<string | null>(null);
   const [preparedGoals, setPreparedGoals] = useState<PreparedImportGoal[]>([]);
@@ -269,23 +266,11 @@ export const ProfileClient = () => {
   const [includedZeroTargetGoalIndexes, setIncludedZeroTargetGoalIndexes] = useState<number[]>([]);
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
 
-  useEffect(() => {
-    const token = window.localStorage.getItem(AUTH_TOKEN_KEY);
-    setIsAuthed(Boolean(token));
-    setIsHydrated(true);
-  }, []);
-
-  useEffect(() => {
-    if (isHydrated && !isAuthed) {
-      router.replace(APP_ROUTES.auth);
-    }
-  }, [isAuthed, isHydrated, router]);
-
   const { data: meData } = useQuery<{ me: { id: string; email: string; subscription: string } | null }>(GET_ME, {
-    skip: !isHydrated || !isAuthed,
+    skip: false,
   });
   const { data: goalsData, refetch: refetchGoals } = useQuery<{ goals: Goal[] }>(GET_GOALS, {
-    skip: !isHydrated || !isAuthed,
+    skip: false,
   });
   const [importGoalsMutation] = useMutation<{
     importGoals: {
@@ -477,10 +462,6 @@ export const ProfileClient = () => {
       showToast(error instanceof Error ? error.message : "Failed to export data", "red");
     }
   };
-
-  if (!isHydrated || !isAuthed) {
-    return null;
-  }
 
   const currentSubscription = meData?.me?.subscription ?? "Free";
   const hasStoredData = (goalsData?.goals.length ?? 0) > 0;

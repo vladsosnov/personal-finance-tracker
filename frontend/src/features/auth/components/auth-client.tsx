@@ -1,71 +1,62 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useMutation } from "@apollo/client/react";
 import { AuthView } from "@/features/auth/components/auth-view";
-import { LOGIN, REGISTER } from "@/features/dashboard/gql/dashboard";
+import { API_BASE_URL } from "@/shared/constants/auth";
 import { APP_ROUTES } from "@/shared/constants/routes";
-import { AUTH_TOKEN_KEY } from "@/shared/constants/storage";
 import type { AuthMode } from "@/shared/types/shared";
-
-type AuthPayload = {
-  token: string;
-  user: {
-    id: string;
-    email: string;
-  };
-};
 
 export const AuthClient = () => {
   const router = useRouter();
-  const [isHydrated, setIsHydrated] = useState(false);
   const [authMode, setAuthMode] = useState<AuthMode>("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-
-  const [register, { loading: isRegistering }] = useMutation<{ register: AuthPayload }>(REGISTER);
-  const [login, { loading: isLoggingIn }] = useMutation<{ login: AuthPayload }>(LOGIN);
-
-  useEffect(() => {
-    const token = window.localStorage.getItem(AUTH_TOKEN_KEY);
-    if (token) {
-      router.replace(APP_ROUTES.dashboard);
-      return;
-    }
-
-    setIsHydrated(true);
-  }, [router]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleAuth = async () => {
     if (!email.trim() || !password.trim()) {
       return;
     }
 
-    const payload =
-      authMode === "register"
-        ? (await register({ variables: { email: email.trim(), password: password.trim() } })).data?.register
-        : (await login({ variables: { email: email.trim(), password: password.trim() } })).data?.login;
+    setIsLoading(true);
+    setError(null);
 
-    if (!payload) {
-      return;
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/${authMode === "register" ? "register" : "login"}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          email: email.trim(),
+          password: password.trim(),
+        }),
+      });
+
+      if (!response.ok) {
+        const payload = (await response.json().catch(() => null)) as { error?: string } | null;
+        throw new Error(payload?.error ?? "Authentication failed");
+      }
+
+      router.replace(APP_ROUTES.dashboard);
+      router.refresh();
+    } catch (authError) {
+      setError(authError instanceof Error ? authError.message : "Authentication failed");
+    } finally {
+      setIsLoading(false);
     }
-
-    window.localStorage.setItem(AUTH_TOKEN_KEY, payload.token);
-    router.replace(APP_ROUTES.dashboard);
-    router.refresh();
   };
-
-  if (!isHydrated) {
-    return null;
-  }
 
   return (
     <AuthView
       authMode={authMode}
       email={email}
       password={password}
-      isLoading={isRegistering || isLoggingIn}
+      isLoading={isLoading}
+      error={error}
       setAuthMode={setAuthMode}
       setEmail={setEmail}
       setPassword={setPassword}

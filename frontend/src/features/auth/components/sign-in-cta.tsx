@@ -1,19 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useQuery } from "@apollo/client/react";
 import { Button, Group } from "@mantine/core";
+import { GET_ME } from "@/features/dashboard/gql/dashboard";
 import { APP_ROUTES } from "@/shared/constants/routes";
-import { AUTH_TOKEN_KEY } from "@/shared/constants/storage";
 
 export const SignInCta = () => {
-  const [isAuthed, setIsAuthed] = useState<boolean | null>(null);
+  const { data, loading } = useQuery<{ me: { id: string } | null }>(GET_ME);
+  const isAuthed = Boolean(data?.me);
 
-  useEffect(() => {
-    setIsAuthed(Boolean(window.localStorage.getItem(AUTH_TOKEN_KEY)));
-  }, []);
-
-  if (isAuthed === null) {
+  if (loading) {
     return null;
   }
 

@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
 import { useMutation, useQuery } from "@apollo/client/react";
 import { Button, Card, Container, Grid, Group, Modal, NumberInput, Stack, Tabs, Text, TextInput, Title } from "@mantine/core";
 import { CreateGoalForm } from "@/features/dashboard/components/create-goal-form";
@@ -25,17 +24,12 @@ import {
 } from "@/features/dashboard/gql/dashboard";
 import type { Goal, GoalDetails } from "@/features/dashboard/types";
 import { DEFAULT_GOAL_COLOR } from "@/shared/constants/goal-colors";
-import { APP_ROUTES } from "@/shared/constants/routes";
-import { AUTH_TOKEN_KEY } from "@/shared/constants/storage";
 import type { OperationType } from "@/shared/gql/__generated__/schema-types";
 import { getTodayDateValue } from "@/shared/utils/date";
 import { MONEY_INPUT_PROPS, numberOrZero } from "@/shared/utils/number";
 
 export const DashboardClient = () => {
-  const router = useRouter();
   const [selectedGoalId, setSelectedGoalId] = useState<string | null>(null);
-  const [isHydrated, setIsHydrated] = useState(false);
-  const [isAuthed, setIsAuthed] = useState(false);
 
   const [goalTitle, setGoalTitle] = useState("");
   const [goalTarget, setGoalTarget] = useState<number | "">("");
@@ -61,26 +55,12 @@ export const DashboardClient = () => {
   const [pendingCompletionGoal, setPendingCompletionGoal] = useState<Goal | null>(null);
   const [goalStatusTab, setGoalStatusTab] = useState<"active" | "completed">("active");
 
-  useEffect(() => {
-    const token = window.localStorage.getItem(AUTH_TOKEN_KEY);
-    setIsAuthed(Boolean(token));
-    setIsHydrated(true);
-  }, []);
-
-  useEffect(() => {
-    if (isHydrated && !isAuthed) {
-      router.replace(APP_ROUTES.auth);
-    }
-  }, [isAuthed, isHydrated, router]);
-
   const { data: meData } = useQuery<{ me: { id: string; email: string; subscription: string } | null }>(GET_ME, {
-    skip: !isHydrated || !isAuthed,
+    skip: false,
   });
   const { data: goalsData, previousData: previousGoalsData, loading: isLoadingGoals, refetch: refetchGoals } = useQuery<{ goals: Goal[] }>(
     GET_GOALS,
-    {
-      skip: !isHydrated || !isAuthed,
-    }
+    {}
   );
   const {
     data: goalDetailsData,
@@ -89,7 +69,7 @@ export const DashboardClient = () => {
     refetch: refetchGoalDetails,
   } = useQuery<{ goal: GoalDetails | null }>(GET_GOAL_DETAILS, {
     variables: { id: selectedGoalId },
-    skip: !isHydrated || !isAuthed || !selectedGoalId,
+    skip: !selectedGoalId,
   });
 
   const serverGoals = useMemo(() => goalsData?.goals ?? previousGoalsData?.goals ?? [], [goalsData, previousGoalsData]);
@@ -447,10 +427,6 @@ export const DashboardClient = () => {
       await refetchGoals();
     }
   };
-
-  if (!isHydrated || !isAuthed) {
-    return <DashboardSkeleton />;
-  }
 
   const visibleGoals = goalStatusTab === "completed" ? completedGoals : activeGoals;
   const isCompletedTab = goalStatusTab === "completed";
