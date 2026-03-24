@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useApolloClient, useMutation, useQuery } from "@apollo/client/react";
+import { IconDeviceDesktop, IconMoon, IconSun } from "@tabler/icons-react";
 import {
   Alert,
   Badge,
@@ -106,37 +107,6 @@ const SUBSCRIPTION_PLANS = [
     features: ["Everything in Pro", "Permanent access"],
   },
 ] as const;
-
-const ThemeLightIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-    <circle cx="12" cy="12" r="4" stroke="currentColor" strokeWidth="2" />
-    <path
-      d="M12 2v2.5M12 19.5V22M22 12h-2.5M4.5 12H2M19.07 4.93l-1.77 1.77M6.7 17.3l-1.77 1.77M19.07 19.07l-1.77-1.77M6.7 6.7 4.93 4.93"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-    />
-  </svg>
-);
-
-const ThemeDarkIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-    <path
-      d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-  </svg>
-);
-
-const ThemeSystemIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-    <rect x="3" y="4" width="18" height="12" rx="2" stroke="currentColor" strokeWidth="2" />
-    <path d="M8 20h8M12 16v4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-  </svg>
-);
 
 const themeOptionLabelStyles = {
   display: "inline-flex",
@@ -562,7 +532,7 @@ export const ProfileClient = () => {
                   label: (
                     <span style={themeOptionLabelStyles}>
                       <ThemeIcon size="sm" variant="transparent" style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
-                        <ThemeSystemIcon />
+                        <IconDeviceDesktop size={16} stroke={2} />
                       </ThemeIcon>
                       <span>System</span>
                     </span>
@@ -573,7 +543,7 @@ export const ProfileClient = () => {
                   label: (
                     <span style={themeOptionLabelStyles}>
                       <ThemeIcon size="sm" variant="transparent" style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
-                        <ThemeLightIcon />
+                        <IconSun size={16} stroke={2} />
                       </ThemeIcon>
                       <span>Light</span>
                     </span>
@@ -584,7 +554,7 @@ export const ProfileClient = () => {
                   label: (
                     <span style={themeOptionLabelStyles}>
                       <ThemeIcon size="sm" variant="transparent" style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
-                        <ThemeDarkIcon />
+                        <IconMoon size={16} stroke={2} />
                       </ThemeIcon>
                       <span>Dark</span>
                     </span>

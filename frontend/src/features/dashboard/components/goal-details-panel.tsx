@@ -1,47 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
+import { IconChevronDown, IconMaximize, IconPencil, IconTrash } from "@tabler/icons-react";
 import { Badge, Button, Card, Group, Modal, NumberInput, Pagination, Popover, ScrollArea, Skeleton, Stack, Table, Text, TextInput, Tooltip, Title } from "@mantine/core";
 import { GoalChart } from "@/features/dashboard/components/goal-chart";
 import type { GoalDetails } from "@/features/dashboard/types";
 import type { OperationType } from "@/shared/gql/__generated__/schema-types";
 import { formatDay } from "@/shared/utils/date";
 import { formatMoney, MONEY_INPUT_PROPS, numberOrZero } from "@/shared/utils/number";
-
-const EditIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-    <path
-      d="M4 20h4l10.5-10.5a2.12 2.12 0 0 0-3-3L5 17v3Z"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-    <path d="m13.5 6.5 4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-  </svg>
-);
-
-const DeleteIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-    <path d="M3 6h18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-    <path d="M8 6V4h8v2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-    <path d="M19 6l-1 14H6L5 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-    <path d="M10 11v6M14 11v6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-  </svg>
-);
-
-const ExpandIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-    <path d="M15 4h5v5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-    <path d="M14 10 20 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-    <path d="M9 20H4v-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-    <path d="m4 20 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-  </svg>
-);
-
-const ChevronDownIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-    <path d="m6 9 6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-  </svg>
-);
 
 const CHART_RANGE_OPTIONS = [
   { label: "All time", value: "all" },
@@ -221,7 +185,7 @@ export const GoalDetailsPanel = ({
             <Group gap="xs" wrap="nowrap">
               <Popover opened={isRangePickerOpen} onChange={setIsRangePickerOpen} position="bottom-end" withArrow shadow="md">
                 <Popover.Target>
-                  <Button variant="subtle" rightSection={<ChevronDownIcon />} onClick={() => setIsRangePickerOpen((current) => !current)}>
+                  <Button variant="subtle" rightSection={<IconChevronDown size={16} stroke={2} />} onClick={() => setIsRangePickerOpen((current) => !current)}>
                     {CHART_RANGE_OPTIONS.find((option) => option.value === chartRange)?.label ?? "All time"}
                   </Button>
                 </Popover.Target>
@@ -244,7 +208,7 @@ export const GoalDetailsPanel = ({
                 </Popover.Dropdown>
               </Popover>
               <Button variant="light" px={10} aria-label="Expand chart" onClick={() => setIsChartModalOpen(true)}>
-                <ExpandIcon />
+                <IconMaximize size={16} stroke={2} />
               </Button>
             </Group>
           </Group>
@@ -315,7 +279,7 @@ export const GoalDetailsPanel = ({
                         aria-label="Edit operation"
                         onClick={() => onStartEditOperation(operation.id)}
                       >
-                        <EditIcon />
+                        <IconPencil size={16} stroke={2} />
                       </Button>
                       <Button
                         color="red"
@@ -331,7 +295,7 @@ export const GoalDetailsPanel = ({
                         loading={deletingOperationId === operation.id}
                         onClick={() => setPendingDeleteOperationId(operation.id)}
                       >
-                        {deletingOperationId === operation.id ? undefined : <DeleteIcon />}
+                        {deletingOperationId === operation.id ? undefined : <IconTrash size={16} stroke={2} />}
                       </Button>
                     </Group>
                   </Table.Td>
@@ -452,7 +416,7 @@ export const GoalDetailsPanel = ({
                   <Popover.Target>
                     <Button
                       variant="subtle"
-                      rightSection={<ChevronDownIcon />}
+                      rightSection={<IconChevronDown size={16} stroke={2} />}
                       onClick={() => setIsExpandedRangePickerOpen((current) => !current)}
                     >
                       {CHART_RANGE_OPTIONS.find((option) => option.value === chartRange)?.label ?? "All time"}

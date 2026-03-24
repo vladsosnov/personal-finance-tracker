@@ -16,6 +16,7 @@
     "@apollo/client": "^4.1.6",
     "@mantine/core": "^8.3.16",
     "@mantine/hooks": "^8.3.16",
+    "@tabler/icons-react": "^3.40.0",
     "graphql": "^16.13.1",
     "highcharts": "^12.4.0",
     "highcharts-react-official": "^3.2.3",

@@ -1,44 +1,8 @@
+import { IconDotsVertical, IconPencil, IconTrash, IconX } from "@tabler/icons-react";
 import { Badge, Button, Card, Group, Progress, ScrollArea, Skeleton, Stack, Text, Title } from "@mantine/core";
 import type { Goal } from "@/features/dashboard/types";
 import { hexToRgba } from "@/shared/utils/color";
 import { formatMoney, getProgressPercentage } from "@/shared/utils/number";
-
-const EditIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-    <path
-      d="M4 20h4l10.5-10.5a2.12 2.12 0 0 0-3-3L5 17v3Z"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-    <path d="m13.5 6.5 4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-  </svg>
-);
-
-const DeleteIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-    <path d="M3 6h18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-    <path d="M8 6V4h8v2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-    <path d="M19 6l-1 14H6L5 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-    <path d="M10 11v6M14 11v6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-  </svg>
-);
-
-const ManageIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-    <path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-    <circle cx="7" cy="7" r="1.5" fill="currentColor" />
-    <circle cx="17" cy="12" r="1.5" fill="currentColor" />
-    <circle cx="10" cy="17" r="1.5" fill="currentColor" />
-  </svg>
-);
-
-const ManageActiveIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-    <path d="M6 6l12 12M18 6 6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-  </svg>
-);
 
 type GoalsListProps = {
   goals: Goal[];
@@ -94,7 +58,7 @@ export const GoalsList = ({
           )}
           {showManageToggle && canManage && (
             <Button variant={isManageMode ? "light" : "subtle"} px={10} aria-label="Manage goals" onClick={onToggleManageMode}>
-              {isManageMode ? <ManageActiveIcon /> : <ManageIcon />}
+              {isManageMode ? <IconX size={16} stroke={2} /> : <IconDotsVertical size={16} stroke={2} />}
             </Button>
           )}
         </Group>
@@ -184,7 +148,7 @@ export const GoalsList = ({
                               onStartEditGoal(goal.id);
                             }}
                           >
-                            <EditIcon />
+                            <IconPencil size={16} stroke={2} />
                           </Button>
                           <Button
                             color="red"
@@ -202,7 +166,7 @@ export const GoalsList = ({
                               onStartDeleteGoal(goal.id);
                             }}
                           >
-                            <DeleteIcon />
+                            <IconTrash size={16} stroke={2} />
                           </Button>
                         </Group>
                       ) : (

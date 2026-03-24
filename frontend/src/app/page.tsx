@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { IconPointFilled } from "@tabler/icons-react";
 import { Badge, Button, Card, Container, Group, List, SimpleGrid, Stack, Text, ThemeIcon, Title } from "@mantine/core";
 import { SignInCta } from "@/features/auth/components/sign-in-cta";
 import { APP_ROUTES } from "@/shared/constants/routes";
@@ -75,6 +76,12 @@ const plans = [
   },
 ];
 
+const listBullet = (
+  <ThemeIcon size={20} radius="xl" variant="light" styles={{ root: { display: "flex", alignItems: "center", justifyContent: "center" } }}>
+    <IconPointFilled size={10} stroke={0} />
+  </ThemeIcon>
+);
+
 const LandingPage = () => {
   return (
     <Container size="xl" py={56}>
@@ -104,11 +111,7 @@ const LandingPage = () => {
               </Stack>
               <List
                 spacing="sm"
-                icon={
-                  <ThemeIcon size={20} radius="xl" variant="light">
-                    •
-                  </ThemeIcon>
-                }
+                icon={listBullet}
               >
                 <List.Item>Goal cards with drag and drop ordering</List.Item>
                 <List.Item>Operations log with edit, delete, and pagination</List.Item>
@@ -287,19 +290,21 @@ const LandingPage = () => {
                   <Text c="dimmed">{plan.description}</Text>
                   <List
                     spacing="xs"
-                    icon={
-                      <ThemeIcon size={20} radius="xl" variant="light">
-                        •
-                      </ThemeIcon>
-                    }
+                    icon={listBullet}
                   >
                     {plan.features.map((feature) => (
                       <List.Item key={feature}>{feature}</List.Item>
                     ))}
                   </List>
-                  <Button component={Link} href={plan.href} variant={plan.highlight ? "filled" : "light"} disabled={plan.cta === "Coming soon"}>
-                    {plan.cta}
-                  </Button>
+                  {plan.cta === "Coming soon" ? (
+                    <Button variant={plan.highlight ? "filled" : "light"} disabled>
+                      {plan.cta}
+                    </Button>
+                  ) : (
+                    <Button component={Link} href={plan.href} variant={plan.highlight ? "filled" : "light"}>
+                      {plan.cta}
+                    </Button>
+                  )}
                 </Stack>
               </Card>
             ))}
