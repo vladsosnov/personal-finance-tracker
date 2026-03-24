@@ -6,7 +6,7 @@ type JwtPayload = {
   type: "access" | "refresh";
 };
 
-const JWT_SECRET = process.env.JWT_SECRET ?? "local-dev-jwt-secret";
+const JWT_SECRET = process.env.JWT_SECRET ?? (process.env.NODE_ENV === "production" ? (() => { throw new Error("JWT_SECRET is required in production"); })() : "local-dev-jwt-secret");
 const PASSWORD_ITERATIONS = 100_000;
 const ACCESS_TOKEN_TTL_SEC = 60 * 15;
 const REFRESH_TOKEN_TTL_SEC = 60 * 60 * 24 * 30;

@@ -3,14 +3,6 @@ import type { GoalOperation } from "@/features/dashboard/types";
 import type { OperationType } from "@/shared/gql/__generated__/schema-types";
 import { getTodayDateValue } from "@/shared/utils/date";
 
-export type OperationFormState = {
-  operationType: OperationType;
-  operationAmount: number | "";
-  operationNote: string;
-  operationDate: string;
-  editingOperationId: string | null;
-};
-
 export const useOperationForm = () => {
   const [operationType, setOperationType] = useState<OperationType>("INCREASE");
   const [operationAmount, setOperationAmount] = useState<number | "">("");
