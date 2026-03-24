@@ -2,7 +2,8 @@
 
 import { useMemo, useEffect, useState } from "react";
 import { useQuery } from "@apollo/client/react";
-import { Card, Container, Grid, Stack, Tabs } from "@mantine/core";
+import { Card, Grid, Stack, Tabs } from "@mantine/core";
+import { PageContainer } from "@/shared/components/page-container";
 import { CreateGoalForm } from "@/features/dashboard/components/create-goal-form";
 import { DashboardOverviewStats } from "@/features/dashboard/components/dashboard-overview-stats";
 import { GoalDetailsPanel } from "@/features/dashboard/components/goal-details-panel";
@@ -192,7 +193,7 @@ export const DashboardClient = () => {
       : { title: "No goals yet", description: "Create your first goal to start tracking progress." };
 
   return (
-    <Container size="xl" py={24}>
+    <PageContainer>
       <Stack gap="lg">
         <DashboardOverviewStats totalTarget={totalTarget} totalCurrent={totalCurrent} />
 
@@ -307,6 +308,6 @@ export const DashboardClient = () => {
           onClose={() => { if (!isDeletingGoal) { setDeletingGoalId(null); setDeletingGoalTitle(null); } }}
         />
       </Stack>
-    </Container>
+    </PageContainer>
   );
 };

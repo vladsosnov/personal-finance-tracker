@@ -1,8 +1,9 @@
-import { Card, Container, SimpleGrid, Skeleton, Stack } from "@mantine/core";
+import { Card, SimpleGrid, Skeleton, Stack } from "@mantine/core";
+import { PageContainer } from "@/shared/components/page-container";
 
 export const DashboardSkeleton = () => {
   return (
-    <Container size="xl" py={24}>
+    <PageContainer>
       <Stack gap="lg">
         <Stack gap="xs">
           <Skeleton height={34} width="40%" />
@@ -39,6 +40,6 @@ export const DashboardSkeleton = () => {
           </Stack>
         </Card>
       </Stack>
-    </Container>
+    </PageContainer>
   );
 };

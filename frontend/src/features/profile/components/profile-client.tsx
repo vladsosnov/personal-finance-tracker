@@ -1,6 +1,7 @@
 "use client";
 
-import { Container, Stack, Text, Title } from "@mantine/core";
+import { Stack, Text, Title } from "@mantine/core";
+import { PageContainer } from "@/shared/components/page-container";
 import { DataManagementCard } from "@/features/profile/components/DataManagementCard";
 import { ImportProgressCard } from "@/features/profile/components/ImportProgressCard";
 import { ProfileInfoCard } from "@/features/profile/components/ProfileInfoCard";
@@ -13,7 +14,7 @@ export const ProfileClient = () => {
   const dm = useDataManagement();
 
   return (
-    <Container size="xl" py={24}>
+    <PageContainer>
       <Stack gap="lg">
         <Stack gap={2}>
           <Title order={1}>Profile</Title>
@@ -65,6 +66,6 @@ export const ProfileClient = () => {
         onConfirm={dm.handleResetAllData}
         onClose={dm.closeResetModal}
       />
-    </Container>
+    </PageContainer>
   );
 };

@@ -1,6 +1,7 @@
 "use client";
 
-import { Container, Stack } from "@mantine/core";
+import { Stack } from "@mantine/core";
+import { PageContainer } from "@/shared/components/page-container";
 import { CtaSection } from "@/features/landing/components/CtaSection";
 import { FeaturesSection } from "@/features/landing/components/FeaturesSection";
 import { FutureFeaturesSection } from "@/features/landing/components/FutureFeaturesSection";
@@ -9,7 +10,7 @@ import { PlansSection } from "@/features/landing/components/PlansSection";
 import { ProductPreviewSection } from "@/features/landing/components/ProductPreviewSection";
 
 const LandingPage = () => (
-  <Container size="xl" py={24}>
+  <PageContainer>
     <Stack gap={48}>
       <HeroSection />
       <ProductPreviewSection />
@@ -18,7 +19,7 @@ const LandingPage = () => (
       <PlansSection />
       <CtaSection />
     </Stack>
-  </Container>
+  </PageContainer>
 );
 
 export default LandingPage;
