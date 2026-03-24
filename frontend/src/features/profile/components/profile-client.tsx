@@ -572,6 +572,40 @@ export const ProfileClient = () => {
               <Text c="dimmed">This reads the exported JSON stored in a .txt file and converts history snapshots into goal operations.</Text>
             </Stack>
 
+            <Card withBorder radius="md" p="md" bg="var(--mantine-color-body)">
+              <Stack gap="xs">
+                <Text fw={600}>Expected file format</Text>
+                <Text size="sm" c="dimmed">
+                  The file should contain a JSON array of goals. Each goal should include `title`, `targetValue`, optional `initialValue`,
+                  and a `history` array with `date`, `value`, and optional `note`.
+                </Text>
+                <Text
+                  component="pre"
+                  size="sm"
+                  style={{
+                    margin: 0,
+                    padding: 12,
+                    borderRadius: 8,
+                    overflowX: "auto",
+                    backgroundColor: "rgba(148, 163, 184, 0.08)",
+                    fontFamily: "var(--font-mono)",
+                  }}
+                >
+{`[
+  {
+    "title": "Emergency fund",
+    "targetValue": 10000,
+    "initialValue": 500,
+    "history": [
+      { "date": "2026-01-31T10:00:00Z", "value": 1200 },
+      { "date": "2026-02-28T10:00:00Z", "value": 1800, "note": "Monthly top-up" }
+    ]
+  }
+]`}
+                </Text>
+              </Stack>
+            </Card>
+
             <FileInput
               label="Progress file"
               placeholder="Choose example_of_progress.txt"
