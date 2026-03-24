@@ -1,6 +1,7 @@
 "use client";
 
 import { ApolloProvider } from "@apollo/client/react";
+import { ToastViewport } from "@/shared/components/toast-viewport";
 import { apolloClient } from "@/shared/lib/apollo-client";
 
 type ProvidersProps = {
@@ -8,5 +9,10 @@ type ProvidersProps = {
 };
 
 export const Providers = ({ children }: ProvidersProps) => {
-  return <ApolloProvider client={apolloClient}>{children}</ApolloProvider>;
+  return (
+    <ApolloProvider client={apolloClient}>
+      {children}
+      <ToastViewport />
+    </ApolloProvider>
+  );
 };

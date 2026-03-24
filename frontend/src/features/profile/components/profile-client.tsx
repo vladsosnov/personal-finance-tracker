@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { useApolloClient, useLazyQuery, useMutation, useQuery } from "@apollo/client/react";
 import { IconDeviceDesktop, IconMoon, IconSun } from "@tabler/icons-react";
 import {
-  Alert,
   Badge,
   Button,
   Card,
@@ -29,6 +28,7 @@ import { DEFAULT_GOAL_COLOR } from "@/shared/constants/goal-colors";
 import { APP_ROUTES } from "@/shared/constants/routes";
 import { AUTH_TOKEN_KEY } from "@/shared/constants/storage";
 import type { OperationType } from "@/shared/gql/__generated__/schema-types";
+import { showToast } from "@/shared/lib/toast-store";
 import type { MantineColorScheme } from "@mantine/core";
 import type { Goal } from "@/features/dashboard/types";
 
@@ -263,12 +263,6 @@ export const ProfileClient = () => {
   const [importSource, setImportSource] = useState<string | null>(null);
   const [preparedGoals, setPreparedGoals] = useState<PreparedImportGoal[]>([]);
   const [skippedGoals, setSkippedGoals] = useState<SkippedImportGoal[]>([]);
-  const [exportError, setExportError] = useState<string | null>(null);
-  const [exportSummary, setExportSummary] = useState<string | null>(null);
-  const [importError, setImportError] = useState<string | null>(null);
-  const [importSummary, setImportSummary] = useState<string | null>(null);
-  const [resetError, setResetError] = useState<string | null>(null);
-  const [resetSummary, setResetSummary] = useState<string | null>(null);
   const [isPreparingImport, setIsPreparingImport] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [importProgress, setImportProgress] = useState<ImportProgressState | null>(null);
@@ -290,7 +284,7 @@ export const ProfileClient = () => {
   const { data: meData } = useQuery<{ me: { id: string; email: string; subscription: string } | null }>(GET_ME, {
     skip: !isHydrated || !isAuthed,
   });
-  const { data: goalsData } = useQuery<{ goals: Goal[] }>(GET_GOALS, {
+  const { data: goalsData, refetch: refetchGoals } = useQuery<{ goals: Goal[] }>(GET_GOALS, {
     skip: !isHydrated || !isAuthed,
   });
   const [importGoalsMutation] = useMutation<{
@@ -327,8 +321,6 @@ export const ProfileClient = () => {
     setPreparedGoals([]);
     setSkippedGoals([]);
     setIncludedZeroTargetGoalIndexes([]);
-    setImportError(null);
-    setImportSummary(null);
     setImportProgress(null);
   };
 
@@ -338,27 +330,27 @@ export const ProfileClient = () => {
     setSkippedGoals(result.skippedGoals);
     setIncludedZeroTargetGoalIndexes(nextIncludedZeroTargetGoalIndexes);
 
-    if (!result.goals.length && result.skippedGoals.length) {
-      setImportError("No valid goals found in the selected file");
+    if (!result.goals.length && !result.skippedGoals.length) {
+      showToast("No goals found in the selected file", "red");
       return;
     }
 
-    setImportError(null);
+    if (!result.goals.length && result.skippedGoals.length) {
+      showToast("No valid goals found in the selected file", "red");
+      return;
+    }
+    if (result.skippedGoals.length > 0) {
+      showToast(`Skipping ${result.skippedGoals.length} item${result.skippedGoals.length === 1 ? "" : "s"} during import preview.`, "yellow");
+    }
   };
 
   const previewImportFile = async (nextFile: File | null) => {
     if (!nextFile) {
-      setImportError("Choose a .txt file first");
       resetImportState();
-      setImportError("Choose a .txt file first");
-      setImportSummary(null);
-      setResetSummary(null);
       return;
     }
 
     setIsPreparingImport(true);
-    setImportError(null);
-    setImportSummary(null);
 
     try {
       const source = await nextFile.text();
@@ -366,7 +358,7 @@ export const ProfileClient = () => {
       applyPreparedImport(source, []);
     } catch (error) {
       resetImportState();
-      setImportError(error instanceof Error ? error.message : "Failed to parse import file");
+      showToast(error instanceof Error ? error.message : "Failed to parse import file", "red");
     } finally {
       setIsPreparingImport(false);
     }
@@ -374,15 +366,11 @@ export const ProfileClient = () => {
 
   const handleImport = async () => {
     if (!preparedGoals.length) {
-      setImportError("Prepare the file before importing");
+      showToast("Prepare the file before importing", "red");
       return;
     }
 
     setIsImporting(true);
-    setImportError(null);
-    setImportSummary(null);
-    setResetError(null);
-    setResetSummary(null);
     setImportProgress({
       completedSteps: 0,
       totalSteps: 3,
@@ -423,27 +411,25 @@ export const ProfileClient = () => {
       );
 
       const summary = result.data?.importGoals;
-      setImportSummary(
+      showToast(
         `Imported ${summary?.importedGoalsCount ?? preparedGoals.length} goals and ${summary?.importedOperationsCount ?? importTotals.operations} operations.`
-      );
+      , "teal");
       setPreparedGoals([]);
       setSkippedGoals([]);
       setIncludedZeroTargetGoalIndexes([]);
       setImportSource(null);
       setFile(null);
       await apolloClient.clearStore();
+      await refetchGoals();
       setImportProgress(null);
     } catch (error) {
-      setImportError(error instanceof Error ? error.message : "Import failed");
+      showToast(error instanceof Error ? error.message : "Import failed", "red");
     } finally {
       setIsImporting(false);
     }
   };
 
   const handleResetAllData = async () => {
-    setResetError(null);
-    setResetSummary(null);
-
     try {
       const result = await resetAllDataMutation();
       const summary = result.data?.resetAllData;
@@ -456,18 +442,16 @@ export const ProfileClient = () => {
       setIsResetModalOpen(false);
       setImportProgress(null);
       await apolloClient.clearStore();
+      await refetchGoals();
       if ((summary?.deletedGoalsCount ?? 0) > 0 || (summary?.deletedOperationsCount ?? 0) > 0) {
-        setResetSummary(`Removed ${summary?.deletedGoalsCount ?? 0} goals and ${summary?.deletedOperationsCount ?? 0} operations.`);
+        showToast(`Removed ${summary?.deletedGoalsCount ?? 0} goals and ${summary?.deletedOperationsCount ?? 0} operations.`, "teal");
       }
     } catch (error) {
-      setResetError(error instanceof Error ? error.message : "Failed to reset data");
+      showToast(error instanceof Error ? error.message : "Failed to reset data", "red");
     }
   };
 
   const handleExportAllData = async () => {
-    setExportError(null);
-    setExportSummary(null);
-
     try {
       const result = await exportAllDataQuery();
       const payload = result.data?.exportAllData;
@@ -488,9 +472,9 @@ export const ProfileClient = () => {
       link.remove();
       URL.revokeObjectURL(url);
 
-      setExportSummary("Exported all goals and operations.");
+      showToast("Exported all goals and operations.", "teal");
     } catch (error) {
-      setExportError(error instanceof Error ? error.message : "Failed to export data");
+      showToast(error instanceof Error ? error.message : "Failed to export data", "red");
     }
   };
 
@@ -670,21 +654,6 @@ export const ProfileClient = () => {
               </Group>
             )}
 
-            {importError && (
-              <Alert color="red" withCloseButton onClose={() => setImportError(null)}>
-                {importError}
-              </Alert>
-            )}
-            {importSummary && (
-              <Alert color="teal" withCloseButton onClose={() => setImportSummary(null)}>
-                {importSummary}
-              </Alert>
-            )}
-            {skippedGoals.length > 0 && (
-              <Alert color="yellow">
-                Skipping {skippedGoals.length} item{skippedGoals.length === 1 ? "" : "s"} during import preview.
-              </Alert>
-            )}
             {importProgress && (
               <Stack gap={6}>
                 <Group justify="space-between" gap="xs">
@@ -802,28 +771,8 @@ export const ProfileClient = () => {
               <Title order={4}>Data management</Title>
               <Text c="dimmed">Export your goals as a `.txt` backup or permanently remove all saved goals and operations.</Text>
             </Stack>
-            {exportError && (
-              <Alert color="red" withCloseButton onClose={() => setExportError(null)}>
-                {exportError}
-              </Alert>
-            )}
-            {exportSummary && (
-              <Alert color="teal" withCloseButton onClose={() => setExportSummary(null)}>
-                {exportSummary}
-              </Alert>
-            )}
-            {resetError && (
-              <Alert color="red" withCloseButton onClose={() => setResetError(null)}>
-                {resetError}
-              </Alert>
-            )}
-            {resetSummary && (
-              <Alert color="teal" withCloseButton onClose={() => setResetSummary(null)}>
-                {resetSummary}
-              </Alert>
-            )}
             <Group justify="flex-start">
-              <Button variant="light" onClick={() => handleExportAllData()} loading={isExportingAllData}>
+              <Button variant="light" onClick={() => handleExportAllData()} loading={isExportingAllData} disabled={!hasStoredData}>
                 Export all data
               </Button>
               <Button color="red" variant="light" onClick={() => setIsResetModalOpen(true)} disabled={!hasStoredData}>
