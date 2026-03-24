@@ -2,12 +2,14 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useApolloClient } from "@apollo/client/react";
 import { AuthView } from "@/features/auth/components/auth-view";
 import { API_BASE_URL } from "@/shared/constants/auth";
 import { APP_ROUTES } from "@/shared/constants/routes";
 import type { AuthMode } from "@/shared/types/shared";
 
 export const AuthClient = () => {
+  const apolloClient = useApolloClient();
   const router = useRouter();
   const [authMode, setAuthMode] = useState<AuthMode>("login");
   const [email, setEmail] = useState("");
@@ -41,6 +43,7 @@ export const AuthClient = () => {
         throw new Error(payload?.error ?? "Authentication failed");
       }
 
+      await apolloClient.resetStore();
       router.replace(APP_ROUTES.dashboard);
       router.refresh();
     } catch (authError) {

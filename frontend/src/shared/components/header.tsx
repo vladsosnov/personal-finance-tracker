@@ -2,26 +2,32 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useQuery } from "@apollo/client/react";
+import { useApolloClient, useQuery } from "@apollo/client/react";
 import { Button, Container, Group, Text } from "@mantine/core";
 import { GET_ME } from "@/features/dashboard/gql/dashboard";
 import { API_BASE_URL } from "@/shared/constants/auth";
 import { APP_ROUTES } from "@/shared/constants/routes";
 
 export const Header = () => {
+  const apolloClient = useApolloClient();
   const router = useRouter();
   const pathname = usePathname();
-  const { data: meData } = useQuery<{ me: { id: string } | null }>(GET_ME);
+  const { data: meData } = useQuery<{ me: { id: string } | null }>(GET_ME, {
+    fetchPolicy: "cache-and-network",
+  });
   const isAuthed = Boolean(meData?.me);
 
-  const handleLogout = () => {
-    void fetch(`${API_BASE_URL}/auth/logout`, {
-      method: "POST",
-      credentials: "include",
-    }).finally(() => {
+  const handleLogout = async () => {
+    try {
+      await fetch(`${API_BASE_URL}/auth/logout`, {
+        method: "POST",
+        credentials: "include",
+      });
+    } finally {
+      await apolloClient.resetStore();
       router.push(APP_ROUTES.home);
       router.refresh();
-    });
+    }
   };
 
   return (
@@ -46,7 +52,7 @@ export const Header = () => {
               </Button>
             )}
             {isAuthed && (
-              <Button onClick={handleLogout} color="red" variant="subtle">
+              <Button onClick={() => handleLogout()} color="red" variant="subtle">
                 Log Out
               </Button>
             )}

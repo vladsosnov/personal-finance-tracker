@@ -478,7 +478,7 @@ export const DashboardClient = () => {
 
         {!shouldShowGoalsSkeleton && goalsError && !goals.length ? (
           <Card withBorder radius="md" p="xl">
-            <StateMessage title="Couldn't load goals" description={goalsError.message} actionLabel="Try again" onAction={() => void refetchGoals()} />
+            <StateMessage title="Couldn't load goals" description={goalsError.message} actionLabel="Try again" onAction={() => refetchGoals()} />
           </Card>
         ) : !shouldShowGoalsSkeleton && !goals.length ? (
           <Card withBorder radius="md" p="xl">
@@ -521,7 +521,7 @@ export const DashboardClient = () => {
                 onStartEditGoal={handleStartEditGoal}
                 onStartDeleteGoal={setDeletingGoalId}
                 onRetry={() => {
-                  void refetchGoals();
+                  refetchGoals();
                 }}
                 draggingGoalId={isCompletedTab ? null : draggingGoalId}
                 dragOverGoalId={isCompletedTab ? null : dragOverGoalId}
@@ -554,7 +554,7 @@ export const DashboardClient = () => {
                 onCancelEditOperation={resetOperationForm}
                 onUpdateProgress={handleUpdateProgress}
                 onRetryGoalDetails={() => {
-                  void refetchGoalDetails();
+                  refetchGoalDetails();
                 }}
               />
             </Grid.Col>

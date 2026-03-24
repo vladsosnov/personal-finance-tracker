@@ -492,7 +492,7 @@ export const ProfileClient = () => {
                 <Skeleton height={18} width="28%" />
               </Stack>
             ) : meError ? (
-              <StateMessage title="Couldn't load profile" description={meError.message} actionLabel="Try again" onAction={() => void refetchMe()} />
+              <StateMessage title="Couldn't load profile" description={meError.message} actionLabel="Try again" onAction={() => refetchMe()} />
             ) : (
               <Text>
                 Email: {meData?.me?.email ?? "-"}
@@ -771,7 +771,7 @@ export const ProfileClient = () => {
               <Text c="dimmed">Export your goals as a `.txt` backup or permanently remove all saved goals and operations.</Text>
             </Stack>
             {goalsError ? (
-              <StateMessage title="Couldn't load saved data" description={goalsError.message} actionLabel="Try again" onAction={() => void refetchGoals()} />
+              <StateMessage title="Couldn't load saved data" description={goalsError.message} actionLabel="Try again" onAction={() => refetchGoals()} />
             ) : null}
             <Group justify="flex-start">
               <Button
