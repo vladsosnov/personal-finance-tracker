@@ -2,12 +2,13 @@ import { buildSchema } from "graphql";
 import { findUserById } from "./modules/auth/user.repository";
 import { bulkCreateGoals, createGoal, deleteAllGoalsByUser, deleteGoal, getGoalById, listGoalsByUser, reorderGoals, updateGoal, updateGoalColor, updateGoalCompletion } from "./modules/goals/goal.repository";
 import { bulkCreateGoalOperations, createGoalOperation, deleteAllOperationsByUser, deleteGoalOperation, deleteOperationsByGoal, getGoalOperationById, updateGoalOperation } from "./modules/goals/operation.repository";
-import { buildGoalView } from "./modules/goals/goal.service";
+import { buildGoalView, buildGoalViews } from "./modules/goals/goal.service";
 import { createProposal, listProposals, voteProposal } from "./modules/proposals/proposal.repository";
 import type { OperationType } from "./modules/goals/types";
 
 type Context = {
   userId: string | null;
+  tokenVersion: number;
   clientIp: string;
 };
 
@@ -239,20 +240,23 @@ export const schema = buildSchema(`
   }
 `);
 
-const buildGoalViewWithCompletionState = async (userId: string, goal: import("./modules/goals/types").Goal) => {
-  const goalView = await buildGoalView(userId, goal);
+const applyCompletionState = async (userId: string, goalView: import("./modules/goals/types").GoalView) => {
   const shouldBeCompleted = goalView.targetAmount > 0 && goalView.currentAmount >= goalView.targetAmount;
 
-  if (goal.isCompleted && !shouldBeCompleted) {
-    const reopenedGoal = await updateGoalCompletion(userId, goal.id, false);
+  if (goalView.isCompleted && !shouldBeCompleted) {
+    const reopenedGoal = await updateGoalCompletion(userId, goalView.id, false);
     if (!reopenedGoal) {
       throw new Error("Goal not found");
     }
-
     return buildGoalView(userId, reopenedGoal);
   }
 
   return goalView;
+};
+
+const buildGoalViewWithCompletionState = async (userId: string, goal: import("./modules/goals/types").Goal) => {
+  const goalView = await buildGoalView(userId, goal);
+  return applyCompletionState(userId, goalView);
 };
 
 export const rootValue = {
@@ -268,7 +272,8 @@ export const rootValue = {
   goals: async (_args: unknown, context: Context) => {
     const userId = ensureAuthed(context);
     const goals = await listGoalsByUser(userId);
-    return Promise.all(goals.map((goal) => buildGoalViewWithCompletionState(userId, goal)));
+    const views = await buildGoalViews(userId, goals);
+    return Promise.all(views.map((view) => applyCompletionState(userId, view)));
   },
   goal: async ({ id }: GoalLookupArgs, context: Context) => {
     const userId = ensureAuthed(context);
@@ -278,7 +283,8 @@ export const rootValue = {
   exportAllData: async (_args: unknown, context: Context) => {
     const userId = ensureAuthed(context);
     const goals = await listGoalsByUser(userId);
-    const goalViews = await Promise.all(goals.map((goal) => buildGoalViewWithCompletionState(userId, goal)));
+    const batchViews = await buildGoalViews(userId, goals);
+    const goalViews = await Promise.all(batchViews.map((view) => applyCompletionState(userId, view)));
 
     const exportPayload = goalViews.map((goal) => {
       const sortedOperations = [...goal.operations].sort((left, right) => {
@@ -396,7 +402,8 @@ export const rootValue = {
     const userId = ensureAuthed(context);
     await reorderGoals(userId, goalIds);
     const goals = await listGoalsByUser(userId);
-    return Promise.all(goals.map((goal) => buildGoalViewWithCompletionState(userId, goal)));
+    const views = await buildGoalViews(userId, goals);
+    return Promise.all(views.map((view) => applyCompletionState(userId, view)));
   },
   importGoals: async ({ goals }: ImportGoalsArgs, context: Context) => {
     const userId = ensureAuthed(context);

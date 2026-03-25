@@ -8,6 +8,7 @@ type UserDoc = {
   subscription?: string;
   passwordHash: string;
   passwordSalt: string;
+  tokenVersion?: number;
   emailVerified?: boolean;
   emailVerificationToken?: string;
   emailVerificationExpiry?: Date | null;
@@ -21,6 +22,7 @@ const toUser = (doc: UserDoc): User => ({
   subscription: doc.subscription ?? "Free",
   passwordHash: doc.passwordHash,
   passwordSalt: doc.passwordSalt,
+  tokenVersion: doc.tokenVersion ?? 0,
   emailVerified: doc.emailVerified ?? false,
   emailVerificationToken: doc.emailVerificationToken,
   emailVerificationExpiry: doc.emailVerificationExpiry?.toISOString(),
@@ -103,9 +105,14 @@ export const resetPassword = async (
     },
     {
       $set: { passwordHash, passwordSalt },
+      $inc: { tokenVersion: 1 },
       $unset: { passwordResetToken: 1, passwordResetExpiry: 1 },
     },
     { new: true }
   ).lean();
   return user ? toUser(user as unknown as UserDoc) : null;
+};
+
+export const invalidateTokens = async (userId: string): Promise<void> => {
+  await UserModel.updateOne({ _id: userId }, { $inc: { tokenVersion: 1 } });
 };

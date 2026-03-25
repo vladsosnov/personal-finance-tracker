@@ -4,6 +4,7 @@ type JwtPayload = {
   sub: string;
   exp: number;
   type: "access" | "refresh";
+  tv?: number;
 };
 
 const JWT_SECRET = process.env.JWT_SECRET ?? (process.env.NODE_ENV === "production" ? (() => { throw new Error("JWT_SECRET is required in production"); })() : "local-dev-jwt-secret");
@@ -39,13 +40,14 @@ export const verifyPassword = (password: string, hash: string, salt: string): bo
   return timingSafeEqual(Buffer.from(hash, "hex"), Buffer.from(computed, "hex"));
 };
 
-const signToken = (userId: string, type: JwtPayload["type"], ttlSec: number): string => {
+const signToken = (userId: string, type: JwtPayload["type"], ttlSec: number, tokenVersion = 0): string => {
   const header = toBase64Url(JSON.stringify({ alg: "HS256", typ: "JWT" }));
   const payload = toBase64Url(
     JSON.stringify({
       sub: userId,
       exp: Math.floor(Date.now() / 1000) + ttlSec,
       type,
+      tv: tokenVersion,
     } satisfies JwtPayload)
   );
   const content = `${header}.${payload}`;
@@ -53,11 +55,13 @@ const signToken = (userId: string, type: JwtPayload["type"], ttlSec: number): st
   return `${content}.${signature}`;
 };
 
-export const signJwt = (userId: string): string => signToken(userId, "access", ACCESS_TOKEN_TTL_SEC);
+export const signJwt = (userId: string, tokenVersion = 0): string => signToken(userId, "access", ACCESS_TOKEN_TTL_SEC, tokenVersion);
 
-export const signRefreshJwt = (userId: string): string => signToken(userId, "refresh", REFRESH_TOKEN_TTL_SEC);
+export const signRefreshJwt = (userId: string, tokenVersion = 0): string => signToken(userId, "refresh", REFRESH_TOKEN_TTL_SEC, tokenVersion);
 
-const verifyToken = (token: string | undefined, expectedType: JwtPayload["type"]): string | null => {
+type TokenResult = { userId: string; tokenVersion: number } | null;
+
+const verifyToken = (token: string | undefined, expectedType: JwtPayload["type"]): TokenResult => {
   if (!token) {
     return null;
   }
@@ -84,12 +88,12 @@ const verifyToken = (token: string | undefined, expectedType: JwtPayload["type"]
     return null;
   }
 
-  return decoded.sub;
+  return { userId: decoded.sub, tokenVersion: decoded.tv ?? 0 };
 };
 
-export const verifyJwt = (token?: string): string | null => verifyToken(token, "access");
+export const verifyJwt = (token?: string): TokenResult => verifyToken(token, "access");
 
-export const verifyRefreshJwt = (token?: string): string | null => verifyToken(token, "refresh");
+export const verifyRefreshJwt = (token?: string): TokenResult => verifyToken(token, "refresh");
 
 export const buildCookie = (name: string, value: string, maxAgeSec: number): string => {
   const secure = process.env.NODE_ENV === "production" ? "; Secure" : "";
@@ -101,9 +105,9 @@ export const buildExpiredCookie = (name: string): string => {
   return `${name}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0${secure}`;
 };
 
-export const authCookieHeaders = (userId: string): string[] => [
-  buildCookie(AUTH_ACCESS_COOKIE, signJwt(userId), ACCESS_TOKEN_TTL_SEC),
-  buildCookie(AUTH_REFRESH_COOKIE, signRefreshJwt(userId), REFRESH_TOKEN_TTL_SEC),
+export const authCookieHeaders = (userId: string, tokenVersion = 0): string[] => [
+  buildCookie(AUTH_ACCESS_COOKIE, signJwt(userId, tokenVersion), ACCESS_TOKEN_TTL_SEC),
+  buildCookie(AUTH_REFRESH_COOKIE, signRefreshJwt(userId, tokenVersion), REFRESH_TOKEN_TTL_SEC),
 ];
 
 export const generateSecureToken = (): string => randomBytes(32).toString("hex");

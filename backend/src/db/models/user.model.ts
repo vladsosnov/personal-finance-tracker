@@ -5,6 +5,7 @@ export type UserDocument = {
   subscription: string;
   passwordHash: string;
   passwordSalt: string;
+  tokenVersion: number;
   emailVerified: boolean;
   emailVerificationToken?: string;
   emailVerificationExpiry?: Date;
@@ -18,6 +19,7 @@ const userSchema = new Schema<UserDocument>(
     subscription: { type: String, required: true, default: "Free" },
     passwordHash: { type: String, required: true },
     passwordSalt: { type: String, required: true },
+    tokenVersion: { type: Number, required: true, default: 0 },
     emailVerified: { type: Boolean, required: true, default: false },
     emailVerificationToken: { type: String, index: true, sparse: true },
     emailVerificationExpiry: { type: Date },

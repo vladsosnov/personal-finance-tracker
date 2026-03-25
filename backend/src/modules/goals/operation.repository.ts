@@ -180,6 +180,25 @@ export const deleteAllOperationsByUser = async (userId: string): Promise<number>
   return result.deletedCount ?? 0;
 };
 
+export const listAllOperationsByUser = async (userId: string): Promise<GoalOperation[]> => {
+  const operations = await GoalOperationModel.find({ userId }).sort({ operationDate: -1, createdAt: -1 }).lean();
+
+  return operations.map((operation) =>
+    toGoalOperation(
+      operation as unknown as {
+        _id: mongoose.Types.ObjectId;
+        userId: mongoose.Types.ObjectId;
+        goalId: mongoose.Types.ObjectId;
+        type: OperationType;
+        amount: number;
+        note?: string;
+        operationDate?: string;
+        createdAt: Date;
+      }
+    )
+  );
+};
+
 export const listOperationsByGoal = async (userId: string, goalId: string): Promise<GoalOperation[]> => {
   const operations = await GoalOperationModel.find({ userId, goalId }).sort({ operationDate: -1, createdAt: -1 }).lean();
 
