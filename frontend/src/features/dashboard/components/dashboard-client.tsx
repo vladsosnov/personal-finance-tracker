@@ -76,8 +76,7 @@ export const DashboardClient = () => {
   const totalTarget = useMemo(() => activeGoals.reduce((sum, g) => sum + g.targetAmount, 0), [activeGoals]);
   const totalCurrent = useMemo(() => activeGoals.reduce((sum, g) => sum + g.currentAmount, 0), [activeGoals]);
 
-  const subscription = meData?.me?.subscription ?? "Free";
-  const plan = getPlanByName(subscription);
+  const plan = getPlanByName(meData?.me?.subscription ?? "Free");
   const goalLimitMessage = plan.maxGoals !== null && goals.length >= plan.maxGoals
     ? `Free plan supports up to ${plan.maxGoals} goals. Upgrade to add more.`
     : null;
