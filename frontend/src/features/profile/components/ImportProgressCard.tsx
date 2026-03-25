@@ -9,6 +9,7 @@ type ImportProgressCardProps = {
   importProgress: ImportProgressState | null;
   importProgressValue: number;
   importLimitMessage: string | null;
+  isImportOverLimit: boolean;
   isPreparingImport: boolean;
   isImporting: boolean;
   includedZeroTargetGoalIndexes: number[];
@@ -26,6 +27,7 @@ export const ImportProgressCard = ({
   importProgress,
   importProgressValue,
   importLimitMessage,
+  isImportOverLimit,
   isPreparingImport,
   isImporting,
   includedZeroTargetGoalIndexes,
@@ -60,7 +62,7 @@ export const ImportProgressCard = ({
             <Text size="sm" c="yellow">{importLimitMessage}</Text>
           )}
           <Group>
-            <Button onClick={onImport} loading={isImporting} disabled={!preparedGoals.length || isPreparingImport}>
+            <Button onClick={onImport} loading={isImporting} disabled={!preparedGoals.length || isPreparingImport || isImportOverLimit}>
               Import
             </Button>
           </Group>

@@ -51,18 +51,15 @@ export const useDataManagement = () => {
   const existingGoalCount = goalsData?.goals.length ?? 0;
   const remainingSlots = plan.maxGoals !== null ? Math.max(0, plan.maxGoals - existingGoalCount) : null;
 
-  const cappedPreparedGoals = useMemo(
-    () => remainingSlots !== null ? preparedGoals.slice(0, remainingSlots) : preparedGoals,
-    [preparedGoals, remainingSlots]
-  );
+  const isImportOverLimit = remainingSlots !== null && preparedGoals.length > remainingSlots;
 
-  const importLimitMessage = remainingSlots !== null && preparedGoals.length > remainingSlots
-    ? `Free plan is limited to ${plan.maxGoals} goals. You can import ${remainingSlots} more goal${remainingSlots === 1 ? "" : "s"}.`
+  const importLimitMessage = isImportOverLimit
+    ? `Free plan is limited to ${plan.maxGoals} goals. Remove ${preparedGoals.length - remainingSlots!} goal${preparedGoals.length - remainingSlots! === 1 ? "" : "s"} to proceed.`
     : null;
 
   const importTotals = useMemo(
-    () => cappedPreparedGoals.reduce((acc, goal) => ({ goals: acc.goals + 1, operations: acc.operations + goal.operationCount }), { goals: 0, operations: 0 }),
-    [cappedPreparedGoals]
+    () => preparedGoals.reduce((acc, goal) => ({ goals: acc.goals + 1, operations: acc.operations + goal.operationCount }), { goals: 0, operations: 0 }),
+    [preparedGoals]
   );
 
   const importProgressValue = importProgress
@@ -92,9 +89,6 @@ export const useDataManagement = () => {
     if (!result.goals.length) {
       showToast("No valid goals found in the selected file", "red");
       return;
-    }
-    if (result.skippedGoals.length > 0) {
-      showToast(`Skipping ${result.skippedGoals.length} item${result.skippedGoals.length === 1 ? "" : "s"} during import preview.`, "yellow");
     }
   };
 
@@ -141,7 +135,7 @@ export const useDataManagement = () => {
   };
 
   const handleImport = async () => {
-    if (!cappedPreparedGoals.length) {
+    if (!preparedGoals.length) {
       showToast("Prepare the file before importing", "red");
       return;
     }
@@ -155,7 +149,7 @@ export const useDataManagement = () => {
 
       const result = await importGoalsMutation({
         variables: {
-          goals: cappedPreparedGoals.map(({ title, targetAmount, initialAmount, color, operations }) => ({
+          goals: preparedGoals.map(({ title, targetAmount, initialAmount, color, operations }) => ({
             title, targetAmount, initialAmount, color, operations,
           })),
         },
@@ -165,7 +159,7 @@ export const useDataManagement = () => {
 
       const summary = result.data?.importGoals;
       showToast(
-        `Imported ${summary?.importedGoalsCount ?? cappedPreparedGoals.length} goals and ${summary?.importedOperationsCount ?? importTotals.operations} operations.`,
+        `Imported ${summary?.importedGoalsCount ?? preparedGoals.length} goals and ${summary?.importedOperationsCount ?? importTotals.operations} operations.`,
         "teal"
       );
 
@@ -260,9 +254,10 @@ export const useDataManagement = () => {
     hasStoredData: (goalsData?.goals.length ?? 0) > 0,
     // import
     file,
-    preparedGoals: cappedPreparedGoals,
+    preparedGoals,
     skippedGoals,
     importLimitMessage,
+    isImportOverLimit,
     importTotals,
     importProgress,
     importProgressValue,
