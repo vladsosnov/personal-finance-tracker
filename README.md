@@ -1,129 +1,167 @@
-# personal-finance-tracker
+# Financial Goals Tracker
 
-Personal Finance Tracker is a full-stack app for tracking financial goals - create goals, log progress over time, visualize trends, and manage your data.
+A full-stack web app for tracking financial goals. Create savings goals, log deposits and withdrawals, visualize progress with charts, and manage your data with import/export.
 
-## Project Demo
+Built for personal use and available as a hosted service.
 
-Live links:
+## Live Demo
 
-- Frontend: [TBD later](https://YOUR_FRONTEND_URL)
-- Backend API: [TBD later](https://YOUR_BACKEND_URL)
-- GraphQL docs (GraphiQL): [TBD later](https://YOUR_BACKEND_URL/graphql)
+- **App:** [TBD — add your production URL here]
+- **API:** [TBD — add your production API URL here]
 
-## What Is Implemented
+## Features
 
-- Cookie-based JWT authentication with access/refresh token rotation
-- REST auth endpoints: `POST /auth/register`, `/auth/login`, `/auth/refresh`, `/auth/logout`
-- User-scoped goals — each user sees only their own data
-- Goal cards with target amount, initial amount, current amount, and progress
-- Goal operations (increase/decrease) with optional notes and custom dates
-- Drag-to-reorder goals
-- Goal color picker (hex)
-- Mark goal as completed when target is reached
-- Dashboard overview stats
-- Interactive progress charts (Highcharts)
-- Export all goals and operations as a `.txt` JSON backup
-- Import progress from a `.txt` backup file with a preview step
+**Goals**
+- Create, edit, delete, and reorder savings goals
+- Set target amount, initial amount, and color
+- Track progress with increase/decrease operations (with optional notes and dates)
+- Mark goals as completed when target is reached
+- Dashboard overview with total stats
+
+**Charts**
+- Interactive progress charts per goal (Highcharts)
+- Configurable date range (7d / 30d / 90d / 1y / all)
+
+**Data Management**
+- Export all goals and operations as JSON backup
+- Import from backup file with preview and validation
 - Reset all data
-- Theme switcher: light, dark, system
-- Subscription plan UI (Free / Pro / Lifetime)
-- GraphQL API with `graphql-http`, documented via GraphiQL
-- Shared GraphQL schema types generated for frontend usage
-- Rate limiting on auth and GraphQL endpoints
-- Health endpoints: `GET /health`, `GET /healthcheck`
 
-## Stack
+**Account**
+- Email/password authentication with JWT (HttpOnly cookies)
+- Email verification with resend support
+- Password reset via email link
+- Delete account
+- Subscription plans UI (Free / Pro / Lifetime)
 
-- **Frontend:** Next.js 14 (App Router), React 18, TypeScript, Apollo Client, Mantine, Highcharts, Jest
-- **Backend:** Node.js, Express 5, GraphQL (`graphql-http`), TypeScript, MongoDB (Mongoose), JWT, Jest
+**Other**
+- Light, dark, and system theme
+- Fully keyboard-accessible (WCAG)
+- Community feedback/proposals page with voting
+- Mobile-responsive layout
 
-## Repository Structure
+## Tech Stack
+
+| Layer | Technologies |
+|---|---|
+| Frontend | Next.js 14 (App Router), React 18, TypeScript, Mantine v8, Apollo Client, Highcharts |
+| Backend | Node.js, Express 5, GraphQL (graphql-http), TypeScript, Mongoose |
+| Database | MongoDB (Atlas) |
+| Auth | JWT access + refresh tokens, HttpOnly cookies, HMAC-SHA256 |
+| Email | Nodemailer (any SMTP provider) |
+
+## Project Structure
 
 ```
-frontend/   Next.js client application
-backend/    Express + GraphQL API server
+frontend/          Next.js client application
+  src/
+    app/           Pages (App Router)
+    features/      Feature modules (dashboard, profile, auth, feedback, landing)
+    shared/        Shared components, constants, hooks, GraphQL queries
+
+backend/           Express + GraphQL API server
+  src/
+    db/models/     Mongoose models
+    modules/       Feature modules (auth, goals, proposals)
+    schema.ts      GraphQL schema and resolvers
+    auth.ts        JWT and password hashing utilities
+    email.ts       Email sending (SMTP or dev console fallback)
 ```
 
-## Local Setup
+## Local Development
 
-**Prerequisites:**
-
-- Node.js `v20+` (see `.nvmrc`)
-- MongoDB Atlas URI or a local MongoDB instance
-
-**Install dependencies:**
+**Prerequisites:** Node.js v20+, MongoDB (Atlas or local)
 
 ```bash
-cd frontend && yarn
-cd ../backend && yarn
-```
+# Install dependencies
+cd frontend && npm install
+cd ../backend && npm install
 
-**Environment variables:**
-
-```bash
+# Configure backend environment
 cp backend/.env.example backend/.env
+# Edit backend/.env with your MongoDB URI and a strong JWT_SECRET
+
+# Run (separate terminals)
+cd backend && npm run dev     # API on http://localhost:4000
+cd frontend && npm run dev    # App on http://localhost:3000
 ```
 
-Edit `backend/.env`:
+### Environment Variables
 
-```
-PORT=4000
-MONGODB_URI=mongodb://127.0.0.1:27017/finance-goals
-JWT_SECRET=your-secret-here
-```
+**Backend** (`backend/.env`):
 
-**Optional — override the default backend URL for the frontend:**
+| Variable | Required | Description |
+|---|---|---|
+| `PORT` | No | API port (default: 4000) |
+| `MONGODB_URI` | Yes | MongoDB connection string |
+| `JWT_SECRET` | Yes | Secret for signing JWTs — use a long random string in production |
+| `FRONTEND_ORIGIN` | No | Allowed CORS origin (default: http://localhost:3000) |
+| `SMTP_HOST` | No | SMTP server host (e.g., smtp.gmail.com) |
+| `SMTP_PORT` | No | SMTP port (default: 587) |
+| `SMTP_USER` | No | SMTP username |
+| `SMTP_PASS` | No | SMTP password or app password |
+| `SMTP_FROM` | No | Sender email address |
 
-```bash
-echo "NEXT_PUBLIC_GRAPHQL_URL=http://localhost:4000/graphql" > frontend/.env.local
-```
+Without SMTP configured, emails are printed to the backend console (dev mode).
 
-**Run locally (separate terminals):**
+**Frontend** (`frontend/.env.local`, optional):
 
-```bash
-cd backend && yarn dev
-```
-
-```bash
-cd frontend && yarn dev
-```
-
-**Local URLs:**
-
-- Frontend: `http://localhost:3000`
-- GraphQL API: `http://localhost:4000/graphql`
-- GraphQL docs (GraphiQL): `http://localhost:4000/graphql` (development only)
-- Health: `http://localhost:4000/health`
-
-## GraphQL API Overview
-
-All GraphQL operations are sent to `POST /graphql`. Authentication is handled via HTTP-only cookies set by the REST auth endpoints.
-
-**Queries:**
-
-| Query | Description |
+| Variable | Description |
 |---|---|
-| `me` | Current user info |
-| `goals` | List all goals for the authenticated user |
-| `goal(id)` | Get a single goal by ID |
-| `exportAllData` | Export all goals and operations as a JSON string |
+| `NEXT_PUBLIC_API_URL` | Backend API URL (default: http://localhost:4000) |
 
-**Mutations:**
+## API Overview
 
-| Mutation | Description |
-|---|---|
-| `createGoal` | Create a new goal |
-| `editGoal` | Edit goal title, target, initial amount, or color |
-| `updateGoalColor` | Update only the goal color |
-| `deleteGoal` | Delete a goal and all its operations |
-| `reorderGoals` | Reorder goals by providing an ordered list of IDs |
-| `completeGoal` | Mark a goal as completed (only when current >= target) |
-| `updateGoalProgress` | Add an operation (increase or decrease) to a goal |
-| `editGoalOperation` | Edit an existing operation |
-| `deleteGoalOperation` | Delete an operation |
-| `importGoals` | Bulk-import goals with operations |
-| `resetAllData` | Delete all goals and operations for the current user |
+### REST Endpoints (Auth)
+
+| Method | Endpoint | Description |
+|---|---|---|
+| POST | `/auth/register` | Create account + send verification email |
+| POST | `/auth/login` | Sign in |
+| POST | `/auth/refresh` | Refresh access token |
+| POST | `/auth/logout` | Clear auth cookies |
+| GET | `/auth/verify-email?token=` | Verify email address |
+| POST | `/auth/request-verification` | Resend verification email (authenticated) |
+| POST | `/auth/forgot-password` | Request password reset link |
+| POST | `/auth/reset-password` | Reset password with token |
+| POST | `/auth/delete-account` | Delete account and all data (authenticated) |
+| GET | `/health` | Server status |
+| GET | `/healthcheck` | Deep health check (includes DB ping) |
+
+### GraphQL (`POST /graphql`)
+
+Authentication via HttpOnly cookies set by the REST auth endpoints.
+
+**Queries:** `me`, `goals`, `goal(id)`, `exportAllData`, `proposals`
+
+**Mutations:** `createGoal`, `editGoal`, `deleteGoal`, `reorderGoals`, `completeGoal`, `updateGoalProgress`, `editGoalOperation`, `deleteGoalOperation`, `importGoals`, `resetAllData`, `createProposal`, `voteProposal`
 
 ## Deployment
 
-- TBD later as status is "in development"
+### Frontend (Vercel)
+
+1. Import the repo in Vercel, set root directory to `frontend`
+2. Add environment variable: `NEXT_PUBLIC_API_URL` = your production backend URL
+3. Deploy
+
+### Backend (Railway / Render / Fly.io)
+
+1. Create a new service, set root directory to `backend`
+2. Build command: `npm run build`
+3. Start command: `npm start`
+4. Add environment variables: `MONGODB_URI`, `JWT_SECRET`, `FRONTEND_ORIGIN`, SMTP vars
+5. Deploy
+
+### Production Checklist
+
+- [ ] Use a strong, random `JWT_SECRET` (at least 64 characters)
+- [ ] Set `FRONTEND_ORIGIN` to your production frontend URL
+- [ ] Set `NEXT_PUBLIC_API_URL` to your production backend URL
+- [ ] Configure SMTP for real email delivery (Resend, SendGrid, or Amazon SES)
+- [ ] Use a dedicated MongoDB Atlas cluster (not free shared tier)
+- [ ] Set up a custom domain with HTTPS
+- [ ] Set up Stripe or Lemon Squeezy for subscription billing
+
+## License
+
+Copyright (c) 2026 Vlad Sosnov. All rights reserved. See [LICENSE](LICENSE).
