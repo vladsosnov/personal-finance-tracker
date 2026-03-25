@@ -114,7 +114,7 @@ export const GoalDetailsPanel = ({
 
             <Group justify="space-between" align="center">
               <Title order={5}>Operations</Title>
-              <Button onClick={handleOpenAddOperation}>Add</Button>
+              <Button onClick={handleOpenAddOperation} aria-label="Add operation">Add</Button>
             </Group>
 
             <GoalOperationsTable
@@ -151,7 +151,7 @@ export const GoalDetailsPanel = ({
             <Modal
               opened={isChartModalOpen}
               onClose={() => setIsChartModalOpen(false)}
-              title="Progress"
+              title={`${selectedGoal.title} — Progress chart`}
               centered
               size="calc(100vw - 96px)"
             >
@@ -180,17 +180,20 @@ export const GoalDetailsPanel = ({
 };
 
 const LoadingSkeleton = () => (
-  <Stack gap="md">
-    <Skeleton height={28} width="45%" />
-    <Skeleton height={240} radius="md" />
-    <Group justify="space-between" align="center">
-      <Skeleton height={22} width={110} />
-      <Skeleton height={36} width={130} />
-    </Group>
-    <Stack gap="sm">
-      {Array.from({ length: 4 }).map((_, i) => (
-        <Skeleton key={i} height={44} radius="md" />
-      ))}
+  <div role="status" aria-label="Loading goal details">
+    <span className="sr-only">Loading goal details...</span>
+    <Stack gap="md">
+      <Skeleton height={28} width="45%" />
+      <Skeleton height={240} radius="md" />
+      <Group justify="space-between" align="center">
+        <Skeleton height={22} width={110} />
+        <Skeleton height={36} width={130} />
+      </Group>
+      <Stack gap="sm">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <Skeleton key={i} height={44} radius="md" />
+        ))}
+      </Stack>
     </Stack>
-  </Stack>
+  </div>
 );

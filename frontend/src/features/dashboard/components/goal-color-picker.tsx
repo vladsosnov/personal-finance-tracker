@@ -17,14 +17,15 @@ export const GoalColorPicker = ({ label, value, onChange, disabled = false }: Go
         {label}
       </Text>
       <Group gap="sm" wrap="nowrap">
-        <ColorSwatch color={selectedColor.value} />
+        <ColorSwatch color={selectedColor.value} aria-hidden="true" />
         <Select
           value={value}
           data={GOAL_COLOR_OPTIONS}
           allowDeselect={false}
+          aria-label={label}
           renderOption={({ option }) => (
             <Group gap="sm" wrap="nowrap">
-              <ColorSwatch color={option.value} size={18} />
+              <ColorSwatch color={option.value} size={18} aria-hidden="true" />
               <Text size="sm">{option.label}</Text>
             </Group>
           )}

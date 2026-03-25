@@ -35,53 +35,68 @@ export const OperationModal = ({
   onSubmit,
   onClose,
 }: OperationModalProps) => (
-  <Modal opened={opened} onClose={onClose} title={isEditing ? "Edit" : "Add"} centered>
-    <Stack gap="md">
-      <Group gap="xs" wrap="nowrap">
-        <Button
-          fullWidth
-          color="teal"
-          variant={operationType === "INCREASE" ? "light" : "subtle"}
-          onClick={() => onChangeType("INCREASE")}
-        >
-          Increase
-        </Button>
-        <Button
-          fullWidth
-          color="red"
-          variant={operationType === "DECREASE" ? "light" : "subtle"}
-          onClick={() => onChangeType("DECREASE")}
-        >
-          Decrease
-        </Button>
-      </Group>
-      <NumberInput
-        label="Amount"
-        placeholder="500"
-        {...MONEY_INPUT_PROPS}
-        value={operationAmount}
-        onChange={(value) => onChangeAmount(numberOrZero(value))}
-      />
-      <TextInput
-        label="Date"
-        type="date"
-        value={operationDate}
-        onChange={(e) => onChangeDate(e.currentTarget.value)}
-      />
-      <TextInput
-        label="Note"
-        placeholder="Salary transfer..."
-        value={operationNote}
-        onChange={(e) => onChangeNote(e.currentTarget.value)}
-      />
-      <Group justify="flex-end">
-        <Button variant="default" onClick={onClose} disabled={isLoading}>
-          Cancel
-        </Button>
-        <Button onClick={onSubmit} loading={isLoading} disabled={isSubmitDisabled}>
-          {isEditing ? "Save" : "Add"}
-        </Button>
-      </Group>
-    </Stack>
+  <Modal opened={opened} onClose={onClose} title={isEditing ? "Edit operation" : "Add operation"} centered>
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (!isSubmitDisabled) onSubmit();
+      }}
+    >
+      <Stack gap="md">
+        <Group gap="xs" wrap="nowrap" role="group" aria-label="Operation type">
+          <Button
+            fullWidth
+            color="teal"
+            variant={operationType === "INCREASE" ? "light" : "subtle"}
+            aria-pressed={operationType === "INCREASE"}
+            onClick={() => onChangeType("INCREASE")}
+            type="button"
+          >
+            Increase
+          </Button>
+          <Button
+            fullWidth
+            color="red"
+            variant={operationType === "DECREASE" ? "light" : "subtle"}
+            aria-pressed={operationType === "DECREASE"}
+            onClick={() => onChangeType("DECREASE")}
+            type="button"
+          >
+            Decrease
+          </Button>
+        </Group>
+        <NumberInput
+          label="Amount"
+          placeholder="500"
+          required
+          aria-required
+          {...MONEY_INPUT_PROPS}
+          value={operationAmount}
+          onChange={(value) => onChangeAmount(numberOrZero(value))}
+        />
+        <TextInput
+          label="Date"
+          type="date"
+          required
+          aria-required
+          value={operationDate}
+          onChange={(e) => onChangeDate(e.currentTarget.value)}
+        />
+        <TextInput
+          label="Note"
+          placeholder="Salary transfer..."
+          value={operationNote}
+          onChange={(e) => onChangeNote(e.currentTarget.value)}
+        />
+        <Group justify="flex-end">
+          <Button variant="default" onClick={onClose} disabled={isLoading} type="button">
+            Cancel
+          </Button>
+          <Button type="submit" loading={isLoading} disabled={isSubmitDisabled}>
+            {isEditing ? "Save" : "Add"}
+          </Button>
+        </Group>
+      </Stack>
+    </form>
   </Modal>
 );

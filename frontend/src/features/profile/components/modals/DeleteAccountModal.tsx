@@ -8,11 +8,11 @@ type DeleteAccountModalProps = {
 };
 
 export const DeleteAccountModal = ({ opened, isLoading, onConfirm, onClose }: DeleteAccountModalProps) => (
-  <Modal opened={opened} onClose={() => { if (!isLoading) onClose(); }} title="Delete account?" centered>
+  <Modal opened={opened} onClose={() => { if (!isLoading) onClose(); }} title="Delete account?" centered aria-describedby="delete-account-desc">
     <Stack gap="md">
-      <Text>This will permanently delete your account and all associated goals and operations. This action cannot be undone.</Text>
+      <Text id="delete-account-desc">This will permanently delete your account and all associated goals and operations. This action cannot be undone.</Text>
       <Group justify="flex-end">
-        <Button variant="default" onClick={onClose} disabled={isLoading}>
+        <Button variant="default" onClick={onClose} disabled={isLoading} data-autofocus>
           Cancel
         </Button>
         <Button color="red" onClick={onConfirm} loading={isLoading}>

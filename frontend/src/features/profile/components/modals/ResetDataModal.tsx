@@ -8,11 +8,11 @@ type ResetDataModalProps = {
 };
 
 export const ResetDataModal = ({ opened, isLoading, onConfirm, onClose }: ResetDataModalProps) => (
-  <Modal opened={opened} onClose={() => { if (!isLoading) onClose(); }} title="Reset all data?" centered>
+  <Modal opened={opened} onClose={() => { if (!isLoading) onClose(); }} title="Reset all data?" centered aria-describedby="reset-data-desc">
     <Stack gap="md">
-      <Text>This will permanently remove all goals and operations from your account.</Text>
+      <Text id="reset-data-desc">This will permanently remove all goals and operations from your account.</Text>
       <Group justify="flex-end">
-        <Button variant="default" onClick={onClose} disabled={isLoading}>
+        <Button variant="default" onClick={onClose} disabled={isLoading} data-autofocus>
           Cancel
         </Button>
         <Button color="red" onClick={onConfirm} loading={isLoading}>

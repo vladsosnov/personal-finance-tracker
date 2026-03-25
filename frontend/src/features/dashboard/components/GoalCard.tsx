@@ -43,6 +43,10 @@ export const GoalCard = ({
       radius="md"
       p="md"
       draggable={isDraggable}
+      role="button"
+      tabIndex={0}
+      aria-pressed={isSelected}
+      aria-label={`${goal.title}, ${formatMoney(goal.currentAmount)} of ${formatMoney(goal.targetAmount)}${goal.isCompleted ? ", completed" : `, ${goalProgress.toFixed(1)}% progress`}`}
       style={{
         cursor: isDraggable ? (isDragged ? "grabbing" : "grab") : "pointer",
         borderColor: isDropTarget || isSelected ? goal.color : undefined,
@@ -55,6 +59,12 @@ export const GoalCard = ({
       onDrop={onDrop}
       onDragEnd={onDragEnd}
       onClick={onSelect}
+      onKeyDown={(e: React.KeyboardEvent) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onSelect();
+        }
+      }}
     >
       <Stack gap="xs">
         <Group justify="space-between" align="flex-start" wrap="nowrap">
@@ -107,6 +117,7 @@ export const GoalCard = ({
         </Text>
         <Progress
           value={Math.max(0, Math.min(goalProgress, 100))}
+          aria-label={`${goal.title} progress: ${goalProgress.toFixed(1)}%`}
           styles={{ section: { backgroundColor: goal.color } }}
         />
       </Stack>

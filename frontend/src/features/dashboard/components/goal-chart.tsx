@@ -3,6 +3,10 @@
 import { useMemo } from "react";
 import Highcharts from "highcharts";
 import HighchartsReact from "highcharts-react-official";
+
+if (typeof window !== "undefined") {
+  require("highcharts/modules/accessibility");
+}
 import { useComputedColorScheme } from "@mantine/core";
 import type { Options } from "highcharts";
 import type { GoalOperation } from "@/features/dashboard/types";
@@ -117,6 +121,9 @@ export const GoalChart = ({ operations, color, height = 320, range }: GoalChartP
         style: {
           color: isDark ? "#E5E7EB" : "#0F172A",
         },
+      },
+      accessibility: {
+        description: "Line chart showing goal progress over time",
       },
       credits: { enabled: false },
       chart: {

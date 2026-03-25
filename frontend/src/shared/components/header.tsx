@@ -35,28 +35,41 @@ export const Header = () => {
       <Container size="xl" py="sm">
         <Group justify="space-between">
           <Text fw={800}>Financial Goals Tracker</Text>
-          <Group gap="xs">
-            <Button component={Link} href={APP_ROUTES.home} variant={pathname === APP_ROUTES.home ? "light" : "subtle"}>
-              Home
-            </Button>
-            <Button
-              component={Link}
-              href={APP_ROUTES.dashboard}
-              variant={pathname === APP_ROUTES.dashboard ? "light" : "subtle"}
-            >
-              Dashboard
-            </Button>
-            {isAuthed && (
-              <>
-                <Button component={Link} href={APP_ROUTES.profile} variant={pathname === APP_ROUTES.profile ? "light" : "subtle"}>
-                  Profile
-                </Button>
-                <Button onClick={handleLogout} color="red" variant="subtle">
-                  Log Out
-                </Button>
-              </>
-            )}
-          </Group>
+          <nav aria-label="Main navigation">
+            <Group gap="xs">
+              <Button
+                component={Link}
+                href={APP_ROUTES.home}
+                variant={pathname === APP_ROUTES.home ? "light" : "subtle"}
+                aria-current={pathname === APP_ROUTES.home ? "page" : undefined}
+              >
+                Home
+              </Button>
+              <Button
+                component={Link}
+                href={APP_ROUTES.dashboard}
+                variant={pathname === APP_ROUTES.dashboard ? "light" : "subtle"}
+                aria-current={pathname === APP_ROUTES.dashboard ? "page" : undefined}
+              >
+                Dashboard
+              </Button>
+              {isAuthed && (
+                <>
+                  <Button
+                    component={Link}
+                    href={APP_ROUTES.profile}
+                    variant={pathname === APP_ROUTES.profile ? "light" : "subtle"}
+                    aria-current={pathname === APP_ROUTES.profile ? "page" : undefined}
+                  >
+                    Profile
+                  </Button>
+                  <Button onClick={handleLogout} color="red" variant="subtle">
+                    Log Out
+                  </Button>
+                </>
+              )}
+            </Group>
+          </nav>
         </Group>
       </Container>
     </header>

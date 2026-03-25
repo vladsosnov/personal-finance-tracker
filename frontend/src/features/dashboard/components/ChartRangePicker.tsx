@@ -24,17 +24,26 @@ export const ChartRangePicker = ({ value, opened, onToggle, onChange }: ChartRan
   return (
     <Popover opened={opened} onChange={onToggle} position="bottom-end" withArrow shadow="md">
       <Popover.Target>
-        <Button variant="subtle" rightSection={<IconChevronDown size={16} stroke={2} />} onClick={onToggle}>
+        <Button
+          variant="subtle"
+          rightSection={<IconChevronDown size={16} stroke={2} />}
+          onClick={onToggle}
+          aria-label={`Chart range: ${selectedLabel}`}
+          aria-expanded={opened}
+          aria-haspopup="listbox"
+        >
           {selectedLabel}
         </Button>
       </Popover.Target>
       <Popover.Dropdown p="xs">
-        <Stack gap={4}>
+        <Stack gap={4} role="listbox" aria-label="Chart time range">
           {CHART_RANGE_OPTIONS.map((option) => (
             <Button
               key={option.value}
               variant={value === option.value ? "light" : "subtle"}
               justify="flex-start"
+              role="option"
+              aria-selected={value === option.value}
               onClick={() => onChange(option.value)}
             >
               {option.label}

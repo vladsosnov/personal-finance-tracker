@@ -15,9 +15,10 @@ export const DeleteOperationModal = ({ operation, isLoading, onConfirm, onClose 
     onClose={() => { if (!isLoading) onClose(); }}
     title="Delete Operation"
     centered
+    aria-describedby="delete-operation-desc"
   >
     <Stack gap="md">
-      <Text>
+      <Text id="delete-operation-desc">
         {operation
           ? `Delete this ${operation.type.toLowerCase()} operation for ${formatMoney(operation.amount)}?`
           : "Delete this operation?"}
@@ -26,7 +27,7 @@ export const DeleteOperationModal = ({ operation, isLoading, onConfirm, onClose 
         <Button color="red" onClick={onConfirm} loading={isLoading}>
           Delete
         </Button>
-        <Button variant="subtle" onClick={onClose} disabled={isLoading}>
+        <Button variant="subtle" onClick={onClose} disabled={isLoading} data-autofocus>
           Cancel
         </Button>
       </Stack>

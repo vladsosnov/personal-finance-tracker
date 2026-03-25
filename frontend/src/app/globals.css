@@ -153,6 +153,41 @@ a {
   text-decoration: none;
 }
 
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+.skip-to-content {
+  position: absolute;
+  left: -9999px;
+  z-index: 999;
+  padding: 8px 16px;
+  background: var(--mantine-color-blue-6, #228be6);
+  color: #fff;
+  font-weight: 600;
+  border-radius: 4px;
+  text-decoration: none;
+}
+
+.skip-to-content:focus {
+  left: 8px;
+  top: 8px;
+}
+
+/* Ensure visible focus outlines on interactive card elements */
+[role="button"]:focus-visible {
+  outline: 2px solid var(--mantine-color-blue-6, #228be6);
+  outline-offset: 2px;
+}
+
 @media (prefers-color-scheme: dark) {
   html {
     color-scheme: dark;

@@ -29,8 +29,11 @@ const RootLayout = ({
         <AppThemeProvider>
           <Providers>
             <div className="app-shell">
+              <a href="#main-content" className="skip-to-content">
+                Skip to main content
+              </a>
               <Header />
-              <main className="app-main">{children}</main>
+              <main id="main-content" className="app-main">{children}</main>
               <Footer />
             </div>
           </Providers>

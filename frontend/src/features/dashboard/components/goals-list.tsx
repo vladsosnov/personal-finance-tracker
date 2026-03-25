@@ -53,7 +53,7 @@ export const GoalsList = ({
       <Stack gap={6}>
         <Group justify="space-between" align="center">
           {goals.length > 0 && (
-            <Text size="sm" c="dimmed">
+            <Text size="sm" c="dimmed" aria-hidden="true">
               Drag and drop cards to change their order.
             </Text>
           )}
@@ -61,7 +61,8 @@ export const GoalsList = ({
             <Button
               variant={manageMode.isActive ? "light" : "subtle"}
               px={10}
-              aria-label="Manage goals"
+              aria-label={manageMode.isActive ? "Exit manage mode" : "Manage goals"}
+              aria-expanded={manageMode.isActive}
               onClick={manageMode.onToggle}
             >
               {manageMode.isActive ? <IconX size={16} stroke={2} /> : <IconDotsVertical size={16} stroke={2} />}
@@ -110,9 +111,10 @@ export const GoalsList = ({
 
 
 const GoalsLoadingSkeleton = () => (
-  <>
+  <div role="status" aria-label="Loading goals">
+    <span className="sr-only">Loading goals...</span>
     {Array.from({ length: 5 }).map((_, i) => (
-      <Card key={i} withBorder radius="md" p="md">
+      <Card key={i} withBorder radius="md" p="md" mb="sm">
         <Stack gap="xs">
           <Group justify="space-between">
             <Skeleton height={20} width="42%" />
@@ -123,5 +125,5 @@ const GoalsLoadingSkeleton = () => (
         </Stack>
       </Card>
     ))}
-  </>
+  </div>
 );

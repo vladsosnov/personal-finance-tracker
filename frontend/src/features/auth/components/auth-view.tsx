@@ -27,24 +27,47 @@ export const AuthView = ({
   return (
     <Container size="sm" py={72}>
       <Card withBorder radius="md" p="xl">
-        <Stack>
-          <Title order={2}>Financial Goals Tracker</Title>
-          <Text c="dimmed">Sign in to manage your own goals and progress history.</Text>
-          <SegmentedControl
-            data={[
-              { label: "Log In", value: "login" },
-              { label: "Register", value: "register" },
-            ]}
-            value={authMode}
-            onChange={(value) => setAuthMode(value as AuthMode)}
-          />
-          <TextInput label="Email" value={email} onChange={(event) => setEmail(event.currentTarget.value)} />
-          <PasswordInput label="Password" value={password} onChange={(event) => setPassword(event.currentTarget.value)} />
-          {error ? <Alert color="red">{error}</Alert> : null}
-          <Button onClick={onSubmit} loading={isLoading}>
-            {authMode === "register" ? "Create Account" : "Log In"}
-          </Button>
-        </Stack>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            onSubmit();
+          }}
+          noValidate
+        >
+          <Stack>
+            <Title order={2}>Financial Goals Tracker</Title>
+            <Text c="dimmed">Sign in to manage your own goals and progress history.</Text>
+            <SegmentedControl
+              data={[
+                { label: "Log In", value: "login" },
+                { label: "Register", value: "register" },
+              ]}
+              value={authMode}
+              onChange={(value) => setAuthMode(value as AuthMode)}
+            />
+            <TextInput
+              label="Email"
+              type="email"
+              autoComplete="email"
+              required
+              aria-required
+              value={email}
+              onChange={(event) => setEmail(event.currentTarget.value)}
+            />
+            <PasswordInput
+              label="Password"
+              autoComplete={authMode === "register" ? "new-password" : "current-password"}
+              required
+              aria-required
+              value={password}
+              onChange={(event) => setPassword(event.currentTarget.value)}
+            />
+            {error ? <Alert color="red" role="alert">{error}</Alert> : null}
+            <Button type="submit" loading={isLoading}>
+              {authMode === "register" ? "Create Account" : "Log In"}
+            </Button>
+          </Stack>
+        </form>
       </Card>
     </Container>
   );

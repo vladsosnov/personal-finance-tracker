@@ -29,7 +29,7 @@ export const ProfileInfoCard = ({ email, subscription, isLoading, error, onRetry
       )}
       {!isLoading && !error && (
         <Group>
-          <Button color="red" variant="subtle" size="xs" onClick={onDeleteAccount}>
+          <Button color="red" variant="light" size="xs" onClick={onDeleteAccount}>
             Delete account
           </Button>
         </Group>

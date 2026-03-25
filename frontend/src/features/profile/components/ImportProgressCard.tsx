@@ -68,7 +68,7 @@ export const ImportProgressCard = ({
               {importProgress.completedSteps} / {importProgress.totalSteps}
             </Text>
           </Group>
-          <Progress value={importProgressValue} animated />
+          <Progress value={importProgressValue} animated aria-label={`Import progress: ${importProgress.completedSteps} of ${importProgress.totalSteps} steps completed`} />
           <Text size="sm" c="dimmed">{importProgress.currentLabel}</Text>
         </Stack>
       )}
@@ -78,7 +78,7 @@ export const ImportProgressCard = ({
           <Text fw={600}>
             Ready to import {importTotals.goals} goals and {importTotals.operations} operations
           </Text>
-          <Table striped highlightOnHover>
+          <Table striped highlightOnHover aria-label="Goals ready to import">
             <Table.Thead>
               <Table.Tr>
                 <Table.Th>Goal</Table.Th>
@@ -112,7 +112,7 @@ export const ImportProgressCard = ({
       {skippedGoals.length > 0 && (
         <Stack gap="sm">
           <Text fw={600}>Skipped items</Text>
-          <Table striped highlightOnHover>
+          <Table striped highlightOnHover aria-label="Skipped items">
             <Table.Thead>
               <Table.Tr>
                 <Table.Th>Title</Table.Th>

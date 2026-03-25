@@ -39,7 +39,7 @@ export const GoalOperationsTable = ({
 
   return (
     <>
-      <Table striped highlightOnHover>
+      <Table striped highlightOnHover aria-label="Goal operations">
         <Table.Thead>
           <Table.Tr>
             <Table.Th>Date</Table.Th>
@@ -88,7 +88,7 @@ export const GoalOperationsTable = ({
                     size="compact-sm"
                     px={8}
                     styles={{ root: { minHeight: 28, backgroundColor: "rgba(15, 23, 42, 0.06)", color: "var(--mantine-color-text)" } }}
-                    aria-label="Edit operation"
+                    aria-label={`Edit ${operation.type.toLowerCase()} operation for ${formatMoney(operation.amount)} on ${formatDay(operation.operationDate)}`}
                     onClick={() => onEdit(operation.id)}
                   >
                     <IconPencil size={16} stroke={2} />
@@ -99,7 +99,7 @@ export const GoalOperationsTable = ({
                     size="compact-sm"
                     px={8}
                     styles={{ root: { minHeight: 28 } }}
-                    aria-label="Delete operation"
+                    aria-label={`Delete ${operation.type.toLowerCase()} operation for ${formatMoney(operation.amount)} on ${formatDay(operation.operationDate)}`}
                     loading={deletingOperationId === operation.id}
                     onClick={() => onDelete(operation.id)}
                   >
