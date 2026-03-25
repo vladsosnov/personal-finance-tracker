@@ -3,10 +3,12 @@ import { findUserById } from "./modules/auth/user.repository";
 import { bulkCreateGoals, createGoal, deleteAllGoalsByUser, deleteGoal, getGoalById, listGoalsByUser, reorderGoals, updateGoal, updateGoalColor, updateGoalCompletion } from "./modules/goals/goal.repository";
 import { bulkCreateGoalOperations, createGoalOperation, deleteAllOperationsByUser, deleteGoalOperation, deleteOperationsByGoal, getGoalOperationById, updateGoalOperation } from "./modules/goals/operation.repository";
 import { buildGoalView } from "./modules/goals/goal.service";
+import { createProposal, listProposals, voteProposal } from "./modules/proposals/proposal.repository";
 import type { OperationType } from "./modules/goals/types";
 
 type Context = {
   userId: string | null;
+  clientIp: string;
 };
 
 type GoalArgs = {
@@ -185,11 +187,37 @@ export const schema = buildSchema(`
     operations: [GoalOperation!]!
   }
 
+  enum ProposalCategory {
+    BUG
+    FEATURE
+    TEXT_CHANGE
+    OTHER
+  }
+
+  enum ProposalStatus {
+    OPEN
+    IN_REVIEW
+    DONE
+    REJECTED
+  }
+
+  type Proposal {
+    id: ID!
+    category: ProposalCategory!
+    title: String!
+    description: String!
+    status: ProposalStatus!
+    votes: Int!
+    hasVoted: Boolean!
+    createdAt: String!
+  }
+
   type Query {
     me: User
     goals: [Goal!]!
     goal(id: ID!): Goal
     exportAllData: String!
+    proposals: [Proposal!]!
   }
 
   type Mutation {
@@ -204,6 +232,8 @@ export const schema = buildSchema(`
     updateGoalProgress(goalId: ID!, type: OperationType!, amount: Float!, note: String, operationDate: String): Goal!
     editGoalOperation(operationId: ID!, type: OperationType!, amount: Float!, note: String, operationDate: String): Goal!
     deleteGoalOperation(operationId: ID!): Goal!
+    createProposal(category: ProposalCategory!, title: String!, description: String!, contactEmail: String): Proposal!
+    voteProposal(proposalId: ID!): Proposal
   }
 `);
 
@@ -527,5 +557,81 @@ export const rootValue = {
     }
 
     return buildGoalViewWithCompletionState(userId, goal);
+  },
+  proposals: async (_args: unknown, context: Context) => {
+    const all = await listProposals();
+    return all.map((p) => ({
+      id: p.id,
+      category: p.category.toUpperCase(),
+      title: p.title,
+      description: p.description,
+      status: p.status.toUpperCase(),
+      votes: p.votes,
+      hasVoted: p.voterIps.includes(context.clientIp),
+      createdAt: p.createdAt,
+    }));
+  },
+  createProposal: async (
+    { category, title, description, contactEmail }: { category: string; title: string; description: string; contactEmail?: string },
+    context: Context
+  ) => {
+    const trimmedTitle = title.trim();
+    const trimmedDescription = description.trim();
+
+    if (!trimmedTitle) throw new Error("Title is required");
+    if (trimmedTitle.length > 200) throw new Error("Title must be at most 200 characters");
+    if (!trimmedDescription) throw new Error("Description is required");
+    if (trimmedDescription.length > 2000) throw new Error("Description must be at most 2000 characters");
+
+    if (contactEmail) {
+      const email = contactEmail.trim();
+      if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        throw new Error("Invalid email address");
+      }
+    }
+
+    const categoryMap: Record<string, "bug" | "feature" | "text_change" | "other"> = {
+      BUG: "bug",
+      FEATURE: "feature",
+      TEXT_CHANGE: "text_change",
+      OTHER: "other",
+    };
+
+    const mappedCategory = categoryMap[category];
+    if (!mappedCategory) throw new Error("Invalid category");
+
+    const proposal = await createProposal({
+      category: mappedCategory,
+      title: trimmedTitle,
+      description: trimmedDescription,
+      contactEmail: contactEmail?.trim() || undefined,
+      submitterIp: context.clientIp,
+    });
+
+    return {
+      id: proposal.id,
+      category: proposal.category.toUpperCase(),
+      title: proposal.title,
+      description: proposal.description,
+      status: proposal.status.toUpperCase(),
+      votes: proposal.votes,
+      hasVoted: false,
+      createdAt: proposal.createdAt,
+    };
+  },
+  voteProposal: async ({ proposalId }: { proposalId: string }, context: Context) => {
+    const proposal = await voteProposal(proposalId, context.clientIp);
+    if (!proposal) return null;
+
+    return {
+      id: proposal.id,
+      category: proposal.category.toUpperCase(),
+      title: proposal.title,
+      description: proposal.description,
+      status: proposal.status.toUpperCase(),
+      votes: proposal.votes,
+      hasVoted: true,
+      createdAt: proposal.createdAt,
+    };
   },
 };

@@ -53,6 +53,14 @@ export const Header = () => {
               >
                 Dashboard
               </Button>
+              <Button
+                component={Link}
+                href={APP_ROUTES.feedback}
+                variant={pathname === APP_ROUTES.feedback ? "light" : "subtle"}
+                aria-current={pathname === APP_ROUTES.feedback ? "page" : undefined}
+              >
+                Feedback
+              </Button>
               {isAuthed && (
                 <>
                   <Button

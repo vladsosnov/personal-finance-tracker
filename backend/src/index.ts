@@ -247,7 +247,13 @@ app.post(
           ? req.headers.get("authorization") ?? undefined
           : ((req.headers as { authorization?: string }).authorization ?? undefined);
       const token = authHeader?.startsWith("Bearer ") ? authHeader.slice("Bearer ".length) : cookies[AUTH_ACCESS_COOKIE];
-      return { userId: verifyJwt(token) };
+
+      const forwarded = typeof req.headers.get === "function"
+        ? req.headers.get("x-forwarded-for") ?? undefined
+        : ((req.headers as { "x-forwarded-for"?: string })["x-forwarded-for"] ?? undefined);
+      const clientIp = forwarded?.split(",")[0]?.trim() || "unknown";
+
+      return { userId: verifyJwt(token), clientIp };
     },
   })
 );
