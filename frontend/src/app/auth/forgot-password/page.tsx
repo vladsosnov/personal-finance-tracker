@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Alert, Anchor, Button, Card, Container, Stack, Text, TextInput, Title } from "@mantine/core";
 import { API_BASE_URL } from "@/shared/constants/auth";
 import { APP_ROUTES } from "@/shared/constants/routes";
+import { trackEvent } from "@/shared/lib/analytics";
 
 const ForgotPasswordPage = () => {
   const [email, setEmail] = useState("");
@@ -14,6 +15,7 @@ const ForgotPasswordPage = () => {
   const handleSubmit = async () => {
     if (!email.trim()) return;
 
+    trackEvent("forgot_password_click");
     setIsLoading(true);
     setError(null);
 

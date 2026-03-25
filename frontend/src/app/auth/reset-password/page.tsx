@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { Alert, Anchor, Button, Card, Container, PasswordInput, Stack, Text, Title } from "@mantine/core";
 import { API_BASE_URL } from "@/shared/constants/auth";
 import { APP_ROUTES } from "@/shared/constants/routes";
+import { trackEvent } from "@/shared/lib/analytics";
 
 const ResetPasswordPage = () => {
   const searchParams = useSearchParams();
@@ -22,6 +23,7 @@ const ResetPasswordPage = () => {
   const handleSubmit = async () => {
     if (!isValid || !token) return;
 
+    trackEvent("reset_password_submit");
     setIsLoading(true);
     setError(null);
 

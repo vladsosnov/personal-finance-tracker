@@ -8,11 +8,14 @@ export type AnalyticsEventDocument = {
 
 const analyticsEventSchema = new Schema<AnalyticsEventDocument>(
   {
-    event: { type: String, required: true, index: true },
-    userId: { type: String, index: true, sparse: true },
+    event: { type: String, required: true },
+    userId: { type: String, sparse: true },
     metadata: { type: Schema.Types.Mixed },
   },
   { timestamps: true }
 );
+
+analyticsEventSchema.index({ createdAt: -1 });
+analyticsEventSchema.index({ event: 1, userId: 1 });
 
 export const AnalyticsEventModel = model<AnalyticsEventDocument>("AnalyticsEvent", analyticsEventSchema);

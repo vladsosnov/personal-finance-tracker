@@ -391,11 +391,28 @@ app.post("/analytics/track", createRateLimit("analytics-track", 60, 60 * 1000), 
 
     const cookies = parseCookies(req.headers.cookie);
     const tokenResult = verifyJwt(cookies[AUTH_ACCESS_COOKIE]);
-    const userId = tokenResult?.userId ?? undefined;
+    let userId: string | undefined;
+    if (tokenResult) {
+      const user = await findUserById(tokenResult.userId);
+      if (user && user.tokenVersion === tokenResult.tokenVersion) {
+        userId = user.id;
+      }
+    }
 
-    const metadata = typeof req.body?.metadata === "object" && req.body.metadata !== null
-      ? req.body.metadata as Record<string, string>
-      : undefined;
+    let metadata: Record<string, string> | undefined;
+    if (typeof req.body?.metadata === "object" && req.body.metadata !== null) {
+      const raw = req.body.metadata as Record<string, unknown>;
+      const keys = Object.keys(raw);
+      if (keys.length <= 10) {
+        const sanitized: Record<string, string> = {};
+        for (const key of keys) {
+          const k = String(key).slice(0, 64);
+          const v = typeof raw[key] === "string" ? (raw[key] as string).slice(0, 256) : "";
+          sanitized[k] = v;
+        }
+        metadata = sanitized;
+      }
+    }
 
     await recordEvent(event, userId, metadata);
     res.json({ ok: true });
@@ -456,13 +473,15 @@ app.post(
 
       const tokenResult = verifyJwt(token);
       let userId: string | null = null;
+      let userRole: "user" | "admin" = "user";
       if (tokenResult) {
         const user = await findUserById(tokenResult.userId);
         if (user && user.tokenVersion === tokenResult.tokenVersion) {
           userId = user.id;
+          userRole = user.role;
         }
       }
-      return { userId, tokenVersion: tokenResult?.tokenVersion ?? 0, clientIp };
+      return { userId, userRole, tokenVersion: tokenResult?.tokenVersion ?? 0, clientIp };
     },
   })
 );

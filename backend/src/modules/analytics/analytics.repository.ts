@@ -1,12 +1,25 @@
 import { AnalyticsEventModel } from "../../db/models/analytics-event.model";
 
 export const TRACKED_EVENTS = [
+  // auth
   "login_click",
   "register_click",
   "login_success",
   "register_success",
+  "forgot_password_click",
+  "reset_password_submit",
+  // dashboard - goals
   "add_goal_click",
-  "page_view",
+  "goal_deleted",
+  // dashboard - operations
+  "operation_added",
+  "operation_deleted",
+  // profile
+  "profile_page_view",
+  "data_exported",
+  "data_imported",
+  "data_reset",
+  "delete_account_click",
 ] as const;
 
 export type TrackedEvent = (typeof TRACKED_EVENTS)[number];
@@ -39,23 +52,24 @@ export const getUniqueUserLogins = async (): Promise<number> => {
   return result.length;
 };
 
+const MAX_RECENT_EVENTS = 200;
+
 export const getRecentEvents = async (limit = 50): Promise<Array<{
   id: string;
   event: string;
   userId: string | null;
-  metadata: Record<string, string> | null;
   createdAt: string;
 }>> => {
+  const capped = Math.min(limit, MAX_RECENT_EVENTS);
   const events = await AnalyticsEventModel.find()
     .sort({ createdAt: -1 })
-    .limit(limit)
+    .limit(capped)
     .lean();
 
   return events.map((e) => ({
     id: (e._id as { toString(): string }).toString(),
     event: e.event,
     userId: e.userId ?? null,
-    metadata: (e.metadata as Record<string, string>) ?? null,
     createdAt: (e as unknown as { createdAt: Date }).createdAt.toISOString(),
   }));
 };

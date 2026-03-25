@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@apollo/client/react";
-import { Badge, Card, Grid, Group, Loader, Select, Stack, Table, Text, TextInput, Title } from "@mantine/core";
+import { ActionIcon, Badge, Card, Grid, Group, Loader, Select, Stack, Table, Text, TextInput, Title, Tooltip } from "@mantine/core";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { PageContainer } from "@/shared/components/page-container";
@@ -33,8 +33,17 @@ const EVENT_LABELS: Record<string, string> = {
   register_click: "Register Button Clicks",
   login_success: "Successful Logins",
   register_success: "Successful Registrations",
+  forgot_password_click: "Forgot Password Clicks",
+  reset_password_submit: "Reset Password Submits",
   add_goal_click: "Add Goal Clicks",
-  page_view: "Page Views",
+  goal_deleted: "Goals Deleted",
+  operation_added: "Operations Added",
+  operation_deleted: "Operations Deleted",
+  profile_page_view: "Profile Page Views",
+  data_exported: "Data Exports",
+  data_imported: "Data Imports",
+  data_reset: "Data Resets",
+  delete_account_click: "Delete Account Clicks",
 };
 
 const formatEventName = (event: string) => EVENT_LABELS[event] ?? event;
@@ -148,7 +157,10 @@ export const AdminLogsClient = () => {
   );
 
   useEffect(() => {
-    if (!meLoading && meData?.me && meData.me.role !== "admin") {
+    if (meLoading) return;
+    if (!meData?.me) {
+      router.replace(APP_ROUTES.auth);
+    } else if (meData.me.role !== "admin") {
       router.replace(APP_ROUTES.dashboard);
     }
   }, [meLoading, meData, router]);
@@ -176,7 +188,14 @@ export const AdminLogsClient = () => {
       <Stack gap="lg">
         <Group justify="space-between">
           <Title order={2}>Analytics Logs</Title>
-          <Badge color="red" variant="filled" size="lg">Admin</Badge>
+          <Group gap="sm">
+            <Tooltip label="Refresh data">
+              <ActionIcon variant="subtle" size="lg" onClick={() => refetch()} loading={loading}>
+                <Text size="lg">&#x21bb;</Text>
+              </ActionIcon>
+            </Tooltip>
+            <Badge color="red" variant="filled" size="lg">Admin</Badge>
+          </Group>
         </Group>
 
         {loading && !stats && (

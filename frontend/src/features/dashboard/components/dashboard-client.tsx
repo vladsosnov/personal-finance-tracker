@@ -124,6 +124,7 @@ export const DashboardClient = () => {
       updatedGoal = await editOperation({ operationId: operationForm.editingOperationId, ...sharedInput });
     } else {
       if (!selectedGoalId) return;
+      trackEvent("operation_added");
       updatedGoal = await addOperation({ goalId: selectedGoalId, ...sharedInput });
     }
 
@@ -162,6 +163,7 @@ export const DashboardClient = () => {
 
   const handleConfirmDeleteGoal = async () => {
     if (!deletingGoalId) return;
+    trackEvent("goal_deleted");
     setIsDeletingGoal(true);
     try {
       await deleteGoal(deletingGoalId);
@@ -186,6 +188,7 @@ export const DashboardClient = () => {
   };
 
   const handleDeleteOperation = async (operationId: string) => {
+    trackEvent("operation_deleted");
     setDeletingOperationId(operationId);
     try {
       await deleteOperation(operationId);

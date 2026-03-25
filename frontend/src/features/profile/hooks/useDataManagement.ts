@@ -9,6 +9,7 @@ import { prepareImportGoals } from "@/features/profile/utils/prepareImport";
 import { showToast } from "@/shared/lib/toast-store";
 import { API_BASE_URL } from "@/shared/constants/auth";
 import { APP_ROUTES } from "@/shared/constants/routes";
+import { trackEvent } from "@/shared/lib/analytics";
 
 export const useDataManagement = () => {
   const apolloClient = useApolloClient();
@@ -124,6 +125,7 @@ export const useDataManagement = () => {
       return;
     }
 
+    trackEvent("data_imported");
     setIsImporting(true);
     setImportProgress({ completedSteps: 0, totalSteps: 3, currentLabel: "Preparing import payload..." });
 
@@ -158,6 +160,7 @@ export const useDataManagement = () => {
   };
 
   const handleResetAllData = async () => {
+    trackEvent("data_reset");
     try {
       const result = await resetAllDataMutation();
       const summary = result.data?.resetAllData;
@@ -177,6 +180,7 @@ export const useDataManagement = () => {
   };
 
   const handleDeleteAccount = async () => {
+    trackEvent("delete_account_click");
     setIsDeletingAccount(true);
     try {
       const response = await fetch(`${API_BASE_URL}/auth/delete-account`, {
@@ -198,6 +202,7 @@ export const useDataManagement = () => {
   };
 
   const handleExportAllData = async () => {
+    trackEvent("data_exported");
     try {
       const result = await exportAllDataQuery();
       const payload = result.data?.exportAllData;

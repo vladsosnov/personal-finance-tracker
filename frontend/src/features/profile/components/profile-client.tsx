@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { Stack, Text, Title } from "@mantine/core";
 import { EmailVerificationBanner } from "@/features/auth/components/email-verification-banner";
 import { PageContainer } from "@/shared/components/page-container";
@@ -11,9 +12,14 @@ import { ThemeCard } from "@/features/profile/components/ThemeCard";
 import { DeleteAccountModal } from "@/features/profile/components/modals/DeleteAccountModal";
 import { ResetDataModal } from "@/features/profile/components/modals/ResetDataModal";
 import { useDataManagement } from "@/features/profile/hooks/useDataManagement";
+import { trackEvent } from "@/shared/lib/analytics";
 
 export const ProfileClient = () => {
   const dm = useDataManagement();
+
+  useEffect(() => {
+    trackEvent("profile_page_view");
+  }, []);
 
   return (
     <PageContainer>

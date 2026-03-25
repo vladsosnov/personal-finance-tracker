@@ -6,9 +6,11 @@ import { bulkCreateGoalOperations, createGoalOperation, deleteAllOperationsByUse
 import { buildGoalView, buildGoalViews } from "./modules/goals/goal.service";
 import { createProposal, listProposals, voteProposal } from "./modules/proposals/proposal.repository";
 import type { OperationType } from "./modules/goals/types";
+import type { UserRole } from "./modules/auth/types";
 
 type Context = {
   userId: string | null;
+  userRole: UserRole;
   tokenVersion: number;
   clientIp: string;
 };
@@ -105,10 +107,9 @@ const ensureAuthed = (context: Context): string => {
   return context.userId;
 };
 
-const ensureAdmin = async (context: Context): Promise<string> => {
+const ensureAdmin = (context: Context): string => {
   const userId = ensureAuthed(context);
-  const user = await findUserById(userId);
-  if (!user || user.role !== "admin") {
+  if (context.userRole !== "admin") {
     throw new Error("Forbidden");
   }
   return userId;

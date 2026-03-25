@@ -1,12 +1,23 @@
 import { API_BASE_URL } from "@/shared/constants/auth";
 
 export type TrackedEvent =
+  // auth
   | "login_click"
   | "register_click"
-  | "login_success"
-  | "register_success"
+  | "forgot_password_click"
+  | "reset_password_submit"
+  // dashboard - goals
   | "add_goal_click"
-  | "page_view";
+  | "goal_deleted"
+  // dashboard - operations
+  | "operation_added"
+  | "operation_deleted"
+  // profile
+  | "profile_page_view"
+  | "data_exported"
+  | "data_imported"
+  | "data_reset"
+  | "delete_account_click";
 
 export const trackEvent = (event: TrackedEvent, metadata?: Record<string, string>) => {
   fetch(`${API_BASE_URL}/analytics/track`, {
