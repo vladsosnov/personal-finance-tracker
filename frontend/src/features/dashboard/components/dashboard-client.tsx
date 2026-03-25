@@ -19,6 +19,7 @@ import { useGoalForm } from "@/features/dashboard/hooks/useGoalForm";
 import { useOperationForm } from "@/features/dashboard/hooks/useOperationForm";
 import { EmailVerificationBanner } from "@/features/auth/components/email-verification-banner";
 import { GET_ME } from "@/shared/gql/queries";
+import { getPlanByName } from "@/shared/constants/plans";
 import type { Goal, GoalDetails } from "@/features/dashboard/types";
 import { StateMessage } from "@/shared/components/state-message";
 
@@ -74,6 +75,12 @@ export const DashboardClient = () => {
 
   const totalTarget = useMemo(() => activeGoals.reduce((sum, g) => sum + g.targetAmount, 0), [activeGoals]);
   const totalCurrent = useMemo(() => activeGoals.reduce((sum, g) => sum + g.currentAmount, 0), [activeGoals]);
+
+  const subscription = meData?.me?.subscription ?? "Free";
+  const plan = getPlanByName(subscription);
+  const goalLimitMessage = plan.maxGoals !== null && goals.length >= plan.maxGoals
+    ? `Free plan supports up to ${plan.maxGoals} goals. Upgrade to add more.`
+    : null;
 
   const isOperationSubmitDisabled = !selectedGoalId || !operationForm.operationAmount || Number(operationForm.operationAmount) <= 0;
 
@@ -212,6 +219,7 @@ export const DashboardClient = () => {
           goalColor={createGoalForm.color}
           isCreatingGoal={isCreatingGoal}
           isAddDisabled={!createGoalForm.isValid}
+          limitMessage={goalLimitMessage}
           setGoalTitle={createGoalForm.setTitle}
           setGoalTarget={createGoalForm.setTargetAmount}
           setGoalInitialAmount={createGoalForm.setInitialAmount}

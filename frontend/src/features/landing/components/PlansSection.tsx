@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Badge, Button, Card, Group, List, SimpleGrid, Stack, Text, Title } from "@mantine/core";
 import { ListBullet } from "@/features/landing/components/ListBullet";
-import { PLANS } from "@/features/landing/constants/landingData";
+import { LANDING_PLANS } from "@/features/landing/constants/landingData";
 
 export const PlansSection = () => (
   <section aria-labelledby="plans-heading">
@@ -15,7 +15,7 @@ export const PlansSection = () => (
       </Text>
     </Stack>
     <SimpleGrid cols={{ base: 1, md: 3 }} spacing="md">
-      {PLANS.map((plan) => (
+      {LANDING_PLANS.map((plan) => (
         <Card
           key={plan.name}
           withBorder

@@ -98,6 +98,10 @@ export const bulkCreateGoals = async (
   );
 };
 
+export const countGoalsByUser = async (userId: string): Promise<number> => {
+  return GoalModel.countDocuments({ userId });
+};
+
 export const listGoalsByUser = async (userId: string): Promise<Goal[]> => {
   const goals = await GoalModel.find({ userId }).sort({ sortOrder: 1, createdAt: 1 }).lean();
   return goals.map((goal) =>

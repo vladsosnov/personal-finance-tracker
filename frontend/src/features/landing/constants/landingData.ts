@@ -1,4 +1,5 @@
 import { APP_ROUTES } from "@/shared/constants/routes";
+import { PLANS } from "@/shared/constants/plans";
 
 export const FEATURES = [
   {
@@ -42,32 +43,9 @@ export const FUTURE_FEATURES = [
   },
 ];
 
-export const PLANS = [
-  {
-    name: "Free",
-    price: "$0",
-    description: "For getting started with your first financial goal.",
-    features: ["Goal tracking", "Operations log", "Theme settings"],
-    cta: "Start free",
-    href: APP_ROUTES.auth,
-    highlight: false,
-  },
-  {
-    name: "Pro",
-    price: "$3/mo",
-    description: "For users managing multiple goals with deeper tracking.",
-    features: ["Everything in Free", "Advanced analytics", "More customization"],
-    cta: "Coming soon",
-    href: APP_ROUTES.auth,
-    highlight: false,
-  },
-  {
-    name: "Lifetime",
-    price: "$9 once",
-    description: "One-time payment for long-term planning without subscription.",
-    features: ["Everything in Pro", "Permanent access"],
-    cta: "Coming soon",
-    href: APP_ROUTES.auth,
-    highlight: true,
-  },
-] as const;
+export const LANDING_PLANS = PLANS.map((plan) => ({
+  ...plan,
+  cta: plan.name === "Free" ? "Start free" : "Coming soon",
+  href: APP_ROUTES.auth,
+  highlight: plan.name === "Lifetime",
+}));

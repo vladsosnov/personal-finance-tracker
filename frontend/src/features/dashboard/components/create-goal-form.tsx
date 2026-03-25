@@ -1,4 +1,4 @@
-import { Button, Card, Grid, NumberInput, Stack, TextInput, Title } from "@mantine/core";
+import { Button, Card, Grid, NumberInput, Stack, Text, TextInput, Title } from "@mantine/core";
 import { GoalColorPicker } from "@/features/dashboard/components/goal-color-picker";
 import { MONEY_INPUT_PROPS, numberOrZero } from "@/shared/utils/number";
 
@@ -9,6 +9,7 @@ type CreateGoalFormProps = {
   goalColor: string;
   isCreatingGoal: boolean;
   isAddDisabled: boolean;
+  limitMessage: string | null;
   setGoalTitle: (value: string) => void;
   setGoalTarget: (value: number | "") => void;
   setGoalInitialAmount: (value: number | "") => void;
@@ -23,6 +24,7 @@ export const CreateGoalForm = ({
   goalColor,
   isCreatingGoal,
   isAddDisabled,
+  limitMessage,
   setGoalTitle,
   setGoalTarget,
   setGoalInitialAmount,
@@ -34,12 +36,13 @@ export const CreateGoalForm = ({
       <form
         onSubmit={(e) => {
           e.preventDefault();
-          if (!isAddDisabled) onCreateGoal();
+          if (!isAddDisabled && !limitMessage) onCreateGoal();
         }}
         aria-label="Create goal"
       >
         <Stack gap="sm">
           <Title order={4}>Create goal</Title>
+          {limitMessage && <Text size="sm" c="orange">{limitMessage}</Text>}
           <Grid align="flex-end">
             <Grid.Col span={{ base: 12, md: 4 }}>
               <TextInput
@@ -81,7 +84,7 @@ export const CreateGoalForm = ({
                 fullWidth
                 type="submit"
                 loading={isCreatingGoal}
-                disabled={isAddDisabled}
+                disabled={isAddDisabled || Boolean(limitMessage)}
               >
                 Add goal
               </Button>

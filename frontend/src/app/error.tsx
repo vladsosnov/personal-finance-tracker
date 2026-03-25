@@ -2,7 +2,7 @@
 
 import { Button, Container, Text, Title } from "@mantine/core";
 
-export const GlobalError = ({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) => {
+const GlobalError = ({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) => {
   return (
     <Container size="sm" py="xl" style={{ textAlign: "center" }}>
       <Title order={2} mb="md">
@@ -15,3 +15,5 @@ export const GlobalError = ({ error, reset }: { error: Error & { digest?: string
     </Container>
   );
 };
+
+export default GlobalError;

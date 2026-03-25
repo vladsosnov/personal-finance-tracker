@@ -1,6 +1,6 @@
 import { buildSchema } from "graphql";
 import { findUserById } from "./modules/auth/user.repository";
-import { bulkCreateGoals, createGoal, deleteAllGoalsByUser, deleteGoal, getGoalById, listGoalsByUser, reorderGoals, updateGoal, updateGoalColor, updateGoalCompletion } from "./modules/goals/goal.repository";
+import { bulkCreateGoals, countGoalsByUser, createGoal, deleteAllGoalsByUser, deleteGoal, getGoalById, listGoalsByUser, reorderGoals, updateGoal, updateGoalColor, updateGoalCompletion } from "./modules/goals/goal.repository";
 import { bulkCreateGoalOperations, createGoalOperation, deleteAllOperationsByUser, deleteGoalOperation, deleteOperationsByGoal, getGoalOperationById, updateGoalOperation } from "./modules/goals/operation.repository";
 import { buildGoalView, buildGoalViews } from "./modules/goals/goal.service";
 import { createProposal, listProposals, voteProposal } from "./modules/proposals/proposal.repository";
@@ -91,6 +91,11 @@ const MAX_GOAL_TITLE_LENGTH = 80;
 const MAX_NOTE_LENGTH = 500;
 const MAX_IMPORT_GOALS = 200;
 const MAX_IMPORT_OPERATIONS_PER_GOAL = 2000;
+const FREE_MAX_GOALS = 3;
+
+const getMaxGoals = (subscription: string): number | null => {
+  return subscription.toLowerCase() === "free" ? FREE_MAX_GOALS : null;
+};
 
 const ensureAuthed = (context: Context): string => {
   if (!context.userId) {
@@ -346,6 +351,15 @@ export const rootValue = {
       throw new Error("Goal color must be a valid hex color");
     }
 
+    const user = await findUserById(userId);
+    const maxGoals = getMaxGoals(user?.subscription ?? "Free");
+    if (maxGoals !== null) {
+      const currentCount = await countGoalsByUser(userId);
+      if (currentCount >= maxGoals) {
+        throw new Error(`Free plan is limited to ${maxGoals} goals. Upgrade to create more.`);
+      }
+    }
+
     const goal = await createGoal(userId, title.trim(), targetAmount, initialAmount, color);
     return buildGoalViewWithCompletionState(userId, goal);
   },
@@ -416,6 +430,19 @@ export const rootValue = {
 
     if (goals.length > MAX_IMPORT_GOALS) {
       throw new Error(`Import is limited to ${MAX_IMPORT_GOALS} goals at a time`);
+    }
+
+    const user = await findUserById(userId);
+    const maxGoals = getMaxGoals(user?.subscription ?? "Free");
+    if (maxGoals !== null) {
+      const currentCount = await countGoalsByUser(userId);
+      const available = maxGoals - currentCount;
+      if (available <= 0) {
+        throw new Error(`Free plan is limited to ${maxGoals} goals. Upgrade to import more.`);
+      }
+      if (goals.length > available) {
+        throw new Error(`Free plan is limited to ${maxGoals} goals. You can import ${available} more goal${available === 1 ? "" : "s"}.`);
+      }
     }
 
     for (const goal of goals) {

@@ -1,5 +1,5 @@
 import { Badge, Card, Group, SimpleGrid, Stack, Table, Text, Title } from "@mantine/core";
-import { SUBSCRIPTION_PLANS } from "@/features/profile/constants/subscriptionPlans";
+import { PLANS } from "@/shared/constants/plans";
 
 type SubscriptionCardProps = {
   currentSubscription: string;
@@ -13,7 +13,7 @@ export const SubscriptionCard = ({ currentSubscription }: SubscriptionCardProps)
         <Text c="dimmed">Review your current plan and see available upgrade options.</Text>
       </Stack>
       <SimpleGrid cols={{ base: 1, md: 3 }} spacing="sm">
-        {SUBSCRIPTION_PLANS.map((plan) => {
+        {PLANS.map((plan) => {
           const isCurrentPlan = currentSubscription.toLowerCase() === plan.name.toLowerCase();
           return (
             <Card
