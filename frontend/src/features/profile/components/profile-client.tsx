@@ -1,6 +1,7 @@
 "use client";
 
 import { Stack, Text, Title } from "@mantine/core";
+import { EmailVerificationBanner } from "@/features/auth/components/email-verification-banner";
 import { PageContainer } from "@/shared/components/page-container";
 import { DataManagementCard } from "@/features/profile/components/DataManagementCard";
 import { ImportProgressCard } from "@/features/profile/components/ImportProgressCard";
@@ -17,6 +18,10 @@ export const ProfileClient = () => {
   return (
     <PageContainer>
       <Stack gap="lg">
+        {dm.meData?.me && !dm.meData.me.emailVerified && (
+          <EmailVerificationBanner emailVerified={false} />
+        )}
+
         <Stack gap={2}>
           <Title order={1}>Profile</Title>
           <Text c="dimmed">Account preferences and progress import.</Text>

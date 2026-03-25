@@ -17,6 +17,7 @@ import { useGoalDetails } from "@/features/dashboard/hooks/useGoalDetails";
 import { useGoalDrag } from "@/features/dashboard/hooks/useGoalDrag";
 import { useGoalForm } from "@/features/dashboard/hooks/useGoalForm";
 import { useOperationForm } from "@/features/dashboard/hooks/useOperationForm";
+import { EmailVerificationBanner } from "@/features/auth/components/email-verification-banner";
 import { GET_ME } from "@/shared/gql/queries";
 import type { Goal, GoalDetails } from "@/features/dashboard/types";
 import { StateMessage } from "@/shared/components/state-message";
@@ -32,7 +33,7 @@ export const DashboardClient = () => {
   const [pendingCompletionGoal, setPendingCompletionGoal] = useState<Goal | null>(null);
   const [deletingOperationId, setDeletingOperationId] = useState<string | null>(null);
 
-  useQuery<{ me: { id: string; email: string; subscription: string } | null }>(GET_ME);
+  const { data: meData } = useQuery<{ me: { id: string; email: string; subscription: string; emailVerified: boolean } | null }>(GET_ME);
 
   const {
     goals,
@@ -198,6 +199,10 @@ export const DashboardClient = () => {
   return (
     <PageContainer>
       <Stack gap="lg">
+        {meData?.me && !meData.me.emailVerified && (
+          <EmailVerificationBanner emailVerified={false} />
+        )}
+
         <DashboardOverviewStats totalTarget={totalTarget} totalCurrent={totalCurrent} />
 
         <CreateGoalForm

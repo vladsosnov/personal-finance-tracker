@@ -27,7 +27,7 @@ export const useDataManagement = () => {
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
 
   const { data: meData, loading: isLoadingMe, error: meError, refetch: refetchMe } =
-    useQuery<{ me: { id: string; email: string; subscription: string } | null }>(GET_ME);
+    useQuery<{ me: { id: string; email: string; subscription: string; emailVerified: boolean } | null }>(GET_ME);
 
   const { data: goalsData, loading: isLoadingGoals, error: goalsError, refetch: refetchGoals } =
     useQuery<{ goals: Goal[] }>(GET_GOALS);
