@@ -1,9 +1,9 @@
 "use client";
 
 import { useQuery } from "@apollo/client/react";
-import { Badge, Card, Grid, Group, Loader, Stack, Table, Text, Title } from "@mantine/core";
+import { Badge, Card, Grid, Group, Loader, Select, Stack, Table, Text, TextInput, Title } from "@mantine/core";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { PageContainer } from "@/shared/components/page-container";
 import { StateMessage } from "@/shared/components/state-message";
 import { GET_ME } from "@/shared/gql/queries";
@@ -45,6 +45,94 @@ const StatCard = ({ label, value }: { label: string; value: number }) => (
     <Title order={3} mt={4}>{value.toLocaleString()}</Title>
   </Card>
 );
+
+const RecentEventsTable = ({ events }: { events: RecentEvent[] }) => {
+  const [search, setSearch] = useState("");
+  const [eventFilter, setEventFilter] = useState<string | null>(null);
+
+  const eventOptions = useMemo(() => {
+    const unique = Array.from(new Set(events.map((e) => e.event))).sort();
+    return unique.map((e) => ({ value: e, label: formatEventName(e) }));
+  }, [events]);
+
+  const filtered = useMemo(() => {
+    return events.filter((event) => {
+      if (eventFilter && event.event !== eventFilter) return false;
+      if (search) {
+        const q = search.toLowerCase();
+        const matchesEvent = event.event.toLowerCase().includes(q);
+        const matchesUser = (event.userId ?? "anonymous").toLowerCase().includes(q);
+        if (!matchesEvent && !matchesUser) return false;
+      }
+      return true;
+    });
+  }, [events, eventFilter, search]);
+
+  return (
+    <Stack gap="sm">
+      <Group>
+        <TextInput
+          placeholder="Search by event or user ID..."
+          value={search}
+          onChange={(e) => setSearch(e.currentTarget.value)}
+          style={{ flex: 1 }}
+        />
+        <Select
+          placeholder="All events"
+          data={eventOptions}
+          value={eventFilter}
+          onChange={setEventFilter}
+          clearable
+          w={220}
+        />
+      </Group>
+      <Card withBorder radius="md" p={0}>
+        <Table striped highlightOnHover>
+          <Table.Thead>
+            <Table.Tr>
+              <Table.Th>Event</Table.Th>
+              <Table.Th>User ID</Table.Th>
+              <Table.Th>Time</Table.Th>
+            </Table.Tr>
+          </Table.Thead>
+          <Table.Tbody>
+            {filtered.map((event) => (
+              <Table.Tr key={event.id}>
+                <Table.Td>
+                  <Badge variant="light" size="sm">{event.event}</Badge>
+                </Table.Td>
+                <Table.Td>
+                  <Text size="sm" c="dimmed" style={{ fontFamily: "monospace" }}>
+                    {event.userId ?? "anonymous"}
+                  </Text>
+                </Table.Td>
+                <Table.Td>
+                  <Text size="sm" c="dimmed">
+                    {new Date(event.createdAt).toLocaleString()}
+                  </Text>
+                </Table.Td>
+              </Table.Tr>
+            ))}
+            {!filtered.length && (
+              <Table.Tr>
+                <Table.Td colSpan={3}>
+                  <Text c="dimmed" ta="center" py="md">
+                    {events.length ? "No events match your filters" : "No events yet"}
+                  </Text>
+                </Table.Td>
+              </Table.Tr>
+            )}
+          </Table.Tbody>
+        </Table>
+      </Card>
+      {events.length > 0 && (
+        <Text size="xs" c="dimmed" ta="right">
+          Showing {filtered.length} of {events.length} events
+        </Text>
+      )}
+    </Stack>
+  );
+};
 
 export const AdminLogsClient = () => {
   const router = useRouter();
@@ -159,43 +247,7 @@ export const AdminLogsClient = () => {
             </Card>
 
             <Title order={3}>Recent Events</Title>
-            <Card withBorder radius="md" p={0}>
-              <Table striped highlightOnHover>
-                <Table.Thead>
-                  <Table.Tr>
-                    <Table.Th>Event</Table.Th>
-                    <Table.Th>User ID</Table.Th>
-                    <Table.Th>Time</Table.Th>
-                  </Table.Tr>
-                </Table.Thead>
-                <Table.Tbody>
-                  {stats.recentEvents.map((event) => (
-                    <Table.Tr key={event.id}>
-                      <Table.Td>
-                        <Badge variant="light" size="sm">{event.event}</Badge>
-                      </Table.Td>
-                      <Table.Td>
-                        <Text size="sm" c="dimmed" style={{ fontFamily: "monospace" }}>
-                          {event.userId ?? "anonymous"}
-                        </Text>
-                      </Table.Td>
-                      <Table.Td>
-                        <Text size="sm" c="dimmed">
-                          {new Date(event.createdAt).toLocaleString()}
-                        </Text>
-                      </Table.Td>
-                    </Table.Tr>
-                  ))}
-                  {!stats.recentEvents.length && (
-                    <Table.Tr>
-                      <Table.Td colSpan={3}>
-                        <Text c="dimmed" ta="center" py="md">No events yet</Text>
-                      </Table.Td>
-                    </Table.Tr>
-                  )}
-                </Table.Tbody>
-              </Table>
-            </Card>
+            <RecentEventsTable events={stats.recentEvents} />
           </>
         )}
       </Stack>
