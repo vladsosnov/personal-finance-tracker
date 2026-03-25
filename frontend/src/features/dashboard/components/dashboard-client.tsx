@@ -22,6 +22,7 @@ import { GET_ME } from "@/shared/gql/queries";
 import { getPlanByName } from "@/shared/constants/plans";
 import type { Goal, GoalDetails } from "@/features/dashboard/types";
 import { StateMessage } from "@/shared/components/state-message";
+import { trackEvent } from "@/shared/lib/analytics";
 
 export const DashboardClient = () => {
   const [selectedGoalId, setSelectedGoalId] = useState<string | null>(null);
@@ -98,6 +99,7 @@ export const DashboardClient = () => {
 
   const handleCreateGoal = async (input: { title: string; targetAmount: number | ""; initialAmount: number | ""; color: string }) => {
     if (!input.title.trim() || !input.targetAmount || Number(input.targetAmount) <= 0) return;
+    trackEvent("add_goal_click");
     await createGoal({
       title: input.title,
       targetAmount: Number(input.targetAmount),

@@ -4,4 +4,5 @@ export const APP_ROUTES = {
   dashboard: "/dashboard",
   profile: "/profile",
   feedback: "/feedback",
+  adminLogs: "/admin/logs",
 } as const;

@@ -7,6 +7,7 @@ import { AuthView } from "@/features/auth/components/auth-view";
 import { API_BASE_URL } from "@/shared/constants/auth";
 import { APP_ROUTES } from "@/shared/constants/routes";
 import type { AuthMode } from "@/shared/types/shared";
+import { trackEvent } from "@/shared/lib/analytics";
 
 export const AuthClient = () => {
   const apolloClient = useApolloClient();
@@ -21,6 +22,8 @@ export const AuthClient = () => {
     if (!email.trim() || !password.trim()) {
       return;
     }
+
+    trackEvent(authMode === "register" ? "register_click" : "login_click");
 
     setIsLoading(true);
     setError(null);

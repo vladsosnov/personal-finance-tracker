@@ -12,10 +12,11 @@ export const Header = () => {
   const apolloClient = useApolloClient();
   const router = useRouter();
   const pathname = usePathname();
-  const { data: meData } = useQuery<{ me: { id: string } | null }>(GET_ME, {
+  const { data: meData } = useQuery<{ me: { id: string; role: string } | null }>(GET_ME, {
     fetchPolicy: "cache-and-network",
   });
   const isAuthed = Boolean(meData?.me);
+  const isAdmin = meData?.me?.role === "admin";
 
   const handleLogout = async () => {
     try {
@@ -63,6 +64,17 @@ export const Header = () => {
               </Button>
               {isAuthed && (
                 <>
+                  {isAdmin && (
+                    <Button
+                      component={Link}
+                      href={APP_ROUTES.adminLogs}
+                      variant={pathname === APP_ROUTES.adminLogs ? "light" : "subtle"}
+                      aria-current={pathname === APP_ROUTES.adminLogs ? "page" : undefined}
+                      color="red"
+                    >
+                      Admin Logs
+                    </Button>
+                  )}
                   <Button
                     component={Link}
                     href={APP_ROUTES.profile}
