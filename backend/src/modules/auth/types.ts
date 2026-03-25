@@ -4,4 +4,9 @@ export type User = {
   subscription: string;
   passwordHash: string;
   passwordSalt: string;
+  emailVerified: boolean;
+  emailVerificationToken?: string;
+  emailVerificationExpiry?: string;
+  passwordResetToken?: string;
+  passwordResetExpiry?: string;
 };

@@ -98,10 +98,11 @@ const ensureAuthed = (context: Context): string => {
   return context.userId;
 };
 
-const toSafeUser = (user: { id: string; email: string; subscription: string }) => ({
+const toSafeUser = (user: { id: string; email: string; subscription: string; emailVerified: boolean }) => ({
   id: user.id,
   email: user.email,
   subscription: user.subscription,
+  emailVerified: user.emailVerified,
 });
 
 const assertFiniteNonNegative = (value: number, label: string) => {
@@ -136,6 +137,7 @@ export const schema = buildSchema(`
     id: ID!
     email: String!
     subscription: String!
+    emailVerified: Boolean!
   }
 
   input ImportGoalOperationInput {

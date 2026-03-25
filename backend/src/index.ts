@@ -8,11 +8,22 @@ import {
   AUTH_REFRESH_COOKIE,
   authCookieHeaders,
   buildExpiredCookie,
+  generateSecureToken,
   verifyJwt,
   verifyRefreshJwt,
 } from "./auth";
+import { sendPasswordResetEmail, sendVerificationEmail } from "./email";
 import { graphQlDocsHtml } from "./graphql-docs";
-import { createUser, deleteUserById, findUserByEmail, findUserById } from "./modules/auth/user.repository";
+import {
+  createUser,
+  deleteUserById,
+  findUserByEmail,
+  findUserById,
+  resetPassword,
+  setEmailVerificationToken,
+  setPasswordResetToken,
+  verifyEmail,
+} from "./modules/auth/user.repository";
 import { deleteAllGoalsByUser } from "./modules/goals/goal.repository";
 import { deleteAllOperationsByUser } from "./modules/goals/operation.repository";
 import { rootValue, schema } from "./schema";
@@ -157,6 +168,12 @@ app.post("/auth/register", createRateLimit("auth-register", 10, 15 * 60 * 1000),
 
     const { hash, salt } = hashPassword(password);
     const user = await createUser(email, hash, salt);
+
+    const verificationToken = generateSecureToken();
+    const verificationExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    await setEmailVerificationToken(user.id, verificationToken, verificationExpiry);
+    sendVerificationEmail(email, verificationToken).catch(() => {});
+
     setAuthCookies(res, user.id);
     res.status(201).json({ user: { id: user.id, email: user.email, subscription: user.subscription } });
   } catch {
@@ -209,6 +226,109 @@ app.post("/auth/refresh", createRateLimit("auth-refresh", 30, 15 * 60 * 1000), a
 app.post("/auth/logout", (_req, res) => {
   clearAuthCookies(res);
   res.json({ ok: true });
+});
+
+app.get("/auth/verify-email", createRateLimit("auth-verify-email", 20, 15 * 60 * 1000), async (req, res) => {
+  try {
+    const token = typeof req.query.token === "string" ? req.query.token : "";
+    if (!token) {
+      res.status(400).json({ error: "Token is required" });
+      return;
+    }
+
+    const user = await verifyEmail(token);
+    if (!user) {
+      res.status(400).json({ error: "Invalid or expired verification link" });
+      return;
+    }
+
+    res.json({ ok: true });
+  } catch {
+    res.status(500).json({ error: "Verification failed" });
+  }
+});
+
+app.post("/auth/request-verification", createRateLimit("auth-request-verification", 5, 15 * 60 * 1000), async (req, res) => {
+  try {
+    const cookies = parseCookies(req.headers.cookie);
+    const userId = verifyJwt(cookies[AUTH_ACCESS_COOKIE]);
+    if (!userId) {
+      res.status(401).json({ error: "Unauthorized" });
+      return;
+    }
+
+    const user = await findUserById(userId);
+    if (!user) {
+      res.status(401).json({ error: "Unauthorized" });
+      return;
+    }
+
+    if (user.emailVerified) {
+      res.json({ ok: true, message: "Email already verified" });
+      return;
+    }
+
+    const verificationToken = generateSecureToken();
+    const verificationExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    await setEmailVerificationToken(userId, verificationToken, verificationExpiry);
+    await sendVerificationEmail(user.email, verificationToken);
+
+    res.json({ ok: true });
+  } catch {
+    res.status(500).json({ error: "Failed to send verification email" });
+  }
+});
+
+app.post("/auth/forgot-password", createRateLimit("auth-forgot-password", 5, 15 * 60 * 1000), async (req, res) => {
+  try {
+    const email = typeof req.body?.email === "string" ? req.body.email.trim().toLowerCase() : "";
+    if (!emailRegex.test(email)) {
+      res.json({ ok: true });
+      return;
+    }
+
+    const user = await findUserByEmail(email);
+    if (user) {
+      const resetToken = generateSecureToken();
+      const resetExpiry = new Date(Date.now() + 60 * 60 * 1000);
+      await setPasswordResetToken(user.id, resetToken, resetExpiry);
+      await sendPasswordResetEmail(email, resetToken);
+    }
+
+    // Always return success to prevent email enumeration
+    res.json({ ok: true });
+  } catch {
+    res.json({ ok: true });
+  }
+});
+
+app.post("/auth/reset-password", createRateLimit("auth-reset-password", 10, 15 * 60 * 1000), async (req, res) => {
+  try {
+    const token = typeof req.body?.token === "string" ? req.body.token : "";
+    const password = typeof req.body?.password === "string" ? req.body.password : "";
+
+    if (!token) {
+      res.status(400).json({ error: "Token is required" });
+      return;
+    }
+
+    if (password.length < 8 || password.length > 128) {
+      res.status(400).json({ error: "Password must be between 8 and 128 characters" });
+      return;
+    }
+
+    const { hash, salt } = hashPassword(password);
+    const user = await resetPassword(token, hash, salt);
+
+    if (!user) {
+      res.status(400).json({ error: "Invalid or expired reset link" });
+      return;
+    }
+
+    res.json({ ok: true });
+  } catch {
+    res.status(500).json({ error: "Password reset failed" });
+  }
 });
 
 app.post("/auth/delete-account", createRateLimit("auth-delete-account", 5, 15 * 60 * 1000), async (req, res) => {

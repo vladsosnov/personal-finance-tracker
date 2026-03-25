@@ -105,3 +105,5 @@ export const authCookieHeaders = (userId: string): string[] => [
   buildCookie(AUTH_ACCESS_COOKIE, signJwt(userId), ACCESS_TOKEN_TTL_SEC),
   buildCookie(AUTH_REFRESH_COOKIE, signRefreshJwt(userId), REFRESH_TOKEN_TTL_SEC),
 ];
+
+export const generateSecureToken = (): string => randomBytes(32).toString("hex");
