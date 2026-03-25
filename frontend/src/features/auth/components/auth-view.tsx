@@ -1,4 +1,4 @@
-import { Alert, Button, Card, Container, PasswordInput, SegmentedControl, Stack, Text, TextInput, Title } from "@mantine/core";
+import { Alert, Anchor, Button, Card, Container, PasswordInput, SegmentedControl, Stack, Text, TextInput, Title } from "@mantine/core";
 import type { AuthMode } from "@/shared/types/shared";
 
 type AuthViewProps = {
@@ -66,6 +66,11 @@ export const AuthView = ({
             <Button type="submit" loading={isLoading}>
               {authMode === "register" ? "Create Account" : "Log In"}
             </Button>
+            {authMode === "login" && (
+              <Anchor href="/auth/forgot-password" size="sm" ta="center">
+                Forgot password?
+              </Anchor>
+            )}
           </Stack>
         </form>
       </Card>

@@ -19,9 +19,9 @@ const userSchema = new Schema<UserDocument>(
     passwordHash: { type: String, required: true },
     passwordSalt: { type: String, required: true },
     emailVerified: { type: Boolean, required: true, default: false },
-    emailVerificationToken: { type: String },
+    emailVerificationToken: { type: String, index: true, sparse: true },
     emailVerificationExpiry: { type: Date },
-    passwordResetToken: { type: String },
+    passwordResetToken: { type: String, index: true, sparse: true },
     passwordResetExpiry: { type: Date },
   },
   { timestamps: true }
