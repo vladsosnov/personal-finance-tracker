@@ -8,6 +8,7 @@ type ImportProgressCardProps = {
   importTotals: { goals: number; operations: number };
   importProgress: ImportProgressState | null;
   importProgressValue: number;
+  importLimitMessage: string | null;
   isPreparingImport: boolean;
   isImporting: boolean;
   includedZeroTargetGoalIndexes: number[];
@@ -24,6 +25,7 @@ export const ImportProgressCard = ({
   importTotals,
   importProgress,
   importProgressValue,
+  importLimitMessage,
   isPreparingImport,
   isImporting,
   includedZeroTargetGoalIndexes,
@@ -53,14 +55,19 @@ export const ImportProgressCard = ({
       />
 
       {file && (
-        <Group>
-          <Button onClick={onImport} loading={isImporting} disabled={!preparedGoals.length || isPreparingImport}>
-            Import
-          </Button>
-        </Group>
+        <Stack gap="xs">
+          {importLimitMessage && (
+            <Text size="sm" c="yellow">{importLimitMessage}</Text>
+          )}
+          <Group>
+            <Button onClick={onImport} loading={isImporting} disabled={!preparedGoals.length || isPreparingImport}>
+              Import
+            </Button>
+          </Group>
+        </Stack>
       )}
 
-      {importProgress && (
+      {importProgress && isImporting && (
         <Stack gap={6}>
           <Group justify="space-between" gap="xs">
             <Text fw={600}>Importing progress</Text>
@@ -97,7 +104,7 @@ export const ImportProgressCard = ({
                   <Table.Td>{goal.operationCount}</Table.Td>
                   <Table.Td>
                     {goal.canRemoveFromImport ? (
-                      <Button variant="subtle" color="red" size="compact-sm" aria-label={`Remove ${goal.title} from import`} onClick={() => onRemoveFromImport(goal.sourceIndex)}>
+                      <Button variant="light" color="red" size="compact-sm" aria-label={`Remove ${goal.title} from import`} onClick={() => onRemoveFromImport(goal.sourceIndex)}>
                         Remove
                       </Button>
                     ) : "-"}

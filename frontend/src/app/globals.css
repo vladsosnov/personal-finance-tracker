@@ -41,37 +41,49 @@
   --card-border-rgb: 131, 134, 135;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --foreground-rgb: 255, 255, 255;
-    --background-start-rgb: 0, 0, 0;
-    --background-end-rgb: 0, 0, 0;
+html[data-mantine-color-scheme="dark"] {
+  color-scheme: dark;
 
-    --primary-glow: radial-gradient(rgba(1, 65, 255, 0.4), rgba(1, 65, 255, 0));
-    --secondary-glow: linear-gradient(
-      to bottom right,
-      rgba(1, 65, 255, 0),
-      rgba(1, 65, 255, 0),
-      rgba(1, 65, 255, 0.3)
-    );
+  --foreground-rgb: 255, 255, 255;
+  --background-start-rgb: 0, 0, 0;
+  --background-end-rgb: 0, 0, 0;
 
-    --tile-start-rgb: 2, 13, 46;
-    --tile-end-rgb: 2, 5, 19;
-    --tile-border: conic-gradient(
-      #ffffff80,
-      #ffffff40,
-      #ffffff30,
-      #ffffff20,
-      #ffffff10,
-      #ffffff10,
-      #ffffff80
-    );
+  --primary-glow: radial-gradient(rgba(1, 65, 255, 0.4), rgba(1, 65, 255, 0));
+  --secondary-glow: linear-gradient(
+    to bottom right,
+    rgba(1, 65, 255, 0),
+    rgba(1, 65, 255, 0),
+    rgba(1, 65, 255, 0.3)
+  );
 
-    --callout-rgb: 20, 20, 20;
-    --callout-border-rgb: 108, 108, 108;
-    --card-rgb: 100, 100, 100;
-    --card-border-rgb: 200, 200, 200;
-  }
+  --tile-start-rgb: 2, 13, 46;
+  --tile-end-rgb: 2, 5, 19;
+  --tile-border: conic-gradient(
+    #ffffff80,
+    #ffffff40,
+    #ffffff30,
+    #ffffff20,
+    #ffffff10,
+    #ffffff10,
+    #ffffff80
+  );
+
+  --callout-rgb: 20, 20, 20;
+  --callout-border-rgb: 108, 108, 108;
+  --card-rgb: 100, 100, 100;
+  --card-border-rgb: 200, 200, 200;
+
+  --mantine-color-body: #09111f;
+  --mantine-color-text: #e5e7eb;
+  --mantine-color-dimmed: #94a3b8;
+  --mantine-color-default: #142033;
+  --mantine-color-default-hover: #1b2a40;
+  --mantine-color-default-color: #e5e7eb;
+  --mantine-color-default-border: rgba(148, 163, 184, 0.24);
+}
+
+html[data-mantine-color-scheme="light"] {
+  color-scheme: light;
 }
 
 * {
@@ -99,16 +111,6 @@ body {
 html[data-mantine-color-scheme="dark"] body {
   color: #f3f4f6;
   background: linear-gradient(to bottom, #111827, #030712);
-}
-
-html[data-mantine-color-scheme="dark"] {
-  --mantine-color-body: #09111f;
-  --mantine-color-text: #e5e7eb;
-  --mantine-color-dimmed: #94a3b8;
-  --mantine-color-default: #142033;
-  --mantine-color-default-hover: #1b2a40;
-  --mantine-color-default-color: #e5e7eb;
-  --mantine-color-default-border: rgba(148, 163, 184, 0.24);
 }
 
 .app-shell {
@@ -203,8 +205,3 @@ html[data-mantine-color-scheme="dark"] .mantine-Button-root[data-disabled] {
   outline-offset: 2px;
 }
 
-@media (prefers-color-scheme: dark) {
-  html {
-    color-scheme: dark;
-  }
-}

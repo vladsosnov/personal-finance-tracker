@@ -53,6 +53,7 @@ export const ProfileClient = () => {
           importTotals={dm.importTotals}
           importProgress={dm.importProgress}
           importProgressValue={dm.importProgressValue}
+          importLimitMessage={dm.importLimitMessage}
           isPreparingImport={dm.isPreparingImport}
           isImporting={dm.isImporting}
           includedZeroTargetGoalIndexes={dm.includedZeroTargetGoalIndexes}

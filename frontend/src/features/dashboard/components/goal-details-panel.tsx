@@ -110,7 +110,15 @@ export const GoalDetailsPanel = ({
               onExpandChart={() => setIsChartModalOpen(true)}
             />
 
-            <GoalChart operations={selectedGoal.operations} color={selectedGoal.color} range={chartRange} />
+            <GoalChart
+              operations={selectedGoal.operations}
+              color={selectedGoal.color}
+              targetAmount={selectedGoal.targetAmount}
+              initialAmount={selectedGoal.initialAmount}
+              currentAmount={selectedGoal.currentAmount}
+              isCompleted={selectedGoal.isCompleted}
+              range={chartRange}
+            />
 
             <Group justify="space-between" align="center">
               <Title order={5}>Operations</Title>
@@ -167,6 +175,10 @@ export const GoalDetailsPanel = ({
                 <GoalChart
                   operations={selectedGoal.operations}
                   color={selectedGoal.color}
+                  targetAmount={selectedGoal.targetAmount}
+                  initialAmount={selectedGoal.initialAmount}
+                  currentAmount={selectedGoal.currentAmount}
+                  isCompleted={selectedGoal.isCompleted}
                   range={chartRange}
                   height={520}
                 />

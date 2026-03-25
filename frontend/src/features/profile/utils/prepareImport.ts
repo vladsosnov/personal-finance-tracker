@@ -16,7 +16,7 @@ const normalizeColor = (value: string | undefined): string => {
   return `#${match[1].slice(0, 6).toUpperCase()}`;
 };
 
-export const prepareImportGoals = (source: string, includedZeroTargetGoalIndexes: Set<number>): PreparedImportResult => {
+export const prepareImportGoals = (source: string, includedZeroTargetGoalIndexes: Set<number>, excludedGoalIndexes: Set<number> = new Set()): PreparedImportResult => {
   const parsed = JSON.parse(source) as unknown;
 
   if (!Array.isArray(parsed)) {
@@ -31,6 +31,11 @@ export const prepareImportGoals = (source: string, includedZeroTargetGoalIndexes
     const title = goal.title?.trim() || `Goal ${goalIndex + 1}`;
     const targetAmount = Number(goal.targetValue);
     const initialAmount = Number(goal.initialValue ?? 0);
+
+    if (excludedGoalIndexes.has(goalIndex)) {
+      skippedGoals.push({ sourceIndex: goalIndex, title, reason: "Removed by user", canInclude: true });
+      return;
+    }
 
     if (!Number.isFinite(targetAmount) || targetAmount < 0) {
       skippedGoals.push({ sourceIndex: goalIndex, title, reason: "Target amount is invalid", canInclude: false });
@@ -88,7 +93,7 @@ export const prepareImportGoals = (source: string, includedZeroTargetGoalIndexes
       color: normalizeColor(goal.display?.bar?.colors?.primary),
       operationCount: operations.length,
       operations,
-      canRemoveFromImport: targetAmount === 0,
+      canRemoveFromImport: true,
     });
   });
 

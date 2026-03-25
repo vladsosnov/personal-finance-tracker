@@ -15,13 +15,94 @@ import { dateStringToUtcTimestamp } from "@/shared/utils/date";
 type GoalChartProps = {
   operations: GoalOperation[];
   color: string;
+  targetAmount: number;
+  initialAmount: number;
+  currentAmount: number;
+  isCompleted: boolean;
   height?: number;
   range: "all" | "7d" | "1m" | "6m" | "12m";
 };
 
 const DAY_MS = 24 * 60 * 60 * 1000;
+const MAX_PREDICTION_DAYS = 365 * 5;
 
-export const GoalChart = ({ operations, color, height = 320, range }: GoalChartProps) => {
+const buildTrendLine = (
+  seriesData: Array<[number, number]>,
+  currentAmount: number,
+  targetAmount: number,
+  isCompleted: boolean,
+): Array<[number, number]> => {
+  if (isCompleted || seriesData.length < 2) return [];
+
+  // Linear regression: y = slope * x + intercept
+  const n = seriesData.length;
+  let sumX = 0;
+  let sumY = 0;
+  let sumXY = 0;
+  let sumXX = 0;
+
+  // Use first timestamp as origin to avoid floating point issues with large timestamps
+  const origin = seriesData[0][0];
+
+  for (const [x, y] of seriesData) {
+    const xNorm = x - origin;
+    sumX += xNorm;
+    sumY += y;
+    sumXY += xNorm * y;
+    sumXX += xNorm * xNorm;
+  }
+
+  const denominator = n * sumXX - sumX * sumX;
+  if (denominator === 0) return [];
+
+  const slope = (n * sumXY - sumX * sumY) / denominator;
+  const intercept = (sumY - slope * sumX) / n;
+
+  // Trend line must be going up to project a goal completion
+  if (slope <= 0) {
+    // Still show the trend through existing data even if negative
+    const startX = seriesData[0][0];
+    const endX = seriesData[seriesData.length - 1][0];
+    return [
+      [startX, Number(intercept.toFixed(2))],
+      [endX, Number((slope * (endX - origin) + intercept).toFixed(2))],
+    ];
+  }
+
+  const startX = seriesData[0][0];
+  const startY = Number(intercept.toFixed(2));
+  const lastX = seriesData[seriesData.length - 1][0];
+  const lastY = Number((slope * (lastX - origin) + intercept).toFixed(2));
+
+  const points: Array<[number, number]> = [
+    [startX, startY],
+    [lastX, lastY],
+  ];
+
+  // Extend to target if applicable
+  if (targetAmount > 0 && currentAmount < targetAmount) {
+    const daysToTarget = (targetAmount - intercept) / slope;
+    const targetTimestamp = origin + daysToTarget;
+    const projectionDays = (targetTimestamp - lastX) / DAY_MS;
+
+    if (projectionDays > 0 && projectionDays <= MAX_PREDICTION_DAYS) {
+      points.push([targetTimestamp, targetAmount]);
+    }
+  }
+
+  return points;
+};
+
+export const GoalChart = ({
+  operations,
+  color,
+  targetAmount,
+  initialAmount,
+  currentAmount,
+  isCompleted,
+  height = 320,
+  range,
+}: GoalChartProps) => {
   const computedColorScheme = useComputedColorScheme("light", { getInitialValueInEffect: true });
   const isDark = computedColorScheme === "dark";
   const seriesData = useMemo<Array<[number, number]>>(() => {
@@ -66,6 +147,40 @@ export const GoalChart = ({ operations, color, height = 320, range }: GoalChartP
     return [allData[firstVisibleIndex - 1], ...allData.slice(firstVisibleIndex)];
   }, [operations, range]);
 
+  const trendData = useMemo(
+    () => buildTrendLine(seriesData, currentAmount, targetAmount, isCompleted),
+    [seriesData, currentAmount, targetAmount, isCompleted]
+  );
+
+  const series: Options["series"] = [
+    {
+      type: "line",
+      name: "Amount",
+      data: seriesData,
+      color,
+    },
+  ];
+
+  if (trendData.length > 0) {
+    series.push({
+      type: "line",
+      name: "Trend",
+      data: trendData,
+      color: isDark ? "#94A3B8" : "#9CA3AF",
+      dashStyle: "Dash",
+      lineWidth: 1.5,
+      marker: {
+        enabled: false,
+      },
+      showInLegend: false,
+      enableMouseTracking: true,
+      tooltip: {
+        xDateFormat: "%b %e, %Y",
+        pointFormat: "",
+      },
+    });
+  }
+
   const options = useMemo<Options>(
     () => ({
       title: {
@@ -98,15 +213,22 @@ export const GoalChart = ({ operations, color, height = 320, range }: GoalChartP
             color: isDark ? "#94A3B8" : "#475569",
           },
         },
+        plotLines: targetAmount > 0 ? [{
+          value: targetAmount,
+          color: isDark ? "rgba(34, 197, 94, 0.5)" : "rgba(22, 163, 74, 0.5)",
+          width: 1,
+          dashStyle: "Dot",
+          label: {
+            text: `Target: ${targetAmount.toLocaleString()}`,
+            align: "right",
+            style: {
+              color: isDark ? "#86EFAC" : "#16A34A",
+              fontSize: "11px",
+            },
+          },
+        }] : [],
       },
-      series: [
-        {
-          type: "line",
-          name: "Amount",
-          data: seriesData,
-          color,
-        },
-      ],
+      series,
       legend: {
         itemStyle: {
           color: isDark ? "#E5E7EB" : "#0F172A",
@@ -123,7 +245,7 @@ export const GoalChart = ({ operations, color, height = 320, range }: GoalChartP
         },
       },
       accessibility: {
-        description: "Line chart showing goal progress over time",
+        description: "Line chart showing goal progress over time with prediction line",
       },
       credits: { enabled: false },
       chart: {
@@ -134,7 +256,7 @@ export const GoalChart = ({ operations, color, height = 320, range }: GoalChartP
         },
       },
     }),
-    [color, height, isDark, seriesData]
+    [color, height, isDark, seriesData, trendData, targetAmount, series]
   );
 
   return <HighchartsReact highcharts={Highcharts} options={options} />;

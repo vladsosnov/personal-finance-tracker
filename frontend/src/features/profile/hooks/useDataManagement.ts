@@ -10,6 +10,7 @@ import { showToast } from "@/shared/lib/toast-store";
 import { API_BASE_URL } from "@/shared/constants/auth";
 import { APP_ROUTES } from "@/shared/constants/routes";
 import { trackEvent } from "@/shared/lib/analytics";
+import { getPlanByName } from "@/shared/constants/plans";
 
 export const useDataManagement = () => {
   const apolloClient = useApolloClient();
@@ -23,6 +24,7 @@ export const useDataManagement = () => {
   const [isImporting, setIsImporting] = useState(false);
   const [importProgress, setImportProgress] = useState<ImportProgressState | null>(null);
   const [includedZeroTargetGoalIndexes, setIncludedZeroTargetGoalIndexes] = useState<number[]>([]);
+  const [excludedGoalIndexes, setExcludedGoalIndexes] = useState<number[]>([]);
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
   const [isDeleteAccountModalOpen, setIsDeleteAccountModalOpen] = useState(false);
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
@@ -45,9 +47,22 @@ export const useDataManagement = () => {
     fetchPolicy: "no-cache",
   });
 
+  const plan = getPlanByName(meData?.me?.subscription ?? "Free");
+  const existingGoalCount = goalsData?.goals.length ?? 0;
+  const remainingSlots = plan.maxGoals !== null ? Math.max(0, plan.maxGoals - existingGoalCount) : null;
+
+  const cappedPreparedGoals = useMemo(
+    () => remainingSlots !== null ? preparedGoals.slice(0, remainingSlots) : preparedGoals,
+    [preparedGoals, remainingSlots]
+  );
+
+  const importLimitMessage = remainingSlots !== null && preparedGoals.length > remainingSlots
+    ? `Free plan is limited to ${plan.maxGoals} goals. You can import ${remainingSlots} more goal${remainingSlots === 1 ? "" : "s"}.`
+    : null;
+
   const importTotals = useMemo(
-    () => preparedGoals.reduce((acc, goal) => ({ goals: acc.goals + 1, operations: acc.operations + goal.operationCount }), { goals: 0, operations: 0 }),
-    [preparedGoals]
+    () => cappedPreparedGoals.reduce((acc, goal) => ({ goals: acc.goals + 1, operations: acc.operations + goal.operationCount }), { goals: 0, operations: 0 }),
+    [cappedPreparedGoals]
   );
 
   const importProgressValue = importProgress
@@ -59,14 +74,16 @@ export const useDataManagement = () => {
     setPreparedGoals([]);
     setSkippedGoals([]);
     setIncludedZeroTargetGoalIndexes([]);
+    setExcludedGoalIndexes([]);
     setImportProgress(null);
   };
 
-  const applyPreparedImport = (source: string, nextIncludedIndexes: number[]) => {
-    const result = prepareImportGoals(source, new Set(nextIncludedIndexes));
+  const applyPreparedImport = (source: string, nextIncludedIndexes: number[], nextExcludedIndexes: number[] = excludedGoalIndexes) => {
+    const result = prepareImportGoals(source, new Set(nextIncludedIndexes), new Set(nextExcludedIndexes));
     setPreparedGoals(result.goals);
     setSkippedGoals(result.skippedGoals);
     setIncludedZeroTargetGoalIndexes(nextIncludedIndexes);
+    setExcludedGoalIndexes(nextExcludedIndexes);
 
     if (!result.goals.length && !result.skippedGoals.length) {
       showToast("No goals found in the selected file", "red");
@@ -91,7 +108,7 @@ export const useDataManagement = () => {
     try {
       const source = await nextFile.text();
       setImportSource(source);
-      applyPreparedImport(source, []);
+      applyPreparedImport(source, [], []);
     } catch (error) {
       resetImportState();
       showToast(error instanceof Error ? error.message : "Failed to parse import file", "red");
@@ -107,20 +124,24 @@ export const useDataManagement = () => {
 
   const handleToggleZeroTargetGoal = (sourceIndex: number, include: boolean) => {
     if (!importSource) return;
-    const next = include
+    const nextIncluded = include
       ? [...includedZeroTargetGoalIndexes, sourceIndex]
       : includedZeroTargetGoalIndexes.filter((i) => i !== sourceIndex);
-    applyPreparedImport(importSource, next);
+    const nextExcluded = include
+      ? excludedGoalIndexes.filter((i) => i !== sourceIndex)
+      : excludedGoalIndexes;
+    applyPreparedImport(importSource, nextIncluded, nextExcluded);
   };
 
   const handleRemoveFromImport = (sourceIndex: number) => {
     if (!importSource) return;
-    const next = includedZeroTargetGoalIndexes.filter((i) => i !== sourceIndex);
-    applyPreparedImport(importSource, next);
+    const nextIncluded = includedZeroTargetGoalIndexes.filter((i) => i !== sourceIndex);
+    const nextExcluded = [...excludedGoalIndexes, sourceIndex];
+    applyPreparedImport(importSource, nextIncluded, nextExcluded);
   };
 
   const handleImport = async () => {
-    if (!preparedGoals.length) {
+    if (!cappedPreparedGoals.length) {
       showToast("Prepare the file before importing", "red");
       return;
     }
@@ -134,7 +155,7 @@ export const useDataManagement = () => {
 
       const result = await importGoalsMutation({
         variables: {
-          goals: preparedGoals.map(({ title, targetAmount, initialAmount, color, operations }) => ({
+          goals: cappedPreparedGoals.map(({ title, targetAmount, initialAmount, color, operations }) => ({
             title, targetAmount, initialAmount, color, operations,
           })),
         },
@@ -144,7 +165,7 @@ export const useDataManagement = () => {
 
       const summary = result.data?.importGoals;
       showToast(
-        `Imported ${summary?.importedGoalsCount ?? preparedGoals.length} goals and ${summary?.importedOperationsCount ?? importTotals.operations} operations.`,
+        `Imported ${summary?.importedGoalsCount ?? cappedPreparedGoals.length} goals and ${summary?.importedOperationsCount ?? importTotals.operations} operations.`,
         "teal"
       );
 
@@ -156,6 +177,7 @@ export const useDataManagement = () => {
       showToast(error instanceof Error ? error.message : "Import failed", "red");
     } finally {
       setIsImporting(false);
+      setImportProgress(null);
     }
   };
 
@@ -238,8 +260,9 @@ export const useDataManagement = () => {
     hasStoredData: (goalsData?.goals.length ?? 0) > 0,
     // import
     file,
-    preparedGoals,
+    preparedGoals: cappedPreparedGoals,
     skippedGoals,
+    importLimitMessage,
     importTotals,
     importProgress,
     importProgressValue,
