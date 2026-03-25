@@ -4,12 +4,13 @@ import { ListBullet } from "@/features/landing/components/ListBullet";
 import { APP_ROUTES } from "@/shared/constants/routes";
 
 export const ProductPreviewSection = () => (
-  <Card withBorder radius="lg" p="xl">
-    <SimpleGrid cols={{ base: 1, md: 2 }} spacing="xl" verticalSpacing="xl">
-      <Stack gap="md">
-        <Stack gap={6}>
-          <Text fw={700}>Product preview</Text>
-          <Title order={2}>Built for real goal tracking, not just static target numbers</Title>
+  <section aria-labelledby="product-preview-heading">
+    <Card withBorder radius="lg" p="xl">
+      <SimpleGrid cols={{ base: 1, md: 2 }} spacing="xl" verticalSpacing="xl">
+        <Stack gap="md">
+          <Stack gap={6}>
+            <Text fw={700}>Product preview</Text>
+            <Title order={2} id="product-preview-heading">Built for real goal tracking, not just static target numbers</Title>
           <Text c="dimmed">
             This section is ready for your dashboard screenshot. Until then, it highlights the exact workflows already available in the
             product.
@@ -34,10 +35,11 @@ export const ProductPreviewSection = () => (
       <DashboardSnapshot />
     </SimpleGrid>
   </Card>
+  </section>
 );
 
 const DashboardSnapshot = () => (
-  <Card withBorder radius="md" p="lg" bg="var(--mantine-color-body)">
+  <Card withBorder radius="md" p="lg" bg="var(--mantine-color-body)" aria-label="Dashboard preview example">
     <Stack gap="md">
       <Group justify="space-between" align="flex-start">
         <Stack gap={2}>
@@ -69,7 +71,14 @@ const DashboardSnapshot = () => (
             <Badge variant="light" color="teal">68.0%</Badge>
           </Group>
           <Text size="sm" c="dimmed">$6,800 / $10,000</Text>
-          <div style={{ height: 10, borderRadius: 999, background: "rgba(15, 118, 110, 0.16)", overflow: "hidden" }}>
+          <div
+            role="progressbar"
+            aria-valuenow={68}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-label="Emergency fund progress: 68%"
+            style={{ height: 10, borderRadius: 999, background: "rgba(15, 118, 110, 0.16)", overflow: "hidden" }}
+          >
             <div style={{ width: "68%", height: "100%", borderRadius: 999, background: "#0F766E" }} />
           </div>
         </Stack>

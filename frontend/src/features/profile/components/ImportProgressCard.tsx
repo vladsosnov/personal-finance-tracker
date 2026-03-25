@@ -97,7 +97,7 @@ export const ImportProgressCard = ({
                   <Table.Td>{goal.operationCount}</Table.Td>
                   <Table.Td>
                     {goal.canRemoveFromImport ? (
-                      <Button variant="subtle" color="red" size="compact-sm" onClick={() => onRemoveFromImport(goal.sourceIndex)}>
+                      <Button variant="subtle" color="red" size="compact-sm" aria-label={`Remove ${goal.title} from import`} onClick={() => onRemoveFromImport(goal.sourceIndex)}>
                         Remove
                       </Button>
                     ) : "-"}
@@ -129,6 +129,7 @@ export const ImportProgressCard = ({
                     {goal.canInclude ? (
                       <Checkbox
                         label="Include"
+                        aria-label={`Include ${goal.title} in import`}
                         checked={includedZeroTargetGoalIndexes.includes(goal.sourceIndex)}
                         onChange={(e) => onToggleZeroTargetGoal(goal.sourceIndex, e.currentTarget.checked)}
                       />

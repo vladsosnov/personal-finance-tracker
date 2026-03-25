@@ -4,10 +4,11 @@ import { ListBullet } from "@/features/landing/components/ListBullet";
 import { PLANS } from "@/features/landing/constants/landingData";
 
 export const PlansSection = () => (
-  <Stack gap="md">
-    <Stack gap={4} ta="center">
-      <Text fw={700}>Plans</Text>
-      <Title order={2}>Choose the plan that fits your tracking needs</Title>
+  <section aria-labelledby="plans-heading">
+    <Stack gap="md">
+      <Stack gap={4} ta="center">
+        <Text fw={700}>Plans</Text>
+        <Title order={2} id="plans-heading">Choose the plan that fits your tracking needs</Title>
       <Text c="dimmed" maw={720} mx="auto">
         Free is available now. Paid plans are shown here so users can understand the product direction, while upgrade checkout is still
         coming later.
@@ -35,11 +36,11 @@ export const PlansSection = () => (
               ))}
             </List>
             {plan.cta === "Coming soon" ? (
-              <Button variant={plan.highlight ? "filled" : "light"} disabled>
+              <Button variant={plan.highlight ? "filled" : "light"} disabled aria-label={`${plan.name} plan — coming soon`}>
                 {plan.cta}
               </Button>
             ) : (
-              <Button component={Link} href={plan.href} variant={plan.highlight ? "filled" : "light"}>
+              <Button component={Link} href={plan.href} variant={plan.highlight ? "filled" : "light"} aria-label={`${plan.cta} with ${plan.name} plan`}>
                 {plan.cta}
               </Button>
             )}
@@ -48,4 +49,5 @@ export const PlansSection = () => (
       ))}
     </SimpleGrid>
   </Stack>
+  </section>
 );

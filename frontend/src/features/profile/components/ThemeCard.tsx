@@ -27,11 +27,12 @@ export const ThemeCard = () => {
         <SegmentedControl
           value={colorScheme}
           onChange={(value) => setColorScheme(value as MantineColorScheme)}
+          aria-label="Theme preference"
           data={THEME_OPTIONS.map(({ value, label, Icon }) => ({
             value,
             label: (
               <span style={labelStyle}>
-                <ThemeIcon size="sm" variant="transparent" style={iconStyle}>
+                <ThemeIcon size="sm" variant="transparent" style={iconStyle} aria-hidden="true">
                   <Icon size={16} stroke={2} />
                 </ThemeIcon>
                 <span>{label}</span>

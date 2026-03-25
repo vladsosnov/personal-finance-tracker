@@ -119,8 +119,10 @@ export const DashboardClient = () => {
     }
 
     operationForm.reset();
-    await Promise.all([refetchGoals(), refetchGoalDetails()]);
-    maybePromptCompletion(updatedGoal);
+    // Refetch in background so the modal can close immediately after mutation
+    Promise.all([refetchGoals(), refetchGoalDetails()]).then(() => {
+      maybePromptCompletion(updatedGoal);
+    });
   };
 
   const handleStartEditGoal = (goalId: string) => {

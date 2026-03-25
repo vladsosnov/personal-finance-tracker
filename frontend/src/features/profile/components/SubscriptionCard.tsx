@@ -16,7 +16,14 @@ export const SubscriptionCard = ({ currentSubscription }: SubscriptionCardProps)
         {SUBSCRIPTION_PLANS.map((plan) => {
           const isCurrentPlan = currentSubscription.toLowerCase() === plan.name.toLowerCase();
           return (
-            <Card key={plan.name} withBorder radius="md" p="md">
+            <Card
+              key={plan.name}
+              withBorder
+              radius="md"
+              p="md"
+              aria-label={`${plan.name} plan${isCurrentPlan ? " (current)" : ""}`}
+              aria-current={isCurrentPlan ? true : undefined}
+            >
               <Stack gap="sm">
                 <Group justify="space-between" align="flex-start">
                   <Stack gap={2}>
@@ -26,7 +33,7 @@ export const SubscriptionCard = ({ currentSubscription }: SubscriptionCardProps)
                   {isCurrentPlan ? <Badge color="teal">Current</Badge> : <Badge variant="light">Soon</Badge>}
                 </Group>
                 <Text c="dimmed">{plan.description}</Text>
-                <Table>
+                <Table aria-label={`${plan.name} plan features`}>
                   <Table.Tbody>
                     {plan.features.map((feature) => (
                       <Table.Tr key={feature}>
