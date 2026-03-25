@@ -26,13 +26,18 @@ type GoalChartProps = {
 const DAY_MS = 24 * 60 * 60 * 1000;
 const MAX_PREDICTION_DAYS = 365 * 5;
 
+type TrendResult = {
+  points: Array<[number, number]>;
+  predictedDate: string | null;
+};
+
 const buildTrendLine = (
   seriesData: Array<[number, number]>,
   currentAmount: number,
   targetAmount: number,
   isCompleted: boolean,
-): Array<[number, number]> => {
-  if (isCompleted || seriesData.length < 2) return [];
+): TrendResult => {
+  if (isCompleted || seriesData.length < 2) return { points: [], predictedDate: null };
 
   // Linear regression: y = slope * x + intercept
   const n = seriesData.length;
@@ -53,7 +58,7 @@ const buildTrendLine = (
   }
 
   const denominator = n * sumXX - sumX * sumX;
-  if (denominator === 0) return [];
+  if (denominator === 0) return { points: [], predictedDate: null };
 
   const slope = (n * sumXY - sumX * sumY) / denominator;
   const intercept = (sumY - slope * sumX) / n;
@@ -63,10 +68,13 @@ const buildTrendLine = (
     // Still show the trend through existing data even if negative
     const startX = seriesData[0][0];
     const endX = seriesData[seriesData.length - 1][0];
-    return [
-      [startX, Number(intercept.toFixed(2))],
-      [endX, Number((slope * (endX - origin) + intercept).toFixed(2))],
-    ];
+    return {
+      points: [
+        [startX, Number(intercept.toFixed(2))],
+        [endX, Number((slope * (endX - origin) + intercept).toFixed(2))],
+      ],
+      predictedDate: null,
+    };
   }
 
   const startX = seriesData[0][0];
@@ -79,6 +87,8 @@ const buildTrendLine = (
     [lastX, lastY],
   ];
 
+  let predictedDate: string | null = null;
+
   // Extend to target if applicable
   if (targetAmount > 0 && currentAmount < targetAmount) {
     const daysToTarget = (targetAmount - intercept) / slope;
@@ -87,10 +97,15 @@ const buildTrendLine = (
 
     if (projectionDays > 0 && projectionDays <= MAX_PREDICTION_DAYS) {
       points.push([targetTimestamp, targetAmount]);
+      predictedDate = new Date(targetTimestamp).toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      });
     }
   }
 
-  return points;
+  return { points, predictedDate };
 };
 
 export const GoalChart = ({
@@ -147,7 +162,7 @@ export const GoalChart = ({
     return [allData[firstVisibleIndex - 1], ...allData.slice(firstVisibleIndex)];
   }, [operations, range]);
 
-  const trendData = useMemo(
+  const trendResult = useMemo(
     () => buildTrendLine(seriesData, currentAmount, targetAmount, isCompleted),
     [seriesData, currentAmount, targetAmount, isCompleted]
   );
@@ -161,11 +176,15 @@ export const GoalChart = ({
     },
   ];
 
-  if (trendData.length > 0) {
+  if (trendResult.points.length > 0) {
+    const predictionLabel = trendResult.predictedDate
+      ? `Predicted completion: ${trendResult.predictedDate}`
+      : "Trend line";
+
     series.push({
       type: "line",
       name: "Trend",
-      data: trendData,
+      data: trendResult.points,
       color: isDark ? "#94A3B8" : "#9CA3AF",
       dashStyle: "Dash",
       lineWidth: 1.5,
@@ -175,8 +194,8 @@ export const GoalChart = ({
       showInLegend: false,
       enableMouseTracking: true,
       tooltip: {
-        xDateFormat: "%b %e, %Y",
-        pointFormat: "",
+        headerFormat: "",
+        pointFormat: `<span style="font-size: 12px">${predictionLabel}</span>`,
       },
     });
   }
@@ -218,14 +237,6 @@ export const GoalChart = ({
           color: isDark ? "rgba(34, 197, 94, 0.5)" : "rgba(22, 163, 74, 0.5)",
           width: 1,
           dashStyle: "Dot",
-          label: {
-            text: `Target: ${targetAmount.toLocaleString()}`,
-            align: "right",
-            style: {
-              color: isDark ? "#86EFAC" : "#16A34A",
-              fontSize: "11px",
-            },
-          },
         }] : [],
       },
       series,
@@ -256,7 +267,7 @@ export const GoalChart = ({
         },
       },
     }),
-    [color, height, isDark, seriesData, trendData, targetAmount, series]
+    [color, height, isDark, seriesData, trendResult, targetAmount, series]
   );
 
   return <HighchartsReact highcharts={Highcharts} options={options} />;
