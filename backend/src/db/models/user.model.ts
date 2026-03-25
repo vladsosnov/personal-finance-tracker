@@ -1,8 +1,10 @@
 import { Schema, model } from "mongoose";
+import type { UserRole } from "../../modules/auth/types";
 
 export type UserDocument = {
   email: string;
   subscription: string;
+  role: UserRole;
   passwordHash: string;
   passwordSalt: string;
   tokenVersion: number;
@@ -17,6 +19,7 @@ const userSchema = new Schema<UserDocument>(
   {
     email: { type: String, required: true, unique: true, index: true },
     subscription: { type: String, required: true, default: "Free" },
+    role: { type: String, enum: ["user", "admin"], required: true, default: "user" },
     passwordHash: { type: String, required: true },
     passwordSalt: { type: String, required: true },
     tokenVersion: { type: Number, required: true, default: 0 },

@@ -1,5 +1,6 @@
 import { buildSchema } from "graphql";
 import { findUserById } from "./modules/auth/user.repository";
+import { getEventCounts, getUniqueUserLogins, getRecentEvents } from "./modules/analytics/analytics.repository";
 import { bulkCreateGoals, countGoalsByUser, createGoal, deleteAllGoalsByUser, deleteGoal, getGoalById, listGoalsByUser, reorderGoals, updateGoal, updateGoalColor, updateGoalCompletion } from "./modules/goals/goal.repository";
 import { bulkCreateGoalOperations, createGoalOperation, deleteAllOperationsByUser, deleteGoalOperation, deleteOperationsByGoal, getGoalOperationById, updateGoalOperation } from "./modules/goals/operation.repository";
 import { buildGoalView, buildGoalViews } from "./modules/goals/goal.service";
@@ -104,10 +105,20 @@ const ensureAuthed = (context: Context): string => {
   return context.userId;
 };
 
-const toSafeUser = (user: { id: string; email: string; subscription: string; emailVerified: boolean }) => ({
+const ensureAdmin = async (context: Context): Promise<string> => {
+  const userId = ensureAuthed(context);
+  const user = await findUserById(userId);
+  if (!user || user.role !== "admin") {
+    throw new Error("Forbidden");
+  }
+  return userId;
+};
+
+const toSafeUser = (user: { id: string; email: string; subscription: string; role: string; emailVerified: boolean }) => ({
   id: user.id,
   email: user.email,
   subscription: user.subscription,
+  role: user.role,
   emailVerified: user.emailVerified,
 });
 
@@ -143,6 +154,7 @@ export const schema = buildSchema(`
     id: ID!
     email: String!
     subscription: String!
+    role: String!
     emailVerified: Boolean!
   }
 
@@ -220,12 +232,31 @@ export const schema = buildSchema(`
     createdAt: String!
   }
 
+  type EventCount {
+    event: String!
+    count: Int!
+  }
+
+  type RecentEvent {
+    id: ID!
+    event: String!
+    userId: String
+    createdAt: String!
+  }
+
+  type AnalyticsStats {
+    eventCounts: [EventCount!]!
+    uniqueUserLogins: Int!
+    recentEvents: [RecentEvent!]!
+  }
+
   type Query {
     me: User
     goals: [Goal!]!
     goal(id: ID!): Goal
     exportAllData: String!
     proposals: [Proposal!]!
+    analyticsStats: AnalyticsStats!
   }
 
   type Mutation {
@@ -593,6 +624,15 @@ export const rootValue = {
     }
 
     return buildGoalViewWithCompletionState(userId, goal);
+  },
+  analyticsStats: async (_args: unknown, context: Context) => {
+    await ensureAdmin(context);
+    const [eventCounts, uniqueUserLogins, recentEvents] = await Promise.all([
+      getEventCounts(),
+      getUniqueUserLogins(),
+      getRecentEvents(100),
+    ]);
+    return { eventCounts, uniqueUserLogins, recentEvents };
   },
   proposals: async (_args: unknown, context: Context) => {
     const all = await listProposals();

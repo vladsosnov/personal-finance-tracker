@@ -1,11 +1,12 @@
 import mongoose from "mongoose";
 import { UserModel } from "../../db/models/user.model";
-import type { User } from "./types";
+import type { User, UserRole } from "./types";
 
 type UserDoc = {
   _id: mongoose.Types.ObjectId;
   email: string;
   subscription?: string;
+  role?: UserRole;
   passwordHash: string;
   passwordSalt: string;
   tokenVersion?: number;
@@ -20,6 +21,7 @@ const toUser = (doc: UserDoc): User => ({
   id: doc._id.toString(),
   email: doc.email,
   subscription: doc.subscription ?? "Free",
+  role: doc.role ?? "user",
   passwordHash: doc.passwordHash,
   passwordSalt: doc.passwordSalt,
   tokenVersion: doc.tokenVersion ?? 0,

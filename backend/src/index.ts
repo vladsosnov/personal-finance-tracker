@@ -28,6 +28,7 @@ import {
 import { deleteAllGoalsByUser } from "./modules/goals/goal.repository";
 import { deleteAllOperationsByUser } from "./modules/goals/operation.repository";
 import { rootValue, schema } from "./schema";
+import { isTrackedEvent, recordEvent } from "./modules/analytics/analytics.repository";
 import { hashPassword, verifyPassword } from "./auth";
 
 dotenv.config();
@@ -188,6 +189,7 @@ app.post("/auth/register", createRateLimit("auth-register", 10, 15 * 60 * 1000),
     sendVerificationEmail(email, verificationToken).catch(() => {});
 
     setAuthCookies(res, user.id, user.tokenVersion);
+    recordEvent("register_success", user.id).catch(() => {});
     res.status(201).json({ user: { id: user.id, email: user.email, subscription: user.subscription } });
   } catch {
     res.status(500).json({ error: "Failed to register" });
@@ -211,6 +213,7 @@ app.post("/auth/login", createRateLimit("auth-login", 15, 15 * 60 * 1000), async
     }
 
     setAuthCookies(res, user.id, user.tokenVersion);
+    recordEvent("login_success", user.id).catch(() => {});
     res.json({ user: { id: user.id, email: user.email, subscription: user.subscription } });
   } catch {
     res.status(500).json({ error: "Failed to log in" });
@@ -375,6 +378,29 @@ app.post("/auth/delete-account", createRateLimit("auth-delete-account", 5, 15 * 
     res.json({ ok: true });
   } catch {
     res.status(500).json({ error: "Failed to delete account" });
+  }
+});
+
+app.post("/analytics/track", createRateLimit("analytics-track", 60, 60 * 1000), async (req, res) => {
+  try {
+    const event = typeof req.body?.event === "string" ? req.body.event : "";
+    if (!event || !isTrackedEvent(event)) {
+      res.status(400).json({ error: "Invalid event" });
+      return;
+    }
+
+    const cookies = parseCookies(req.headers.cookie);
+    const tokenResult = verifyJwt(cookies[AUTH_ACCESS_COOKIE]);
+    const userId = tokenResult?.userId ?? undefined;
+
+    const metadata = typeof req.body?.metadata === "object" && req.body.metadata !== null
+      ? req.body.metadata as Record<string, string>
+      : undefined;
+
+    await recordEvent(event, userId, metadata);
+    res.json({ ok: true });
+  } catch {
+    res.status(500).json({ error: "Failed to track event" });
   }
 });
 
