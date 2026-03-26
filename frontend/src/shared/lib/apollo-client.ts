@@ -62,5 +62,10 @@ const errorLink = new ErrorLink(({ error, operation, forward }) => {
 
 export const apolloClient = new ApolloClient({
   link: ApolloLink.from([errorLink, httpLink]),
-  cache: new InMemoryCache(),
+  cache: new InMemoryCache({
+    typePolicies: {
+      Goal: { keyFields: ["id"] },
+      GoalOperation: { keyFields: ["id"] },
+    },
+  }),
 });

@@ -1,14 +1,19 @@
 import { useState } from "react";
+import dynamic from "next/dynamic";
 import { Button, Card, Group, Modal, ScrollArea, Skeleton, Stack, Title } from "@mantine/core";
 import { ChartRangePicker, type ChartRange } from "@/features/dashboard/components/ChartRangePicker";
 import { GoalDetailHeader } from "@/features/dashboard/components/GoalDetailHeader";
-import { GoalChart } from "@/features/dashboard/components/goal-chart";
 import { GoalOperationsTable } from "@/features/dashboard/components/GoalOperationsTable";
 import { DeleteOperationModal } from "@/features/dashboard/components/modals/DeleteOperationModal";
 import { OperationModal } from "@/features/dashboard/components/modals/OperationModal";
 import type { useOperationForm } from "@/features/dashboard/hooks/useOperationForm";
 import type { GoalDetails, GoalOperation } from "@/features/dashboard/types";
 import { StateMessage } from "@/shared/components/state-message";
+
+const GoalChart = dynamic(
+  () => import("@/features/dashboard/components/goal-chart").then((m) => m.GoalChart),
+  { ssr: false, loading: () => <Skeleton height={320} radius="md" /> }
+);
 
 export type GoalOperationActions = {
   form: ReturnType<typeof useOperationForm>;

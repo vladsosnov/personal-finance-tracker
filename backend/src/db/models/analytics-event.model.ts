@@ -16,6 +16,7 @@ const analyticsEventSchema = new Schema<AnalyticsEventDocument>(
 );
 
 analyticsEventSchema.index({ createdAt: -1 });
+analyticsEventSchema.index({ createdAt: 1 }, { expireAfterSeconds: 90 * 24 * 60 * 60 });
 analyticsEventSchema.index({ event: 1, userId: 1 });
 
 export const AnalyticsEventModel = model<AnalyticsEventDocument>("AnalyticsEvent", analyticsEventSchema);

@@ -77,15 +77,9 @@ export const createProposal = async (input: {
 };
 
 export const voteProposal = async (proposalId: string, voterIp: string): Promise<Proposal | null> => {
-  const existing = await ProposalModel.findById(proposalId).lean();
-  if (!existing) return null;
-
-  const alreadyVoted = (existing.voterIps ?? []).includes(voterIp);
-  if (alreadyVoted) return null;
-
-  const doc = await ProposalModel.findByIdAndUpdate(
-    proposalId,
-    { $inc: { votes: 1 }, $push: { voterIps: voterIp } },
+  const doc = await ProposalModel.findOneAndUpdate(
+    { _id: proposalId, voterIps: { $ne: voterIp } },
+    { $inc: { votes: 1 }, $addToSet: { voterIps: voterIp } },
     { new: true }
   ).lean();
 

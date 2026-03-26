@@ -33,7 +33,12 @@ import { hashPassword, verifyPassword } from "./auth";
 
 dotenv.config();
 
+if (!process.env.NODE_ENV) {
+  console.warn("WARNING: NODE_ENV is not set. Defaulting to development behavior (no Secure cookies, GraphQL playground exposed).");
+}
+
 const app = express();
+app.set("trust proxy", 1);
 const port = Number(process.env.PORT ?? "4000");
 const mongoUri = process.env.MONGODB_URI;
 const frontendOrigin = process.env.FRONTEND_ORIGIN ?? "http://localhost:3000";
@@ -506,6 +511,16 @@ const start = async () => {
   process.on("SIGTERM", shutdown);
   process.on("SIGINT", shutdown);
 };
+
+process.on("unhandledRejection", (reason) => {
+  console.error("Unhandled rejection:", reason);
+  process.exit(1);
+});
+
+process.on("uncaughtException", (error) => {
+  console.error("Uncaught exception:", error);
+  process.exit(1);
+});
 
 start().catch((error: unknown) => {
   console.error("Failed to start backend:", error);

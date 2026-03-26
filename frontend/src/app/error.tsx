@@ -9,7 +9,7 @@ const GlobalError = ({ error, reset }: { error: Error & { digest?: string }; res
         Something went wrong
       </Title>
       <Text c="dimmed" mb="lg">
-        {error.message || "An unexpected error occurred."}
+        {process.env.NODE_ENV === "development" ? error.message : "An unexpected error occurred. Please try again later."}
       </Text>
       <Button onClick={reset}>Try again</Button>
     </Container>

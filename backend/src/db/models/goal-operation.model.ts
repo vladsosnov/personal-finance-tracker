@@ -11,8 +11,8 @@ export type GoalOperationDocument = {
 
 const goalOperationSchema = new Schema<GoalOperationDocument>(
   {
-    userId: { type: Schema.Types.ObjectId, required: true, index: true, ref: "User" },
-    goalId: { type: Schema.Types.ObjectId, required: true, index: true, ref: "Goal" },
+    userId: { type: Schema.Types.ObjectId, required: true, ref: "User" },
+    goalId: { type: Schema.Types.ObjectId, required: true, ref: "Goal" },
     type: { type: String, required: true, enum: ["INCREASE", "DECREASE"] },
     amount: { type: Number, required: true },
     note: { type: String },
@@ -20,5 +20,7 @@ const goalOperationSchema = new Schema<GoalOperationDocument>(
   },
   { timestamps: true }
 );
+
+goalOperationSchema.index({ userId: 1, goalId: 1 });
 
 export const GoalOperationModel = model<GoalOperationDocument>("GoalOperation", goalOperationSchema);

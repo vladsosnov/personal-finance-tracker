@@ -7,7 +7,14 @@ type JwtPayload = {
   tv?: number;
 };
 
-const JWT_SECRET = process.env.JWT_SECRET ?? (process.env.NODE_ENV === "production" ? (() => { throw new Error("JWT_SECRET is required in production"); })() : "local-dev-jwt-secret");
+const JWT_SECRET = (() => {
+  const secret = process.env.JWT_SECRET;
+  if (process.env.NODE_ENV === "production") {
+    if (!secret) throw new Error("JWT_SECRET is required in production");
+    if (secret.length < 32) throw new Error("JWT_SECRET must be at least 32 characters in production");
+  }
+  return secret ?? "local-dev-jwt-secret";
+})();
 const PASSWORD_ITERATIONS = 100_000;
 const ACCESS_TOKEN_TTL_SEC = 60 * 15;
 const REFRESH_TOKEN_TTL_SEC = 60 * 60 * 24 * 30;
