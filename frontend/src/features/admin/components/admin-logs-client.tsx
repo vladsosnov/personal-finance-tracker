@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@apollo/client/react";
-import { ActionIcon, Badge, Card, Grid, Group, Loader, Select, Stack, Table, Text, TextInput, Title, Tooltip } from "@mantine/core";
+import { ActionIcon, Badge, Card, Grid, Group, Loader, Pagination, Select, Stack, Table, Text, TextInput, Title, Tooltip } from "@mantine/core";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { PageContainer } from "@/shared/components/page-container";
@@ -55,9 +55,12 @@ const StatCard = ({ label, value }: { label: string; value: number }) => (
   </Card>
 );
 
+const PAGE_SIZE = 50;
+
 const RecentEventsTable = ({ events }: { events: RecentEvent[] }) => {
   const [search, setSearch] = useState("");
   const [eventFilter, setEventFilter] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
 
   const eventOptions = useMemo(() => {
     const unique = Array.from(new Set(events.map((e) => e.event))).sort();
@@ -76,6 +79,15 @@ const RecentEventsTable = ({ events }: { events: RecentEvent[] }) => {
       return true;
     });
   }, [events, eventFilter, search]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  const paged = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setPage(1);
+  }, [search, eventFilter]);
 
   return (
     <Stack gap="sm">
@@ -105,7 +117,7 @@ const RecentEventsTable = ({ events }: { events: RecentEvent[] }) => {
             </Table.Tr>
           </Table.Thead>
           <Table.Tbody>
-            {filtered.map((event) => (
+            {paged.map((event) => (
               <Table.Tr key={event.id}>
                 <Table.Td>
                   <Badge variant="light" size="sm">{event.event}</Badge>
@@ -134,11 +146,16 @@ const RecentEventsTable = ({ events }: { events: RecentEvent[] }) => {
           </Table.Tbody>
         </Table>
       </Card>
-      {events.length > 0 && (
-        <Text size="xs" c="dimmed" ta="right">
-          Showing {filtered.length} of {events.length} events
+      <Group justify="space-between">
+        <Text size="xs" c="dimmed">
+          {filtered.length > 0
+            ? `Showing ${(safePage - 1) * PAGE_SIZE + 1}–${Math.min(safePage * PAGE_SIZE, filtered.length)} of ${filtered.length} events`
+            : `${events.length} total events`}
         </Text>
-      )}
+        {totalPages > 1 && (
+          <Pagination total={totalPages} value={safePage} onChange={setPage} size="sm" />
+        )}
+      </Group>
     </Stack>
   );
 };

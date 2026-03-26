@@ -96,6 +96,11 @@ const MAX_IMPORT_GOALS = 200;
 const MAX_IMPORT_OPERATIONS_PER_GOAL = 2000;
 const FREE_MAX_GOALS = 3;
 
+const getEffectiveSubscription = (user: { subscription: string; role: string } | null): string => {
+  if (!user) return "Free";
+  return user.role === "admin" ? "Lifetime" : user.subscription;
+};
+
 const getMaxGoals = (subscription: string): number | null => {
   return subscription.toLowerCase() === "free" ? FREE_MAX_GOALS : null;
 };
@@ -118,7 +123,7 @@ const ensureAdmin = (context: Context): string => {
 const toSafeUser = (user: { id: string; email: string; subscription: string; role: string; emailVerified: boolean }) => ({
   id: user.id,
   email: user.email,
-  subscription: user.subscription,
+  subscription: user.role === "admin" ? "Lifetime" : user.subscription,
   role: user.role,
   emailVerified: user.emailVerified,
 });
@@ -384,7 +389,7 @@ export const rootValue = {
     }
 
     const user = await findUserById(userId);
-    const maxGoals = getMaxGoals(user?.subscription ?? "Free");
+    const maxGoals = getMaxGoals(getEffectiveSubscription(user));
     if (maxGoals !== null) {
       const currentCount = await countGoalsByUser(userId);
       if (currentCount >= maxGoals) {
@@ -465,7 +470,7 @@ export const rootValue = {
     }
 
     const user = await findUserById(userId);
-    const maxGoals = getMaxGoals(user?.subscription ?? "Free");
+    const maxGoals = getMaxGoals(getEffectiveSubscription(user));
     if (maxGoals !== null) {
       const currentCount = await countGoalsByUser(userId);
       const available = maxGoals - currentCount;
