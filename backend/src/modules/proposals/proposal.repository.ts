@@ -85,3 +85,16 @@ export const voteProposal = async (proposalId: string, voterIp: string): Promise
 
   return doc ? toProposal(doc as unknown as DocShape) : null;
 };
+
+export const updateProposalStatus = async (
+  proposalId: string,
+  status: Proposal["status"]
+): Promise<Proposal | null> => {
+  const doc = await ProposalModel.findByIdAndUpdate(
+    proposalId,
+    { status },
+    { new: true }
+  ).lean();
+
+  return doc ? toProposal(doc as unknown as DocShape) : null;
+};

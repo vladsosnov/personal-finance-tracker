@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useQuery } from "@apollo/client/react";
 import { IconPlus } from "@tabler/icons-react";
 import { Button, Card, Group, SegmentedControl, Select, Skeleton, Stack, Text, Title } from "@mantine/core";
 import { PageContainer } from "@/shared/components/page-container";
@@ -8,28 +9,43 @@ import { StateMessage } from "@/shared/components/state-message";
 import { CreateProposalModal } from "@/features/feedback/components/CreateProposalModal";
 import { ProposalsTable } from "@/features/feedback/components/ProposalsTable";
 import { useProposals } from "@/features/feedback/hooks/useProposals";
-import { CATEGORY_LABELS, type ProposalCategory } from "@/features/feedback/types";
+import { CATEGORY_LABELS, STATUS_LABELS, type ProposalCategory, type ProposalStatus } from "@/features/feedback/types";
+import { GET_ME } from "@/shared/gql/queries";
 import anim from "@/shared/styles/page-animations.module.css";
 
 type SortOption = "newest" | "most_voted";
 type FilterCategory = "all" | ProposalCategory;
+type FilterStatus = "all" | ProposalStatus;
 
 const CATEGORY_FILTER_OPTIONS = [
   { value: "all", label: "All" },
   ...Object.entries(CATEGORY_LABELS).map(([value, label]) => ({ value, label })),
 ];
 
+const STATUS_FILTER_OPTIONS = [
+  { value: "all", label: "All statuses" },
+  ...Object.entries(STATUS_LABELS).map(([value, label]) => ({ value, label })),
+];
+
 export const FeedbackClient = () => {
-  const { proposals, isLoading, error, isCreating, createProposal, voteForProposal, refetch } = useProposals();
+  const { proposals, isLoading, error, isCreating, createProposal, voteForProposal, updateProposalStatus, refetch } = useProposals();
+  const { data: meData } = useQuery<{ me: { id: string; email: string; role: string } | null }>(GET_ME);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [filterCategory, setFilterCategory] = useState<FilterCategory>("all");
+  const [filterStatus, setFilterStatus] = useState<FilterStatus>("all");
   const [sortBy, setSortBy] = useState<SortOption>("newest");
+
+  const isAdmin = meData?.me?.role === "admin";
 
   const filteredAndSorted = useMemo(() => {
     let result = [...proposals];
 
     if (filterCategory !== "all") {
       result = result.filter((p) => p.category === filterCategory);
+    }
+
+    if (filterStatus !== "all") {
+      result = result.filter((p) => p.status === filterStatus);
     }
 
     if (sortBy === "most_voted") {
@@ -39,7 +55,7 @@ export const FeedbackClient = () => {
     }
 
     return result;
-  }, [proposals, filterCategory, sortBy]);
+  }, [proposals, filterCategory, filterStatus, sortBy]);
 
   const handleSubmit = async (input: { category: ProposalCategory; title: string; description: string; contactEmail?: string }) => {
     await createProposal(input);
@@ -67,6 +83,16 @@ export const FeedbackClient = () => {
                 size="sm"
                 style={{ width: 160 }}
                 aria-label="Filter by category"
+              />
+              <Select
+                label="Status"
+                data={STATUS_FILTER_OPTIONS}
+                value={filterStatus}
+                onChange={(value) => setFilterStatus((value ?? "all") as FilterStatus)}
+                allowDeselect={false}
+                size="sm"
+                style={{ width: 160 }}
+                aria-label="Filter by status"
               />
               <SegmentedControl
                 value={sortBy}
@@ -107,7 +133,11 @@ export const FeedbackClient = () => {
               />
             </Card>
           ) : (
-            <ProposalsTable proposals={filteredAndSorted} onVote={voteForProposal} />
+            <ProposalsTable
+              proposals={filteredAndSorted}
+              onVote={voteForProposal}
+              onUpdateStatus={isAdmin ? updateProposalStatus : undefined}
+            />
           )}
         </div>
 

@@ -4,7 +4,7 @@ import { getEventCounts, getUniqueUserLogins, getRecentEvents } from "./modules/
 import { bulkCreateGoals, countGoalsByUser, createGoal, deleteAllGoalsByUser, deleteGoal, getGoalById, listGoalsByUser, reorderGoals, updateGoal, updateGoalColor, updateGoalCompletion } from "./modules/goals/goal.repository";
 import { bulkCreateGoalOperations, createGoalOperation, deleteAllOperationsByUser, deleteGoalOperation, deleteOperationsByGoal, getGoalOperationById, updateGoalOperation } from "./modules/goals/operation.repository";
 import { buildGoalView, buildGoalViews } from "./modules/goals/goal.service";
-import { createProposal, listProposals, voteProposal } from "./modules/proposals/proposal.repository";
+import { createProposal, listProposals, voteProposal, updateProposalStatus } from "./modules/proposals/proposal.repository";
 import type { OperationType } from "./modules/goals/types";
 import type { UserRole } from "./modules/auth/types";
 
@@ -279,6 +279,7 @@ export const schema = buildSchema(`
     deleteGoalOperation(operationId: ID!): Goal!
     createProposal(category: ProposalCategory!, title: String!, description: String!, contactEmail: String): Proposal!
     voteProposal(proposalId: ID!): Proposal
+    updateProposalStatus(proposalId: ID!, status: ProposalStatus!): Proposal
   }
 `);
 
@@ -718,6 +719,33 @@ export const rootValue = {
       status: proposal.status.toUpperCase(),
       votes: proposal.votes,
       hasVoted: true,
+      createdAt: proposal.createdAt,
+    };
+  },
+  updateProposalStatus: async ({ proposalId, status }: { proposalId: string; status: string }, context: Context) => {
+    ensureAdmin(context);
+
+    const statusMap: Record<string, "open" | "in_review" | "done" | "rejected"> = {
+      OPEN: "open",
+      IN_REVIEW: "in_review",
+      DONE: "done",
+      REJECTED: "rejected",
+    };
+
+    const mappedStatus = statusMap[status];
+    if (!mappedStatus) throw new Error("Invalid status");
+
+    const proposal = await updateProposalStatus(proposalId, mappedStatus);
+    if (!proposal) throw new Error("Proposal not found");
+
+    return {
+      id: proposal.id,
+      category: proposal.category.toUpperCase(),
+      title: proposal.title,
+      description: proposal.description,
+      status: proposal.status.toUpperCase(),
+      votes: proposal.votes,
+      hasVoted: proposal.voterIps.includes(context.clientIp),
       createdAt: proposal.createdAt,
     };
   },

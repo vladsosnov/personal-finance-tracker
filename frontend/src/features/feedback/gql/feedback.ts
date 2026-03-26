@@ -39,3 +39,12 @@ export const VOTE_PROPOSAL = gql`
     }
   }
 `;
+
+export const UPDATE_PROPOSAL_STATUS = gql`
+  mutation UpdateProposalStatus($proposalId: ID!, $status: ProposalStatus!) {
+    updateProposalStatus(proposalId: $proposalId, status: $status) {
+      id
+      status
+    }
+  }
+`;
