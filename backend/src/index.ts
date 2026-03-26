@@ -60,12 +60,17 @@ const csrfProtection = (req: express.Request, res: express.Response, next: expre
     return;
   }
 
+  // Only apply to auth and analytics endpoints
+  if (!req.path.startsWith("/auth/") && !req.path.startsWith("/analytics/")) {
+    next();
+    return;
+  }
+
   const origin = req.headers.origin;
   const referer = req.headers.referer;
 
   // Check if request comes from allowed origin
-  const isValidOrigin = origin === frontendOrigin ||
-                        (referer && referer.startsWith(frontendOrigin + "/"));
+  const isValidOrigin = origin === frontendOrigin || (referer && referer.startsWith(frontendOrigin + "/"));
 
   if (!isValidOrigin) {
     res.status(403).json({ error: "Invalid origin" });
@@ -75,9 +80,8 @@ const csrfProtection = (req: express.Request, res: express.Response, next: expre
   next();
 };
 
-// Apply CSRF protection to all REST endpoints
-app.use("/auth/*", csrfProtection);
-app.use("/analytics/*", csrfProtection);
+// Apply CSRF protection globally (will check path internally)
+app.use(csrfProtection);
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
