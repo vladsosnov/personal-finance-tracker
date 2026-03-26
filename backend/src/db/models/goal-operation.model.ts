@@ -21,6 +21,9 @@ const goalOperationSchema = new Schema<GoalOperationDocument>(
   { timestamps: true }
 );
 
+// Compound indexes for common query patterns
 goalOperationSchema.index({ userId: 1, goalId: 1 });
+goalOperationSchema.index({ userId: 1, operationDate: -1, createdAt: -1 });
+goalOperationSchema.index({ goalId: 1, operationDate: -1, createdAt: -1 });
 
 export const GoalOperationModel = model<GoalOperationDocument>("GoalOperation", goalOperationSchema);

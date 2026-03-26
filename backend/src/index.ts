@@ -52,6 +52,33 @@ app.use(
 );
 app.use(express.json({ limit: "100kb" }));
 
+// CSRF protection via Origin validation for state-changing requests
+const csrfProtection = (req: express.Request, res: express.Response, next: express.NextFunction) => {
+  // Only apply to state-changing methods
+  if (req.method === "GET" || req.method === "HEAD" || req.method === "OPTIONS") {
+    next();
+    return;
+  }
+
+  const origin = req.headers.origin;
+  const referer = req.headers.referer;
+
+  // Check if request comes from allowed origin
+  const isValidOrigin = origin === frontendOrigin ||
+                        (referer && referer.startsWith(frontendOrigin + "/"));
+
+  if (!isValidOrigin) {
+    res.status(403).json({ error: "Invalid origin" });
+    return;
+  }
+
+  next();
+};
+
+// Apply CSRF protection to all REST endpoints
+app.use("/auth/*", csrfProtection);
+app.use("/analytics/*", csrfProtection);
+
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const parseCookies = (cookieHeader?: string) =>

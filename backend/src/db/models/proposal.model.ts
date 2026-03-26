@@ -36,4 +36,9 @@ const proposalSchema = new Schema<ProposalDocument>(
   { timestamps: true }
 );
 
+// Compound indexes for sorting and filtering
+proposalSchema.index({ status: 1, createdAt: -1 }); // Filter by status and sort by date
+proposalSchema.index({ category: 1, createdAt: -1 }); // Filter by category and sort by date
+proposalSchema.index({ votes: -1, createdAt: -1 }); // Sort by popularity
+
 export const ProposalModel = model<ProposalDocument>("Proposal", proposalSchema);
