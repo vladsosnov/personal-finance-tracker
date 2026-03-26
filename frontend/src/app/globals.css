@@ -12,10 +12,10 @@
 
   --primary-glow: conic-gradient(
     from 180deg at 50% 50%,
-    #16abff33 0deg,
-    #0885ff33 55deg,
-    #54d6ff33 120deg,
-    #0071ff33 160deg,
+    #31626333 0deg,
+    #3E5C4733 55deg,
+    #C36A4A33 120deg,
+    #31626333 160deg,
     transparent 360deg
   );
   --secondary-glow: radial-gradient(
@@ -48,12 +48,12 @@ html[data-mantine-color-scheme="dark"] {
   --background-start-rgb: 0, 0, 0;
   --background-end-rgb: 0, 0, 0;
 
-  --primary-glow: radial-gradient(rgba(1, 65, 255, 0.4), rgba(1, 65, 255, 0));
+  --primary-glow: radial-gradient(rgba(49, 98, 99, 0.35), rgba(49, 98, 99, 0));
   --secondary-glow: linear-gradient(
     to bottom right,
-    rgba(1, 65, 255, 0),
-    rgba(1, 65, 255, 0),
-    rgba(1, 65, 255, 0.3)
+    rgba(49, 98, 99, 0),
+    rgba(49, 98, 99, 0),
+    rgba(195, 106, 74, 0.2)
   );
 
   --tile-start-rgb: 2, 13, 46;
@@ -73,13 +73,13 @@ html[data-mantine-color-scheme="dark"] {
   --card-rgb: 100, 100, 100;
   --card-border-rgb: 200, 200, 200;
 
-  --mantine-color-body: #09111f;
-  --mantine-color-text: #e5e7eb;
-  --mantine-color-dimmed: #94a3b8;
-  --mantine-color-default: #142033;
-  --mantine-color-default-hover: #1b2a40;
-  --mantine-color-default-color: #e5e7eb;
-  --mantine-color-default-border: rgba(148, 163, 184, 0.24);
+  --mantine-color-body: #101417;
+  --mantine-color-text: #E7D8C6;
+  --mantine-color-dimmed: #9a8e80;
+  --mantine-color-default: #171C21;
+  --mantine-color-default-hover: #1E2429;
+  --mantine-color-default-color: #E7D8C6;
+  --mantine-color-default-border: rgba(62, 92, 71, 0.35);
 }
 
 html[data-mantine-color-scheme="light"] {
@@ -109,8 +109,8 @@ body {
 }
 
 html[data-mantine-color-scheme="dark"] body {
-  color: #f3f4f6;
-  background: linear-gradient(to bottom, #111827, #030712);
+  color: #E7D8C6;
+  background: linear-gradient(to bottom, #141819, #101417);
 }
 
 .app-shell {
@@ -131,8 +131,8 @@ html[data-mantine-color-scheme="dark"] body {
 }
 
 html[data-mantine-color-scheme="dark"] .app-header {
-  border-bottom-color: rgba(255, 255, 255, 0.08);
-  background: rgba(3, 7, 18, 0.82);
+  border-bottom-color: rgba(62, 92, 71, 0.25);
+  background: rgba(16, 20, 23, 0.88);
 }
 
 .app-main {
@@ -146,8 +146,8 @@ html[data-mantine-color-scheme="dark"] .app-header {
 }
 
 html[data-mantine-color-scheme="dark"] .app-footer {
-  border-top-color: rgba(255, 255, 255, 0.08);
-  background: rgba(3, 7, 18, 0.78);
+  border-top-color: rgba(62, 92, 71, 0.25);
+  background: rgba(16, 20, 23, 0.85);
 }
 
 a {
@@ -172,7 +172,7 @@ a {
   left: -9999px;
   z-index: 999;
   padding: 8px 16px;
-  background: var(--mantine-color-blue-6, #228be6);
+  background: var(--mantine-color-teal-6, #316263);
   color: #fff;
   font-weight: 600;
   border-radius: 4px;
@@ -201,7 +201,7 @@ html[data-mantine-color-scheme="dark"] .mantine-Button-root[data-disabled] {
 
 /* Ensure visible focus outlines on interactive card elements */
 [role="button"]:focus-visible {
-  outline: 2px solid var(--mantine-color-blue-6, #228be6);
+  outline: 2px solid var(--mantine-color-teal-6, #316263);
   outline-offset: 2px;
 }
 

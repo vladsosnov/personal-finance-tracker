@@ -1,0 +1,426 @@
+/* ── Keyframes ──────────────────────────────────────────────── */
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(32px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes gradientShift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(12px, -18px) scale(1.04);
+  }
+  66% {
+    transform: translate(-8px, 10px) scale(0.97);
+  }
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 0.45;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+@keyframes progressFill {
+  from {
+    width: 0%;
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes numberRoll {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ── Scroll reveal ─────────────────────────────────────────── */
+
+.reveal {
+  opacity: 0;
+  transform: translateY(32px);
+  transition:
+    opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
+}
+
+.revealScale {
+  opacity: 0;
+  transform: scale(0.94);
+  transition:
+    opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
+}
+
+.revealVisible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+/* ── Hero ──────────────────────────────────────────────────── */
+
+.heroWrapper {
+  position: relative;
+  overflow: hidden;
+  padding: 80px 0 60px;
+}
+
+.heroContent {
+  position: relative;
+  z-index: 1;
+}
+
+.gradientTitle {
+  background: linear-gradient(
+    135deg,
+    #316263 0%,
+    #C36A4A 35%,
+    #3E5C47 65%,
+    #316263 100%
+  );
+  background-size: 300% 300%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  animation: gradientShift 6s ease infinite;
+  line-height: 1.15;
+}
+
+.heroStagger1 {
+  animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both;
+}
+
+.heroStagger2 {
+  animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.3s both;
+}
+
+.heroStagger3 {
+  animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.5s both;
+}
+
+.heroStagger4 {
+  animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.7s both;
+}
+
+/* ── Floating orbs ─────────────────────────────────────────── */
+
+.orbContainer {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(60px);
+  animation: float 14s ease-in-out infinite, pulse 6s ease-in-out infinite;
+}
+
+.orb1 {
+  width: 280px;
+  height: 280px;
+  top: -60px;
+  left: -40px;
+  background: radial-gradient(circle, rgba(49, 98, 99, 0.25), transparent 70%);
+  animation-delay: 0s, 0s;
+}
+
+.orb2 {
+  width: 220px;
+  height: 220px;
+  top: 20px;
+  right: -30px;
+  background: radial-gradient(circle, rgba(195, 106, 74, 0.18), transparent 70%);
+  animation-delay: -4s, -2s;
+}
+
+.orb3 {
+  width: 180px;
+  height: 180px;
+  bottom: -40px;
+  left: 30%;
+  background: radial-gradient(circle, rgba(62, 92, 71, 0.2), transparent 70%);
+  animation-delay: -8s, -4s;
+}
+
+/* ── Feature cards ─────────────────────────────────────────── */
+
+.featureCard {
+  position: relative;
+  transition:
+    transform 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.3s ease;
+  overflow: hidden;
+}
+
+.featureCard::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  background: radial-gradient(
+    600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
+    rgba(49, 98, 99, 0.08),
+    transparent 40%
+  );
+  pointer-events: none;
+  z-index: 0;
+}
+
+.featureCard:hover {
+  transform: translateY(-4px);
+  box-shadow:
+    0 8px 30px rgba(0, 0, 0, 0.08),
+    0 0 0 1px rgba(49, 98, 99, 0.15);
+}
+
+.featureCard:hover::before {
+  opacity: 1;
+}
+
+html[data-mantine-color-scheme="dark"] .featureCard:hover {
+  box-shadow:
+    0 8px 30px rgba(0, 0, 0, 0.3),
+    0 0 0 1px rgba(49, 98, 99, 0.25);
+}
+
+.featureCardContent {
+  position: relative;
+  z-index: 1;
+}
+
+.featureIcon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, rgba(49, 98, 99, 0.12), rgba(62, 92, 71, 0.12));
+  margin-bottom: 8px;
+}
+
+html[data-mantine-color-scheme="dark"] .featureIcon {
+  background: linear-gradient(135deg, rgba(49, 98, 99, 0.2), rgba(62, 92, 71, 0.2));
+}
+
+/* ── Plan cards ────────────────────────────────────────────── */
+
+.planCard {
+  transition:
+    transform 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.3s ease;
+}
+
+.planCard:hover {
+  transform: translateY(-6px);
+}
+
+.planCardHighlight {
+  position: relative;
+  overflow: hidden;
+}
+
+.planCardHighlight::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    #316263,
+    transparent
+  );
+  animation: shimmer 3s ease-in-out infinite;
+}
+
+/* ── Animated progress bar ─────────────────────────────────── */
+
+.animatedProgress {
+  animation: progressFill 1.5s cubic-bezier(0.16, 1, 0.3, 1) 0.3s both;
+}
+
+/* ── Animated number ───────────────────────────────────────── */
+
+.animatedNumber {
+  animation: numberRoll 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+  display: inline-block;
+}
+
+/* ── Product preview card ──────────────────────────────────── */
+
+.previewCard {
+  position: relative;
+  overflow: hidden;
+}
+
+.previewCard::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    135deg,
+    rgba(49, 98, 99, 0.3),
+    rgba(195, 106, 74, 0.2),
+    rgba(62, 92, 71, 0.3)
+  );
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  -webkit-mask-composite: xor;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+
+.previewCard:hover::before {
+  opacity: 1;
+}
+
+/* ── CTA section ───────────────────────────────────────────── */
+
+.ctaCard {
+  position: relative;
+  overflow: hidden;
+}
+
+.ctaGlow {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse 60% 50% at 50% 120%,
+    rgba(49, 98, 99, 0.1),
+    transparent
+  );
+}
+
+html[data-mantine-color-scheme="dark"] .ctaGlow {
+  background: radial-gradient(
+    ellipse 60% 50% at 50% 120%,
+    rgba(49, 98, 99, 0.15),
+    transparent
+  );
+}
+
+/* ── Section divider ───────────────────────────────────────── */
+
+.sectionDivider {
+  width: 60px;
+  height: 3px;
+  border-radius: 3px;
+  background: linear-gradient(90deg, #316263, #C36A4A);
+  margin: 0 auto;
+}
+
+/* ── Reduced motion ────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal,
+  .revealScale {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
+  .gradientTitle {
+    animation: none;
+  }
+
+  .heroStagger1,
+  .heroStagger2,
+  .heroStagger3,
+  .heroStagger4 {
+    animation: none;
+    opacity: 1;
+  }
+
+  .orb {
+    animation: none;
+  }
+
+  .featureCard {
+    transition: none;
+  }
+
+  .featureCard:hover {
+    transform: none;
+  }
+
+  .planCard:hover {
+    transform: none;
+  }
+
+  .animatedProgress {
+    animation: none;
+  }
+
+  .animatedNumber {
+    animation: none;
+  }
+
+  .planCardHighlight::after {
+    animation: none;
+  }
+}

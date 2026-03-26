@@ -1,6 +1,7 @@
 import { Button, Card, Grid, NumberInput, Stack, Text, TextInput, Title } from "@mantine/core";
 import { GoalColorPicker } from "@/features/dashboard/components/goal-color-picker";
 import { MONEY_INPUT_PROPS, numberOrZero } from "@/shared/utils/number";
+import styles from "@/shared/styles/page-animations.module.css";
 
 type CreateGoalFormProps = {
   goalTitle: string;
@@ -32,7 +33,7 @@ export const CreateGoalForm = ({
   onCreateGoal,
 }: CreateGoalFormProps) => {
   return (
-    <Card withBorder radius="md" p="lg">
+    <Card withBorder radius="md" p="lg" className={styles.stagger4}>
       <form
         onSubmit={(e) => {
           e.preventDefault();

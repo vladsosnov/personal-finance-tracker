@@ -13,6 +13,7 @@ import { DeleteAccountModal } from "@/features/profile/components/modals/DeleteA
 import { ResetDataModal } from "@/features/profile/components/modals/ResetDataModal";
 import { useDataManagement } from "@/features/profile/hooks/useDataManagement";
 import { trackEvent } from "@/shared/lib/analytics";
+import anim from "@/shared/styles/page-animations.module.css";
 
 export const ProfileClient = () => {
   const dm = useDataManagement();
@@ -23,7 +24,7 @@ export const ProfileClient = () => {
 
   return (
     <PageContainer>
-      <Stack gap="lg">
+      <Stack gap="lg" className={anim.pageEnter}>
         {dm.meData?.me && !dm.meData.me.emailVerified && (
           <EmailVerificationBanner emailVerified={false} />
         )}
@@ -31,48 +32,59 @@ export const ProfileClient = () => {
         <Stack gap={2}>
           <Title order={1}>Profile</Title>
           <Text c="dimmed">Account preferences and progress import.</Text>
+          <div className={anim.gradientDivider} style={{ marginTop: 4, marginLeft: 0 }} />
         </Stack>
 
-        <ProfileInfoCard
-          email={dm.meData?.me?.email}
-          subscription={dm.meData?.me?.subscription}
-          isLoading={dm.isLoadingMe}
-          error={dm.meError}
-          onRetry={dm.refetchMe}
-          onDeleteAccount={dm.openDeleteAccountModal}
-        />
+        <div className={anim.stagger1}>
+          <ProfileInfoCard
+            email={dm.meData?.me?.email}
+            subscription={dm.meData?.me?.subscription}
+            isLoading={dm.isLoadingMe}
+            error={dm.meError}
+            onRetry={dm.refetchMe}
+            onDeleteAccount={dm.openDeleteAccountModal}
+          />
+        </div>
 
-        <SubscriptionCard currentSubscription={dm.meData?.me?.subscription ?? "Free"} />
+        <div className={anim.stagger2}>
+          <SubscriptionCard currentSubscription={dm.meData?.me?.subscription ?? "Free"} />
+        </div>
 
-        <ThemeCard />
+        <div className={anim.stagger3}>
+          <ThemeCard />
+        </div>
 
-        <ImportProgressCard
-          file={dm.file}
-          preparedGoals={dm.preparedGoals}
-          skippedGoals={dm.skippedGoals}
-          importTotals={dm.importTotals}
-          importProgress={dm.importProgress}
-          importProgressValue={dm.importProgressValue}
-          importLimitMessage={dm.importLimitMessage}
-          isImportOverLimit={dm.isImportOverLimit}
-          isPreparingImport={dm.isPreparingImport}
-          isImporting={dm.isImporting}
-          includedZeroTargetGoalIndexes={dm.includedZeroTargetGoalIndexes}
-          onFileChange={dm.handleFileChange}
-          onImport={dm.handleImport}
-          onToggleZeroTargetGoal={dm.handleToggleZeroTargetGoal}
-          onRemoveFromImport={dm.handleRemoveFromImport}
-        />
+        <div className={anim.stagger4}>
+          <ImportProgressCard
+            file={dm.file}
+            preparedGoals={dm.preparedGoals}
+            skippedGoals={dm.skippedGoals}
+            importTotals={dm.importTotals}
+            importProgress={dm.importProgress}
+            importProgressValue={dm.importProgressValue}
+            importLimitMessage={dm.importLimitMessage}
+            isImportOverLimit={dm.isImportOverLimit}
+            isPreparingImport={dm.isPreparingImport}
+            isImporting={dm.isImporting}
+            includedZeroTargetGoalIndexes={dm.includedZeroTargetGoalIndexes}
+            onFileChange={dm.handleFileChange}
+            onImport={dm.handleImport}
+            onToggleZeroTargetGoal={dm.handleToggleZeroTargetGoal}
+            onRemoveFromImport={dm.handleRemoveFromImport}
+          />
+        </div>
 
-        <DataManagementCard
-          hasStoredData={dm.hasStoredData}
-          isLoadingGoals={dm.isLoadingGoals}
-          goalsError={dm.goalsError}
-          isExportingAllData={dm.isExportingAllData}
-          onExport={dm.handleExportAllData}
-          onOpenResetModal={dm.openResetModal}
-          onRetry={dm.refetchGoals}
-        />
+        <div className={anim.stagger5}>
+          <DataManagementCard
+            hasStoredData={dm.hasStoredData}
+            isLoadingGoals={dm.isLoadingGoals}
+            goalsError={dm.goalsError}
+            isExportingAllData={dm.isExportingAllData}
+            onExport={dm.handleExportAllData}
+            onOpenResetModal={dm.openResetModal}
+            onRetry={dm.refetchGoals}
+          />
+        </div>
       </Stack>
 
       <ResetDataModal

@@ -23,6 +23,7 @@ import { getPlanByName } from "@/shared/constants/plans";
 import type { Goal, GoalDetails } from "@/features/dashboard/types";
 import { StateMessage } from "@/shared/components/state-message";
 import { trackEvent } from "@/shared/lib/analytics";
+import anim from "@/shared/styles/page-animations.module.css";
 
 export const DashboardClient = () => {
   const [selectedGoalId, setSelectedGoalId] = useState<string | null>(null);
@@ -209,7 +210,7 @@ export const DashboardClient = () => {
 
   return (
     <PageContainer>
-      <Stack gap="lg">
+      <Stack gap="lg" className={anim.pageEnter}>
         {meData?.me && !meData.me.emailVerified && (
           <EmailVerificationBanner emailVerified={false} />
         )}
@@ -249,7 +250,7 @@ export const DashboardClient = () => {
           </Card>
         ) : (
           <Grid>
-            <Grid.Col span={{ base: 12, md: 4 }}>
+            <Grid.Col span={{ base: 12, md: 4 }} className={anim.slideLeft}>
               <Tabs value={goalStatusTab} onChange={(value) => setGoalStatusTab((value as "active" | "completed") ?? "active")}>
                 <Tabs.List mb="sm">
                   <Tabs.Tab value="active">In progress ({activeGoals.length})</Tabs.Tab>
@@ -282,7 +283,7 @@ export const DashboardClient = () => {
                 onRetry={refetchGoals}
               />
             </Grid.Col>
-            <Grid.Col span={{ base: 12, md: 8 }}>
+            <Grid.Col span={{ base: 12, md: 8 }} className={anim.slideRight}>
               <GoalDetailsPanel
                 hasGoals={goals.length > 0}
                 selectedGoal={selectedGoal}

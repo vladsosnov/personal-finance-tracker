@@ -1,5 +1,6 @@
 import { Badge, Card, Group, SimpleGrid, Stack, Table, Text, Title } from "@mantine/core";
 import { PLANS } from "@/shared/constants/plans";
+import anim from "@/shared/styles/page-animations.module.css";
 
 type SubscriptionCardProps = {
   currentSubscription: string;
@@ -21,6 +22,7 @@ export const SubscriptionCard = ({ currentSubscription }: SubscriptionCardProps)
               withBorder
               radius="md"
               p="md"
+              className={`${anim.hoverLift} ${isCurrentPlan ? anim.planCardCurrent : ""}`}
               aria-label={`${plan.name} plan${isCurrentPlan ? " (current)" : ""}`}
               aria-current={isCurrentPlan ? true : undefined}
             >

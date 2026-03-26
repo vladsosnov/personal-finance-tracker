@@ -1,5 +1,6 @@
 import { Alert, Anchor, Button, Card, Container, PasswordInput, SegmentedControl, Stack, Text, TextInput, Title } from "@mantine/core";
 import type { AuthMode } from "@/shared/types/shared";
+import styles from "@/shared/styles/page-animations.module.css";
 
 type AuthViewProps = {
   authMode: AuthMode;
@@ -25,8 +26,13 @@ export const AuthView = ({
   onSubmit,
 }: AuthViewProps) => {
   return (
-    <Container size="sm" py={72}>
-      <Card withBorder radius="md" p="xl">
+    <Container size="sm" py={72} className={styles.authWrapper}>
+      <div className={styles.orbContainer}>
+        <div className={`${styles.orb} ${styles.orbBlue}`} />
+        <div className={`${styles.orb} ${styles.orbViolet}`} />
+      </div>
+
+      <Card withBorder radius="md" p="xl" className={styles.authCard} style={{ position: "relative", zIndex: 1 }}>
         <form
           onSubmit={(e) => {
             e.preventDefault();
@@ -35,7 +41,7 @@ export const AuthView = ({
           noValidate
         >
           <Stack>
-            <Title order={2}>Financial Goals Tracker</Title>
+            <Title order={2} className={styles.authTitle}>Financial Goals Tracker</Title>
             <Text c="dimmed">Sign in to manage your own goals and progress history.</Text>
             <SegmentedControl
               data={[

@@ -1,0 +1,340 @@
+/* ── Keyframes ──────────────────────────────────────────────── */
+
+@keyframes pageEnter {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes cardEnter {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(10px, -14px) scale(1.03);
+  }
+  66% {
+    transform: translate(-6px, 8px) scale(0.98);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.65; }
+}
+
+@keyframes shimmerBorder {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* ── Page enter ────────────────────────────────────────────── */
+
+.pageEnter {
+  animation: pageEnter 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* ── Staggered card animations ─────────────────────────────── */
+
+.stagger1 {
+  animation: cardEnter 0.55s cubic-bezier(0.16, 1, 0.3, 1) 0.05s both;
+}
+
+.stagger2 {
+  animation: cardEnter 0.55s cubic-bezier(0.16, 1, 0.3, 1) 0.12s both;
+}
+
+.stagger3 {
+  animation: cardEnter 0.55s cubic-bezier(0.16, 1, 0.3, 1) 0.19s both;
+}
+
+.stagger4 {
+  animation: cardEnter 0.55s cubic-bezier(0.16, 1, 0.3, 1) 0.26s both;
+}
+
+.stagger5 {
+  animation: cardEnter 0.55s cubic-bezier(0.16, 1, 0.3, 1) 0.33s both;
+}
+
+.stagger6 {
+  animation: cardEnter 0.55s cubic-bezier(0.16, 1, 0.3, 1) 0.40s both;
+}
+
+/* ── Slide variants ────────────────────────────────────────── */
+
+.slideLeft {
+  animation: slideInLeft 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both;
+}
+
+.slideRight {
+  animation: slideInRight 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both;
+}
+
+/* ── Scale entrance ────────────────────────────────────────── */
+
+.scaleIn {
+  animation: scaleIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both;
+}
+
+/* ── Interactive card hover ────────────────────────────────── */
+
+.hoverLift {
+  transition:
+    transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.25s ease;
+}
+
+.hoverLift:hover {
+  transform: translateY(-3px);
+  box-shadow:
+    0 6px 24px rgba(0, 0, 0, 0.06),
+    0 0 0 1px rgba(49, 98, 99, 0.1);
+}
+
+html[data-mantine-color-scheme="dark"] .hoverLift:hover {
+  box-shadow:
+    0 6px 24px rgba(0, 0, 0, 0.25),
+    0 0 0 1px rgba(49, 98, 99, 0.2);
+}
+
+/* ── Stat card with number highlight ───────────────────────── */
+
+.statCard {
+  transition:
+    transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.25s ease,
+    border-color 0.25s ease;
+  overflow: hidden;
+  position: relative;
+}
+
+.statCard::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #316263, #C36A4A);
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+
+.statCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+}
+
+.statCard:hover::after {
+  opacity: 1;
+}
+
+html[data-mantine-color-scheme="dark"] .statCard:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+}
+
+/* ── Auth card ─────────────────────────────────────────────── */
+
+.authWrapper {
+  position: relative;
+  overflow: hidden;
+}
+
+.authCard {
+  animation: scaleIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+  position: relative;
+  overflow: hidden;
+}
+
+.authCard::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    #316263,
+    transparent
+  );
+  animation: shimmerBorder 3s ease-in-out infinite;
+}
+
+.authTitle {
+  background: linear-gradient(
+    135deg,
+    #316263 0%,
+    #C36A4A 100%
+  );
+  background-size: 200% 200%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  animation: gradientShift 5s ease infinite;
+}
+
+/* ── Floating orbs (reusable) ──────────────────────────────── */
+
+.orbContainer {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(60px);
+  animation: float 14s ease-in-out infinite, pulse 6s ease-in-out infinite;
+}
+
+.orbBlue {
+  width: 200px;
+  height: 200px;
+  top: -40px;
+  right: -30px;
+  background: radial-gradient(circle, rgba(49, 98, 99, 0.2), transparent 70%);
+}
+
+.orbViolet {
+  width: 160px;
+  height: 160px;
+  bottom: -30px;
+  left: -20px;
+  background: radial-gradient(circle, rgba(195, 106, 74, 0.15), transparent 70%);
+  animation-delay: -5s, -3s;
+}
+
+/* ── Section header gradient divider ───────────────────────── */
+
+.gradientDivider {
+  width: 50px;
+  height: 3px;
+  border-radius: 3px;
+  background: linear-gradient(90deg, #316263, #C36A4A);
+}
+
+/* ── Subscription plan card hover ──────────────────────────── */
+
+.planCardCurrent {
+  position: relative;
+  overflow: hidden;
+}
+
+.planCardCurrent::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--mantine-color-teal-5, #20c997), var(--mantine-color-teal-7, #0ca678));
+}
+
+/* ── Table row hover ───────────────────────────────────────── */
+
+.tableHover {
+  transition: background-color 0.15s ease;
+}
+
+/* ── Reduced motion ────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  .pageEnter,
+  .stagger1,
+  .stagger2,
+  .stagger3,
+  .stagger4,
+  .stagger5,
+  .stagger6,
+  .slideLeft,
+  .slideRight,
+  .scaleIn,
+  .authCard {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+
+  .hoverLift:hover,
+  .statCard:hover,
+  .planCard:hover {
+    transform: none;
+  }
+
+  .authCard::before {
+    animation: none;
+  }
+
+  .authTitle {
+    animation: none;
+  }
+
+  .orb {
+    animation: none;
+  }
+}
