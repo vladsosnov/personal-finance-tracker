@@ -4,15 +4,24 @@ import { Button, Card, Group, Modal, ScrollArea, Skeleton, Stack, Title } from "
 import { ChartRangePicker, type ChartRange } from "@/features/dashboard/components/ChartRangePicker";
 import { GoalDetailHeader } from "@/features/dashboard/components/GoalDetailHeader";
 import { GoalOperationsTable } from "@/features/dashboard/components/GoalOperationsTable";
-import { DeleteOperationModal } from "@/features/dashboard/components/modals/DeleteOperationModal";
-import { OperationModal } from "@/features/dashboard/components/modals/OperationModal";
 import type { useOperationForm } from "@/features/dashboard/hooks/useOperationForm";
 import type { GoalDetails, GoalOperation } from "@/features/dashboard/types";
 import { StateMessage } from "@/shared/components/state-message";
 
+// Lazy load chart and modals to reduce initial bundle size
 const GoalChart = dynamic(
   () => import("@/features/dashboard/components/goal-chart").then((m) => m.GoalChart),
   { ssr: false, loading: () => <Skeleton height={320} radius="md" /> }
+);
+
+const DeleteOperationModal = dynamic(
+  () => import("@/features/dashboard/components/modals/DeleteOperationModal").then(mod => ({ default: mod.DeleteOperationModal })),
+  { ssr: false }
+);
+
+const OperationModal = dynamic(
+  () => import("@/features/dashboard/components/modals/OperationModal").then(mod => ({ default: mod.OperationModal })),
+  { ssr: false }
 );
 
 export type GoalOperationActions = {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useEffect, useState } from "react";
+import dynamic from "next/dynamic";
 import { useQuery } from "@apollo/client/react";
 import { Card, Grid, Stack, Tabs } from "@mantine/core";
 import { PageContainer } from "@/shared/components/page-container";
@@ -8,9 +9,6 @@ import { CreateGoalForm } from "@/features/dashboard/components/create-goal-form
 import { DashboardOverviewStats } from "@/features/dashboard/components/dashboard-overview-stats";
 import { GoalDetailsPanel } from "@/features/dashboard/components/goal-details-panel";
 import { GoalsList } from "@/features/dashboard/components/goals-list";
-import { EditGoalModal } from "@/features/dashboard/components/modals/EditGoalModal";
-import { DeleteGoalModal } from "@/features/dashboard/components/modals/DeleteGoalModal";
-import { CompleteGoalModal } from "@/features/dashboard/components/modals/CompleteGoalModal";
 import { useGoals } from "@/features/dashboard/hooks/useGoals";
 import { buildGoalFromDetails } from "@/features/dashboard/utils/goalUtils";
 import { useGoalDetails } from "@/features/dashboard/hooks/useGoalDetails";
@@ -24,6 +22,11 @@ import type { Goal, GoalDetails } from "@/features/dashboard/types";
 import { StateMessage } from "@/shared/components/state-message";
 import { trackEvent } from "@/shared/lib/analytics";
 import anim from "@/shared/styles/page-animations.module.css";
+
+// Lazy load modals to reduce initial bundle size
+const EditGoalModal = dynamic(() => import("@/features/dashboard/components/modals/EditGoalModal").then(mod => ({ default: mod.EditGoalModal })), { ssr: false });
+const DeleteGoalModal = dynamic(() => import("@/features/dashboard/components/modals/DeleteGoalModal").then(mod => ({ default: mod.DeleteGoalModal })), { ssr: false });
+const CompleteGoalModal = dynamic(() => import("@/features/dashboard/components/modals/CompleteGoalModal").then(mod => ({ default: mod.CompleteGoalModal })), { ssr: false });
 
 export const DashboardClient = () => {
   const [selectedGoalId, setSelectedGoalId] = useState<string | null>(null);
