@@ -96,7 +96,7 @@ const MAX_IMPORT_GOALS = 200;
 const MAX_IMPORT_OPERATIONS_PER_GOAL = 2000;
 const FREE_MAX_GOALS = 3;
 
-const getEffectiveSubscription = (user: { subscription: string; role: string } | null): string => {
+const getEffectiveSubscription = (user: { subscription: string; role: string } | null | undefined): string => {
   if (!user) return "Free";
   return user.role === "admin" ? "Lifetime" : user.subscription;
 };
@@ -345,12 +345,7 @@ export const rootValue = {
         date: string;
         value: number;
         note?: string;
-      }> = [
-        {
-          date: goal.createdAt,
-          value: goal.initialAmount,
-        },
-      ];
+      }> = [];
 
       for (const operation of sortedOperations) {
         runningValue += operation.type === "INCREASE" ? operation.amount : -operation.amount;
@@ -366,7 +361,17 @@ export const rootValue = {
         title: goal.title,
         targetValue: goal.targetAmount,
         initialValue: goal.initialAmount,
+        sortOrder: goal.sortOrder,
+        isCompleted: goal.isCompleted,
+        completedAt: goal.completedAt ?? null,
         history,
+        operations: sortedOperations.map((op) => ({
+          type: op.type,
+          amount: op.amount,
+          note: op.note ?? null,
+          operationDate: op.operationDate,
+          createdAt: op.createdAt,
+        })),
         display: {
           bar: {
             colors: {
