@@ -1,5 +1,5 @@
 import { ReactElement } from 'react';
-import { render, RenderOptions } from '@testing-library/react';
+import { render, RenderOptions, renderHook as rtlRenderHook, RenderHookOptions } from '@testing-library/react';
 import { MockedProvider } from '@apollo/client/testing/react';
 import type { MockedResponse } from '@apollo/client/testing';
 import { MantineProvider } from '@mantine/core';
@@ -26,6 +26,21 @@ export function renderWithProviders(
   { mocks = [], ...renderOptions }: CustomRenderOptions = {}
 ) {
   return render(ui, {
+    wrapper: ({ children }) => <TestProviders mocks={mocks}>{children}</TestProviders>,
+    ...renderOptions,
+  });
+}
+
+interface CustomRenderHookOptions<Props> extends Omit<RenderHookOptions<Props>, 'wrapper'> {
+  mocks?: readonly MockedResponse[];
+}
+
+export function renderHook<Result, Props>(
+  hook: (props: Props) => Result,
+  options?: CustomRenderHookOptions<Props>
+) {
+  const { mocks = [], ...renderOptions } = options || {};
+  return rtlRenderHook(hook, {
     wrapper: ({ children }) => <TestProviders mocks={mocks}>{children}</TestProviders>,
     ...renderOptions,
   });

@@ -1,4 +1,5 @@
 import type { Goal } from '@/features/dashboard/types';
+import type { Proposal } from '@/features/feedback/types';
 
 export const mockGoal: Goal = {
   id: '1',
@@ -46,6 +47,31 @@ export const mockOperations = [
     amount: 500,
     note: 'Rent',
     date: '2024-01-02',
+    createdAt: '2024-01-02T00:00:00.000Z',
+  },
+];
+
+export const mockProposal: Proposal = {
+  id: '1',
+  category: 'FEATURE',
+  title: 'Add dark mode',
+  description: 'Please add dark mode support',
+  status: 'OPEN',
+  votes: 5,
+  hasVoted: false,
+  createdAt: '2024-01-01T00:00:00.000Z',
+};
+
+export const mockProposals: Proposal[] = [
+  mockProposal,
+  {
+    id: '2',
+    category: 'BUG',
+    title: 'Fix login issue',
+    description: 'Login button not working',
+    status: 'IN_REVIEW',
+    votes: 10,
+    hasVoted: true,
     createdAt: '2024-01-02T00:00:00.000Z',
   },
 ];

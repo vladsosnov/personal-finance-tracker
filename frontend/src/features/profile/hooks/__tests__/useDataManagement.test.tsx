@@ -2,13 +2,11 @@ import { renderHook, act, waitFor } from '@testing-library/react';
 import { MockedProvider } from '@apollo/client/testing/react';
 import type { MockedResponse } from '@apollo/client/testing';
 import { useDataManagement } from '../useDataManagement';
-import { EXPORT_ALL_DATA, GET_GOALS, IMPORT_GOALS, RESET_ALL_DATA } from '@/features/dashboard/gql/dashboard';
+import { EXPORT_ALL_DATA, GET_GOALS, RESET_ALL_DATA } from '@/features/dashboard/gql/dashboard';
 import { GET_ME } from '@/shared/gql/queries';
 import { showToast } from '@/shared/lib/toast-store';
 import { trackEvent } from '@/shared/lib/analytics';
-import { prepareImportGoals } from '@/features/profile/utils/prepareImport';
 
-// Mock dependencies
 jest.mock('@/shared/lib/toast-store');
 jest.mock('@/shared/lib/analytics');
 jest.mock('@/features/profile/utils/prepareImport');
