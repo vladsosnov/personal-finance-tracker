@@ -104,7 +104,12 @@ describe('useOperationForm', () => {
 
   it('handles operation without note', () => {
     const { result } = renderHook(() => useOperationForm());
-    const operation = { ...mockOperation, note: undefined, operationDate: '2024-01-01' };
+    const operation = {
+      ...mockOperation,
+      type: 'INCREASE' as const,
+      note: undefined,
+      operationDate: '2024-01-01'
+    };
 
     act(() => {
       result.current.startEdit(operation);

@@ -10,6 +10,8 @@
     "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
     "build": "tsc -p tsconfig.json",
     "start": "node dist/index.js",
+    "type-check": "tsc --noEmit",
+    "lint": "echo \"Linting not configured yet - skipping\"",
     "test": "echo \"No tests yet\""
   },
   "keywords": [],

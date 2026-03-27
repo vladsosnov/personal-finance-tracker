@@ -104,13 +104,17 @@ describe('useProposals', () => {
       },
     };
 
+    const newProposal = createMock.result && 'data' in createMock.result
+      ? createMock.result.data?.createProposal
+      : null;
+
     const refetchMock: MockedResponse = {
       request: {
         query: GET_PROPOSALS,
       },
       result: {
         data: {
-          proposals: [...mockProposals, createMock.result.data.createProposal],
+          proposals: newProposal ? [...mockProposals, newProposal] : mockProposals,
         },
       },
     };
