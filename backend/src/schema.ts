@@ -389,7 +389,8 @@ export const rootValue = {
     const userId = ensureAuthed(context);
     assertValidGoalTitle(title);
     assertFiniteNonNegative(targetAmount, "Target amount");
-    assertFiniteNonNegative(initialAmount, "Initial amount");
+    const newLocal = "Initial amount";
+    assertFiniteNonNegative(initialAmount, newLocal);
     if (!/^#[0-9A-Fa-f]{6}$/.test(color)) {
       throw new Error("Goal color must be a valid hex color");
     }
