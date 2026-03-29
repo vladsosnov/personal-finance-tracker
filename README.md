@@ -1,167 +1,202 @@
-# Financial Goals Tracker
+# Personal Finance Tracker
 
-A full-stack web app for tracking financial goals. Create savings goals, log deposits and withdrawals, visualize progress with charts, and manage your data with import/export.
+A full-stack app for tracking savings goals, logging deposits and withdrawals, and monitoring progress over time.
 
-Built for personal use and available as a hosted service.
+The repository is split into two deployable apps:
 
-## Live Demo
+- `frontend/`: Next.js 14 application
+- `backend/`: Express 5 + GraphQL API
 
-- **App:** [TBD — add your production URL here]
-- **API:** [TBD — add your production API URL here]
+## What It Does
 
-## Features
-
-**Goals**
-- Create, edit, delete, and reorder savings goals
-- Set target amount, initial amount, and color
-- Track progress with increase/decrease operations (with optional notes and dates)
-- Mark goals as completed when target is reached
-- Dashboard overview with total stats
-
-**Charts**
-- Interactive progress charts per goal (Highcharts)
-- Configurable date range (7d / 30d / 90d / 1y / all)
-
-**Data Management**
-- Export all goals and operations as JSON backup
-- Import from backup file with preview and validation
-- Reset all data
-
-**Account**
-- Email/password authentication with JWT (HttpOnly cookies)
-- Email verification with resend support
-- Password reset via email link
-- Delete account
-- Subscription plans UI (Free / Pro / Lifetime)
-
-**Other**
-- Light, dark, and system theme
-- Fully keyboard-accessible (WCAG)
-- Community feedback/proposals page with voting
-- Mobile-responsive layout
+- Create, edit, delete, reorder, and complete financial goals
+- Record increase and decrease operations with notes and dates
+- Visualize goal progress with interactive charts
+- Export and import account data as JSON
+- Manage account settings, password resets, and email verification
+- Collect product feedback and proposal votes
+- Support light, dark, and system themes
 
 ## Tech Stack
 
-| Layer | Technologies |
-|---|---|
-| Frontend | Next.js 14 (App Router), React 18, TypeScript, Mantine v8, Apollo Client, Highcharts |
-| Backend | Node.js, Express 5, GraphQL (graphql-http), TypeScript, Mongoose |
-| Database | MongoDB (Atlas) |
-| Auth | JWT access + refresh tokens, HttpOnly cookies, HMAC-SHA256 |
-| Email | Nodemailer (any SMTP provider) |
+| Layer | Stack |
+| --- | --- |
+| Frontend | Next.js 14, React 18, TypeScript, Mantine, Apollo Client, Highcharts |
+| Backend | Node.js, Express 5, TypeScript, GraphQL (`graphql-http`), Mongoose |
+| Database | MongoDB |
+| Auth | JWT access + refresh cookies |
+| Email | Nodemailer with SMTP or console fallback in development |
 
-## Project Structure
+## Repository Layout
 
-```
-frontend/          Next.js client application
-  src/
-    app/           Pages (App Router)
-    features/      Feature modules (dashboard, profile, auth, feedback, landing)
-    shared/        Shared components, constants, hooks, GraphQL queries
-
-backend/           Express + GraphQL API server
-  src/
-    db/models/     Mongoose models
-    modules/       Feature modules (auth, goals, proposals)
-    schema.ts      GraphQL schema and resolvers
-    auth.ts        JWT and password hashing utilities
-    email.ts       Email sending (SMTP or dev console fallback)
+```text
+.
+├── frontend/   Next.js app
+├── backend/    Express + GraphQL API
+├── DEPLOYMENT.md
+└── README.md
 ```
 
-## Local Development
+## Prerequisites
 
-**Prerequisites:** Node.js v20+, MongoDB (Atlas or local)
+- Node.js 20+
+- npm
+- MongoDB instance, local or hosted
+
+## Quick Start
+
+1. Install dependencies:
 
 ```bash
-# Install dependencies
-cd frontend && npm install
-cd ../backend && npm install
+cd frontend
+npm install
 
-# Configure backend environment
-cp backend/.env.example backend/.env
-# Edit backend/.env with your MongoDB URI and a strong JWT_SECRET
-
-# Run (separate terminals)
-cd backend && npm run dev     # API on http://localhost:4000
-cd frontend && npm run dev    # App on http://localhost:3000
+cd ../backend
+npm install
 ```
 
-### Environment Variables
+2. Configure the backend environment:
 
-**Backend** (`backend/.env`):
+```bash
+cp backend/.env.example backend/.env
+```
 
-| Variable | Required | Description |
-|---|---|---|
-| `PORT` | No | API port (default: 4000) |
+Required backend values:
+
+- `MONGODB_URI`
+- `JWT_SECRET`
+
+3. Start the backend:
+
+```bash
+cd backend
+npm run dev
+```
+
+4. Start the frontend in a second terminal:
+
+```bash
+cd frontend
+npm run dev
+```
+
+Default local URLs:
+
+- Frontend: `http://localhost:3000`
+- Backend: `http://localhost:4000`
+- GraphQL docs page in development: `http://localhost:4000/graphql`
+
+## Environment Variables
+
+### Backend
+
+Use [`backend/.env.example`](backend/.env.example) as the baseline.
+
+| Variable | Required | Notes |
+| --- | --- | --- |
+| `PORT` | No | Defaults to `4000` |
 | `MONGODB_URI` | Yes | MongoDB connection string |
-| `JWT_SECRET` | Yes | Secret for signing JWTs — use a long random string in production |
-| `FRONTEND_ORIGIN` | No | Allowed CORS origin (default: http://localhost:3000) |
-| `SMTP_HOST` | No | SMTP server host (e.g., smtp.gmail.com) |
-| `SMTP_PORT` | No | SMTP port (default: 587) |
-| `SMTP_USER` | No | SMTP username |
-| `SMTP_PASS` | No | SMTP password or app password |
-| `SMTP_FROM` | No | Sender email address |
+| `JWT_SECRET` | Yes | Use a long random secret in production |
+| `FRONTEND_ORIGIN` | No | Defaults to `http://localhost:3000` |
+| `SMTP_HOST` | No | Optional SMTP provider |
+| `SMTP_PORT` | No | Optional SMTP port |
+| `SMTP_USER` | No | Optional SMTP username |
+| `SMTP_PASS` | No | Optional SMTP password |
+| `SMTP_FROM` | No | Optional sender address |
 
-Without SMTP configured, emails are printed to the backend console (dev mode).
+If SMTP is not configured, the backend falls back to logging email content in development.
 
-**Frontend** (`frontend/.env.local`, optional):
+### Frontend
 
-| Variable | Description |
-|---|---|
-| `NEXT_PUBLIC_API_URL` | Backend API URL (default: http://localhost:4000) |
+The frontend works without a local env file when the backend runs on `http://localhost:4000`.
 
-## API Overview
+| Variable | Required | Notes |
+| --- | --- | --- |
+| `NEXT_PUBLIC_API_URL` | No | Override the backend URL when needed |
 
-### REST Endpoints (Auth)
+## Available Scripts
 
-| Method | Endpoint | Description |
-|---|---|---|
-| POST | `/auth/register` | Create account + send verification email |
-| POST | `/auth/login` | Sign in |
-| POST | `/auth/refresh` | Refresh access token |
-| POST | `/auth/logout` | Clear auth cookies |
-| GET | `/auth/verify-email?token=` | Verify email address |
-| POST | `/auth/request-verification` | Resend verification email (authenticated) |
-| POST | `/auth/forgot-password` | Request password reset link |
-| POST | `/auth/reset-password` | Reset password with token |
-| POST | `/auth/delete-account` | Delete account and all data (authenticated) |
-| GET | `/health` | Server status |
-| GET | `/healthcheck` | Deep health check (includes DB ping) |
+### Frontend
 
-### GraphQL (`POST /graphql`)
+```bash
+npm run dev
+npm run build
+npm run start
+npm run lint
+npm run type-check
+npm run test
+npm run test:watch
+npm run test:coverage
+npm run generate:types
+```
 
-Authentication via HttpOnly cookies set by the REST auth endpoints.
+### Backend
 
-**Queries:** `me`, `goals`, `goal(id)`, `exportAllData`, `proposals`
+```bash
+npm run dev
+npm run build
+npm run start
+npm run type-check
+npm run lint
+npm run test
+```
 
-**Mutations:** `createGoal`, `editGoal`, `deleteGoal`, `reorderGoals`, `completeGoal`, `updateGoalProgress`, `editGoalOperation`, `deleteGoalOperation`, `importGoals`, `resetAllData`, `createProposal`, `voteProposal`
+Note: backend `lint` and `test` are currently placeholders in `backend/package.json`.
+
+## API Surface
+
+### REST auth endpoints
+
+- `POST /auth/register`
+- `POST /auth/login`
+- `POST /auth/refresh`
+- `POST /auth/logout`
+- `GET /auth/verify-email?token=...`
+- `POST /auth/request-verification`
+- `POST /auth/forgot-password`
+- `POST /auth/reset-password`
+- `POST /auth/delete-account`
+
+### Health endpoints
+
+- `GET /health`
+- `GET /healthcheck`
+
+### GraphQL
+
+All application data operations are exposed through `POST /graphql`.
+
+Main query and mutation groups include:
+
+- user/account data
+- goals and goal operations
+- data export and import
+- proposals and voting
+- admin analytics
+
+## Development Notes
+
+- The backend uses HttpOnly auth cookies.
+- CSRF protection is applied to state-changing auth and analytics requests through origin checks.
+- In non-production mode, the backend exposes a GraphQL docs page at `GET /graphql`.
+- Rate limiting for auth endpoints is in-memory and single-process. Replace it for multi-instance production deployments.
 
 ## Deployment
 
-### Frontend (Vercel)
+Deployment guidance lives in [`DEPLOYMENT.md`](DEPLOYMENT.md).
 
-1. Import the repo in Vercel, set root directory to `frontend`
-2. Add environment variable: `NEXT_PUBLIC_API_URL` = your production backend URL
-3. Deploy
+Typical setup:
 
-### Backend (Railway / Render / Fly.io)
+- deploy `frontend/` to Vercel
+- deploy `backend/` to Railway, Render, or Fly.io
+- provide MongoDB and production environment variables
 
-1. Create a new service, set root directory to `backend`
-2. Build command: `npm run build`
-3. Start command: `npm start`
-4. Add environment variables: `MONGODB_URI`, `JWT_SECRET`, `FRONTEND_ORIGIN`, SMTP vars
-5. Deploy
+## Additional Docs
 
-### Production Checklist
-
-- [ ] Use a strong, random `JWT_SECRET` (at least 64 characters)
-- [ ] Set `FRONTEND_ORIGIN` to your production frontend URL
-- [ ] Set `NEXT_PUBLIC_API_URL` to your production backend URL
-- [ ] Configure SMTP for real email delivery (Resend, SendGrid, or Amazon SES)
-- [ ] Use a dedicated MongoDB Atlas cluster (not free shared tier)
-- [ ] Set up a custom domain with HTTPS
-- [ ] Set up Stripe or Lemon Squeezy for subscription billing
+- [`backend/README.md`](backend/README.md)
+- [`frontend/README.md`](frontend/README.md)
+- [`DEPLOYMENT.md`](DEPLOYMENT.md)
 
 ## License
 
-Copyright (c) 2026 Vlad Sosnov. All rights reserved. See [LICENSE](LICENSE).
+See [`LICENSE`](LICENSE).
