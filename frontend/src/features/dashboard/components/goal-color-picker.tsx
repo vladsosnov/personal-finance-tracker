@@ -1,5 +1,7 @@
+import { useMemo } from "react";
 import { ColorSwatch, Group, Select, Stack, Text } from "@mantine/core";
 import { GOAL_COLOR_OPTIONS } from "@/shared/constants/goal-colors";
+import { useCustomColors } from "@/features/profile/hooks/useCustomColors";
 
 type GoalColorPickerProps = {
   label: string;
@@ -9,7 +11,24 @@ type GoalColorPickerProps = {
 };
 
 export const GoalColorPicker = ({ label, value, onChange, disabled = false }: GoalColorPickerProps) => {
-  const selectedColor = GOAL_COLOR_OPTIONS.find((option) => option.value === value) ?? GOAL_COLOR_OPTIONS[0];
+  const { colors: customColors } = useCustomColors();
+
+  const allOptions = useMemo(() => {
+    const preset = GOAL_COLOR_OPTIONS.map((o) => ({ value: o.value, label: o.label }));
+    if (customColors.length === 0) return preset;
+
+    const presetValues = new Set(GOAL_COLOR_OPTIONS.map((o) => o.value.toUpperCase()));
+    const custom = customColors.filter((c) => !presetValues.has(c.value.toUpperCase()));
+
+    if (custom.length === 0) return preset;
+    return [
+      { group: "Preset", items: preset },
+      { group: "Custom", items: custom.map((c) => ({ value: c.value, label: c.label })) },
+    ];
+  }, [customColors]);
+
+  const selectedColorValue =
+    [...GOAL_COLOR_OPTIONS, ...customColors].find((o) => o.value === value)?.value ?? GOAL_COLOR_OPTIONS[0].value;
 
   return (
     <Stack gap={6}>
@@ -17,10 +36,10 @@ export const GoalColorPicker = ({ label, value, onChange, disabled = false }: Go
         {label}
       </Text>
       <Group gap="sm" wrap="nowrap">
-        <ColorSwatch color={selectedColor.value} aria-hidden="true" />
+        <ColorSwatch color={selectedColorValue} aria-hidden="true" />
         <Select
           value={value}
-          data={GOAL_COLOR_OPTIONS}
+          data={allOptions}
           allowDeselect={false}
           aria-label={label}
           renderOption={({ option }) => (

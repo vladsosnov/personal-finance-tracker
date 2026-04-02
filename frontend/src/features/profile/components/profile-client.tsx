@@ -9,6 +9,7 @@ import { ImportProgressCard } from "@/features/profile/components/ImportProgress
 import { ProfileInfoCard } from "@/features/profile/components/ProfileInfoCard";
 import { SubscriptionCard } from "@/features/profile/components/SubscriptionCard";
 import { ThemeCard } from "@/features/profile/components/ThemeCard";
+import { CustomColorsCard } from "@/features/profile/components/CustomColorsCard";
 import { DeleteAccountModal } from "@/features/profile/components/modals/DeleteAccountModal";
 import { ResetDataModal } from "@/features/profile/components/modals/ResetDataModal";
 import { useDataManagement } from "@/features/profile/hooks/useDataManagement";
@@ -55,6 +56,10 @@ export const ProfileClient = () => {
         </div>
 
         <div className={anim.stagger4}>
+          <CustomColorsCard />
+        </div>
+
+        <div className={anim.stagger5}>
           <ImportProgressCard
             file={dm.file}
             preparedGoals={dm.preparedGoals}
@@ -74,7 +79,7 @@ export const ProfileClient = () => {
           />
         </div>
 
-        <div className={anim.stagger5}>
+        <div className={anim.stagger6}>
           <DataManagementCard
             hasStoredData={dm.hasStoredData}
             isLoadingGoals={dm.isLoadingGoals}
