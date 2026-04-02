@@ -60,7 +60,7 @@ export const useCustomColors = () => {
 
     const next = [...current, { value: hex, label: label.trim() || hex }];
     localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-    cachedRaw = null;
+    cachedRaw = undefined;
     notifyListeners();
     return true;
   }, []);
@@ -69,7 +69,7 @@ export const useCustomColors = () => {
     const current = getSnapshot();
     const next = current.filter((c) => c.value !== hex);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-    cachedRaw = null;
+    cachedRaw = undefined;
     notifyListeners();
   }, []);
 
