@@ -15,7 +15,9 @@
     "generate:types": "node scripts/generate-schema-types.cjs",
     "test": "jest",
     "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage"
+    "test:coverage": "jest --coverage",
+    "cypress": "cypress open",
+    "cypress:run": "cypress run"
   },
   "dependencies": {
     "@apollo/client": "^4.1.6",
@@ -39,6 +41,7 @@
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
+    "cypress": "^15.13.0",
     "eslint": "^8",
     "eslint-config-next": "14.2.5",
     "jest": "^30.2.0",
