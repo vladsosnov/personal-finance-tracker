@@ -141,17 +141,6 @@ describe('EditGoalModal', () => {
     expect(cancelButton).toBeDisabled();
   });
 
-  it('prevents modal close when loading', async () => {
-    const user = userEvent.setup();
-    const { form, onConfirm, onClose } = setup();
-
-    render(
-      <EditGoalModal opened={true} isLoading={true} form={form} onConfirm={onConfirm} onClose={onClose} />
-    );
-
-    expect(onClose).not.toHaveBeenCalled();
-  });
-
   it('enforces max length on title input', () => {
     const { form, onConfirm, onClose } = setup();
 
@@ -172,5 +161,125 @@ describe('EditGoalModal', () => {
 
     expect(screen.getByLabelText(/title/i)).toHaveAttribute('aria-required', 'true');
     expect(screen.getByLabelText(/target amount/i)).toHaveAttribute('aria-required', 'true');
+  });
+
+  it('prevents modal close when loading', () => {
+    const { form, onConfirm, onClose } = setup();
+    const { baseElement } = render(
+      <EditGoalModal opened={true} isLoading={true} form={form} onConfirm={onConfirm} onClose={onClose} />
+    );
+
+    const overlay = baseElement.querySelector('.mantine-Modal-overlay');
+    if (overlay) {
+      (overlay as HTMLElement).click();
+    }
+
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it('allows modal close when not loading', async () => {
+    const user = userEvent.setup();
+    const { form, onConfirm, onClose } = setup();
+
+    const { baseElement } = render(
+      <EditGoalModal opened={true} isLoading={false} form={form} onConfirm={onConfirm} onClose={onClose} />
+    );
+
+    const closeButton = baseElement.querySelector('.mantine-Modal-close') as HTMLElement;
+    await user.click(closeButton);
+
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('updates title when input changes', async () => {
+    const user = userEvent.setup();
+    const onConfirm = jest.fn();
+    const onClose = jest.fn();
+    const { result } = renderHook(() => useGoalForm());
+
+    const setTitleSpy = jest.fn(result.current.setTitle);
+    const form = { ...result.current, setTitle: setTitleSpy };
+
+    render(
+      <EditGoalModal opened={true} isLoading={false} form={form} onConfirm={onConfirm} onClose={onClose} />
+    );
+
+    const titleInput = screen.getByLabelText(/title/i);
+    await user.type(titleInput, 'A');
+
+    expect(setTitleSpy).toHaveBeenCalled();
+  });
+
+  it('renders color picker', () => {
+    const { form, onConfirm, onClose } = setup();
+
+    render(
+      <EditGoalModal opened={true} isLoading={false} form={form} onConfirm={onConfirm} onClose={onClose} />
+    );
+
+    expect(screen.getByText(/color/i)).toBeInTheDocument();
+  });
+
+  it('renders starting amount field', () => {
+    const { form, onConfirm, onClose } = setup();
+
+    render(
+      <EditGoalModal opened={true} isLoading={false} form={form} onConfirm={onConfirm} onClose={onClose} />
+    );
+
+    expect(screen.getByLabelText(/starting amount/i)).toBeInTheDocument();
+  });
+
+  it('calls setTargetAmount when target amount changes', async () => {
+    const user = userEvent.setup();
+    const onConfirm = jest.fn();
+    const onClose = jest.fn();
+    const { result } = renderHook(() => useGoalForm());
+
+    const setTargetAmountSpy = jest.fn(result.current.setTargetAmount);
+    const form = { ...result.current, setTargetAmount: setTargetAmountSpy };
+
+    render(
+      <EditGoalModal opened={true} isLoading={false} form={form} onConfirm={onConfirm} onClose={onClose} />
+    );
+
+    const targetInput = screen.getByLabelText(/target amount/i);
+    await user.type(targetInput, '5000');
+
+    expect(setTargetAmountSpy).toHaveBeenCalled();
+  });
+
+  it('calls setInitialAmount when starting amount changes', async () => {
+    const user = userEvent.setup();
+    const onConfirm = jest.fn();
+    const onClose = jest.fn();
+    const { result } = renderHook(() => useGoalForm());
+
+    const setInitialAmountSpy = jest.fn(result.current.setInitialAmount);
+    const form = { ...result.current, setInitialAmount: setInitialAmountSpy };
+
+    render(
+      <EditGoalModal opened={true} isLoading={false} form={form} onConfirm={onConfirm} onClose={onClose} />
+    );
+
+    const startingInput = screen.getByLabelText(/starting amount/i);
+    await user.type(startingInput, '1000');
+
+    expect(setInitialAmountSpy).toHaveBeenCalled();
+  });
+
+  it('prevents form submission via enter when invalid', async () => {
+    const user = userEvent.setup();
+    const { form, onConfirm, onClose } = setup();
+
+    render(
+      <EditGoalModal opened={true} isLoading={false} form={form} onConfirm={onConfirm} onClose={onClose} />
+    );
+
+    const titleInput = screen.getByLabelText(/title/i);
+    await user.click(titleInput);
+    await user.keyboard('{Enter}');
+
+    expect(onConfirm).not.toHaveBeenCalled();
   });
 });

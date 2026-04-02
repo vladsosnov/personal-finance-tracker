@@ -141,4 +141,68 @@ describe('OperationModal', () => {
     const typeGroup = screen.getByRole('group', { name: /operation type/i });
     expect(typeGroup).toBeInTheDocument();
   });
+
+  it('calls onChangeType with INCREASE when increase button clicked', async () => {
+    const user = userEvent.setup();
+    render(<OperationModal {...defaultProps} operationType="DECREASE" />);
+
+    const increaseButton = screen.getByRole('button', { name: /increase/i });
+    await user.click(increaseButton);
+
+    expect(defaultProps.onChangeType).toHaveBeenCalledWith('INCREASE');
+  });
+
+  it('calls onChangeNote when note input changes', async () => {
+    const user = userEvent.setup();
+    render(<OperationModal {...defaultProps} />);
+
+    const noteInput = screen.getByLabelText(/note/i);
+    await user.type(noteInput, 'Test note');
+
+    expect(defaultProps.onChangeNote).toHaveBeenCalled();
+  });
+
+  it('calls onChangeDate when date input changes', async () => {
+    const user = userEvent.setup();
+    render(<OperationModal {...defaultProps} />);
+
+    const dateInput = screen.getByLabelText(/date/i);
+    await user.clear(dateInput);
+    await user.type(dateInput, '2024-06-15');
+
+    expect(defaultProps.onChangeDate).toHaveBeenCalled();
+  });
+
+  it('calls onChangeAmount when amount input changes', async () => {
+    const user = userEvent.setup();
+    render(<OperationModal {...defaultProps} />);
+
+    const amountInput = screen.getByLabelText(/amount/i);
+    await user.clear(amountInput);
+    await user.type(amountInput, '1000');
+
+    expect(defaultProps.onChangeAmount).toHaveBeenCalled();
+  });
+
+  it('submits form via enter key when valid', async () => {
+    const user = userEvent.setup();
+    render(<OperationModal {...defaultProps} />);
+
+    const amountInput = screen.getByLabelText(/amount/i);
+    await user.click(amountInput);
+    await user.keyboard('{Enter}');
+
+    expect(defaultProps.onSubmit).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not submit form via enter when disabled', async () => {
+    const user = userEvent.setup();
+    render(<OperationModal {...defaultProps} isSubmitDisabled={true} />);
+
+    const amountInput = screen.getByLabelText(/amount/i);
+    await user.click(amountInput);
+    await user.keyboard('{Enter}');
+
+    expect(defaultProps.onSubmit).not.toHaveBeenCalled();
+  });
 });

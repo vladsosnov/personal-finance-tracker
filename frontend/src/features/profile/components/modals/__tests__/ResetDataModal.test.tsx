@@ -85,4 +85,25 @@ describe('ResetDataModal', () => {
     const cancelButton = screen.getByRole('button', { name: /cancel/i });
     expect(cancelButton).toHaveAttribute('data-autofocus');
   });
+
+  it('prevents modal close when loading', () => {
+    const { baseElement } = render(<ResetDataModal {...defaultProps} isLoading={true} />);
+
+    const overlay = baseElement.querySelector('.mantine-Modal-overlay');
+    if (overlay) {
+      (overlay as HTMLElement).click();
+    }
+
+    expect(defaultProps.onClose).not.toHaveBeenCalled();
+  });
+
+  it('allows modal close when not loading', async () => {
+    const user = userEvent.setup();
+    const { baseElement } = render(<ResetDataModal {...defaultProps} />);
+
+    const closeButton = baseElement.querySelector('.mantine-Modal-close') as HTMLElement;
+    await user.click(closeButton);
+
+    expect(defaultProps.onClose).toHaveBeenCalledTimes(1);
+  });
 });
