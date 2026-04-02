@@ -30,6 +30,9 @@ import { deleteAllOperationsByUser } from "./modules/goals/operation.repository"
 import { rootValue, schema } from "./schema";
 import { isTrackedEvent, recordEvent } from "./modules/analytics/analytics.repository";
 import { hashPassword, verifyPassword } from "./auth";
+import { parseCookies } from "./utils/parse-cookies";
+import { countQueryDepth } from "./utils/query-depth";
+import { emailRegex } from "./utils/validation";
 
 dotenv.config();
 
@@ -82,20 +85,6 @@ const csrfProtection = (req: express.Request, res: express.Response, next: expre
 
 // Apply CSRF protection globally (will check path internally)
 app.use(csrfProtection);
-
-const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-const parseCookies = (cookieHeader?: string) =>
-  Object.fromEntries(
-    (cookieHeader ?? "")
-      .split(";")
-      .map((part) => part.trim())
-      .filter(Boolean)
-      .map((part) => {
-        const separatorIndex = part.indexOf("=");
-        return [part.slice(0, separatorIndex), decodeURIComponent(part.slice(separatorIndex + 1))];
-      })
-  );
 
 type RateBucket = {
   count: number;
@@ -459,20 +448,6 @@ app.post("/analytics/track", createRateLimit("analytics-track", 60, 60 * 1000), 
 
 const MAX_GRAPHQL_QUERY_LENGTH = 4000;
 const MAX_GRAPHQL_DEPTH = 10;
-
-const countQueryDepth = (query: string): number => {
-  let max = 0;
-  let current = 0;
-  for (const char of query) {
-    if (char === "{") {
-      current++;
-      if (current > max) max = current;
-    } else if (char === "}") {
-      current--;
-    }
-  }
-  return max;
-};
 
 app.post(
   "/graphql",

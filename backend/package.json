@@ -12,7 +12,7 @@
     "start": "node dist/index.js",
     "type-check": "tsc --noEmit",
     "lint": "echo \"Linting not configured yet - skipping\"",
-    "test": "echo \"No tests yet\""
+    "test": "jest"
   },
   "keywords": [],
   "author": "",

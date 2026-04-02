@@ -1,0 +1,157 @@
+import {
+  hashPassword,
+  verifyPassword,
+  signJwt,
+  signRefreshJwt,
+  verifyJwt,
+  verifyRefreshJwt,
+  buildCookie,
+  buildExpiredCookie,
+  authCookieHeaders,
+  generateSecureToken,
+  AUTH_ACCESS_COOKIE,
+  AUTH_REFRESH_COOKIE,
+} from "../auth";
+
+describe("auth", () => {
+  describe("hashPassword / verifyPassword", () => {
+    it("hashes a password and verifies it", () => {
+      const { hash, salt } = hashPassword("mypassword");
+
+      expect(hash).toBeTruthy();
+      expect(salt).toBeTruthy();
+      expect(verifyPassword("mypassword", hash, salt)).toBe(true);
+    });
+
+    it("rejects wrong password", () => {
+      const { hash, salt } = hashPassword("correctpassword");
+
+      expect(verifyPassword("wrongpassword", hash, salt)).toBe(false);
+    });
+
+    it("produces different salts each time", () => {
+      const a = hashPassword("same");
+      const b = hashPassword("same");
+
+      expect(a.salt).not.toBe(b.salt);
+      expect(a.hash).not.toBe(b.hash);
+    });
+  });
+
+  describe("JWT sign / verify", () => {
+    it("signs and verifies an access token", () => {
+      const token = signJwt("user-123", 0);
+      const result = verifyJwt(token);
+
+      expect(result).toEqual({ userId: "user-123", tokenVersion: 0 });
+    });
+
+    it("signs and verifies a refresh token", () => {
+      const token = signRefreshJwt("user-456", 3);
+      const result = verifyRefreshJwt(token);
+
+      expect(result).toEqual({ userId: "user-456", tokenVersion: 3 });
+    });
+
+    it("returns null for undefined token", () => {
+      expect(verifyJwt(undefined)).toBeNull();
+      expect(verifyRefreshJwt(undefined)).toBeNull();
+    });
+
+    it("returns null for empty string", () => {
+      expect(verifyJwt("")).toBeNull();
+      expect(verifyRefreshJwt("")).toBeNull();
+    });
+
+    it("returns null for malformed token", () => {
+      expect(verifyJwt("not.a.valid-token")).toBeNull();
+    });
+
+    it("returns null for token with wrong number of parts", () => {
+      expect(verifyJwt("only-one-part")).toBeNull();
+      expect(verifyJwt("two.parts")).toBeNull();
+    });
+
+    it("rejects access token verified as refresh", () => {
+      const accessToken = signJwt("user-123");
+      expect(verifyRefreshJwt(accessToken)).toBeNull();
+    });
+
+    it("rejects refresh token verified as access", () => {
+      const refreshToken = signRefreshJwt("user-123");
+      expect(verifyJwt(refreshToken)).toBeNull();
+    });
+
+    it("rejects tampered token", () => {
+      const token = signJwt("user-123");
+      const tampered = token.slice(0, -2) + "XX";
+
+      expect(verifyJwt(tampered)).toBeNull();
+    });
+
+    it("defaults tokenVersion to 0", () => {
+      const token = signJwt("user-123");
+      const result = verifyJwt(token);
+
+      expect(result?.tokenVersion).toBe(0);
+    });
+  });
+
+  describe("buildCookie", () => {
+    it("builds a cookie string without Secure in non-production", () => {
+      const cookie = buildCookie("test", "value", 3600);
+
+      expect(cookie).toBe("test=value; Path=/; HttpOnly; SameSite=Lax; Max-Age=3600");
+    });
+
+    it("includes the cookie name, value, and max-age", () => {
+      const cookie = buildCookie("name", "val", 60);
+
+      expect(cookie).toContain("name=val");
+      expect(cookie).toContain("Max-Age=60");
+      expect(cookie).toContain("HttpOnly");
+      expect(cookie).toContain("SameSite=Lax");
+    });
+  });
+
+  describe("buildExpiredCookie", () => {
+    it("builds a cookie with Max-Age=0", () => {
+      const cookie = buildExpiredCookie("test");
+
+      expect(cookie).toContain("test=");
+      expect(cookie).toContain("Max-Age=0");
+    });
+  });
+
+  describe("authCookieHeaders", () => {
+    it("returns two cookie headers (access + refresh)", () => {
+      const headers = authCookieHeaders("user-123", 0);
+
+      expect(headers).toHaveLength(2);
+      expect(headers[0]).toContain(AUTH_ACCESS_COOKIE);
+      expect(headers[1]).toContain(AUTH_REFRESH_COOKIE);
+    });
+  });
+
+  describe("generateSecureToken", () => {
+    it("returns a 64-char hex string", () => {
+      const token = generateSecureToken();
+
+      expect(token).toMatch(/^[a-f0-9]{64}$/);
+    });
+
+    it("generates unique tokens", () => {
+      const a = generateSecureToken();
+      const b = generateSecureToken();
+
+      expect(a).not.toBe(b);
+    });
+  });
+
+  describe("constants", () => {
+    it("exports cookie names", () => {
+      expect(AUTH_ACCESS_COOKIE).toBe("fgt_access");
+      expect(AUTH_REFRESH_COOKIE).toBe("fgt_refresh");
+    });
+  });
+});
