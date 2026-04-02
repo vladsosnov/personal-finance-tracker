@@ -1,10 +1,11 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import { ColorSchemeScript } from "@mantine/core";
 import { Footer } from "@/shared/components/footer";
 import { AppThemeProvider } from "@/shared/components/app-theme-provider";
 import { Header } from "@/shared/components/header";
 import { Providers } from "@/shared/components/providers";
+import { RegisterSW } from "@/shared/components/register-sw";
 import "./globals.css";
 import "@mantine/core/styles.css";
 
@@ -13,6 +14,19 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata: Metadata = {
   title: "Financial Goals Tracker",
   description: "Track progress toward your financial goals",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "FinTracker",
+  },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  themeColor: "#316263",
 };
 
 const RootLayout = ({
@@ -24,6 +38,8 @@ const RootLayout = ({
     <html lang="en">
       <head>
         <ColorSchemeScript />
+        <link rel="icon" type="image/png" href="/favicon-32x32.png" sizes="32x32" />
+        <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
       </head>
       <body className={inter.className}>
         <AppThemeProvider>
@@ -35,6 +51,7 @@ const RootLayout = ({
               <Header />
               <main id="main-content" className="app-main">{children}</main>
               <Footer />
+              <RegisterSW />
             </div>
           </Providers>
         </AppThemeProvider>
