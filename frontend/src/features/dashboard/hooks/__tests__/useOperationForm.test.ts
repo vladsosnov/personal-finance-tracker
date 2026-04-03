@@ -5,7 +5,7 @@ import { mockOperation } from '@/__tests__/mock-data';
 describe('useOperationForm', () => {
   beforeEach(() => {
     jest.useFakeTimers();
-    jest.setSystemTime(new Date('2024-01-15'));
+    jest.setSystemTime(1705276800000);
   });
 
   afterEach(() => {
