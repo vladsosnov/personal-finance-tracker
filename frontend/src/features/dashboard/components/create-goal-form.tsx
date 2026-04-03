@@ -1,4 +1,4 @@
-import { Button, Card, Grid, NumberInput, Stack, Text, TextInput, Title } from "@mantine/core";
+import { Button, Card, Grid, Group, NumberInput, Stack, Text, TextInput, Title } from "@mantine/core";
 import { GoalColorPicker } from "@/features/dashboard/components/goal-color-picker";
 import { MONEY_INPUT_PROPS, numberOrZero } from "@/shared/utils/number";
 import styles from "@/shared/styles/page-animations.module.css";
@@ -42,8 +42,10 @@ export const CreateGoalForm = ({
         aria-label="Create goal"
       >
         <Stack gap="sm">
-          <Title order={4}>Create goal</Title>
-          {limitMessage && <Text size="sm" c="orange">{limitMessage}</Text>}
+          <Group justify="space-between" align="center">
+            <Title order={4}>Create goal</Title>
+            {limitMessage && <Text size="sm" c="orange">{limitMessage}</Text>}
+          </Group>
           <Grid align="flex-end">
             <Grid.Col span={{ base: 12, md: 4 }}>
               <TextInput

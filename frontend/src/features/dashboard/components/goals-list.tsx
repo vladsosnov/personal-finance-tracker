@@ -52,11 +52,13 @@ export const GoalsList = ({
     <Card withBorder radius="md" p="lg">
       <Stack gap={6}>
         <Group justify="space-between" align="center">
-          {goals.length > 0 && (
+          {isLoadingGoals ? (
+            <Skeleton height={24} width={240} />
+          ) : goals.length > 0 ? (
             <Text size="sm" c="dimmed" aria-hidden="true">
               Drag and drop cards to change their order.
             </Text>
-          )}
+          ) : null}
           {manageMode.showToggle !== false && (manageMode.canManage ?? goals.length > 0) && (
             <Button
               variant={manageMode.isActive ? "light" : "subtle"}
@@ -69,7 +71,7 @@ export const GoalsList = ({
             </Button>
           )}
         </Group>
-        <ScrollArea h={540} offsetScrollbars scrollbarSize={8}>
+        <ScrollArea h={520} offsetScrollbars scrollbarSize={8}>
           <Stack gap="sm" pr={4}>
             {isLoadingGoals ? (
               <GoalsLoadingSkeleton />
@@ -113,15 +115,15 @@ export const GoalsList = ({
 const GoalsLoadingSkeleton = () => (
   <div role="status" aria-label="Loading goals">
     <span className="sr-only">Loading goals...</span>
-    {Array.from({ length: 5 }).map((_, i) => (
-      <Card key={i} withBorder radius="md" p="md" mb="sm">
+    {Array.from({ length: 3 }).map((_, i) => (
+      <Card key={i} withBorder radius="md" p="sm" mb="sm">
         <Stack gap="xs">
           <Group justify="space-between">
-            <Skeleton height={20} width="42%" />
-            <Skeleton height={24} width={64} radius="xl" />
+            <Skeleton height={24} width="42%" />
+            <Skeleton height={26} width={64} radius="xl" />
           </Group>
-          <Skeleton height={16} width="58%" />
-          <Skeleton height={12} radius="xl" />
+          <Skeleton height={20} width="58%" />
+          <Skeleton height={16} radius="xl" />
         </Stack>
       </Card>
     ))}

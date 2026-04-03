@@ -3,17 +3,20 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useApolloClient, useQuery } from "@apollo/client/react";
+import { IconDownload } from "@tabler/icons-react";
 import { Box, Burger, Button, Container, Drawer, Group, Stack, Text } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { GET_ME } from "@/shared/gql/queries";
 import { API_BASE_URL } from "@/shared/constants/auth";
 import { APP_ROUTES } from "@/shared/constants/routes";
+import { usePwaInstall } from "@/shared/hooks/usePwaInstall";
 
 export const Header = () => {
   const apolloClient = useApolloClient();
   const router = useRouter();
   const pathname = usePathname();
   const [menuOpened, { toggle: toggleMenu, close: closeMenu }] = useDisclosure(false);
+  const { canInstall, install } = usePwaInstall();
   const { data: meData } = useQuery<{ me: { id: string; role: string } | null }>(GET_ME, {
     fetchPolicy: "cache-and-network",
   });
@@ -102,9 +105,22 @@ export const Header = () => {
 
           {/* Desktop nav */}
           <Box visibleFrom="sm">
-            <nav aria-label="Main navigation">
-              <Group gap="xs">{navLinks}</Group>
-            </nav>
+            <Group gap="xs">
+              <nav aria-label="Main navigation">
+                <Group gap="xs">{navLinks}</Group>
+              </nav>
+              {canInstall && (
+                <Button
+                  variant="light"
+                  size="sm"
+                  leftSection={<IconDownload size={16} />}
+                  onClick={install}
+                  aria-label="Install app"
+                >
+                  Install App
+                </Button>
+              )}
+            </Group>
           </Box>
 
           {/* Mobile burger */}
@@ -128,7 +144,19 @@ export const Header = () => {
         hiddenFrom="sm"
       >
         <nav aria-label="Mobile navigation">
-          <Stack gap="xs">{navLinks}</Stack>
+          <Stack gap="xs">
+            {navLinks}
+            {canInstall && (
+              <Button
+                variant="light"
+                leftSection={<IconDownload size={16} />}
+                onClick={() => { closeMenu(); install(); }}
+                aria-label="Install app"
+              >
+                Install App
+              </Button>
+            )}
+          </Stack>
         </nav>
       </Drawer>
     </header>

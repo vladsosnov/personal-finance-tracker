@@ -17,7 +17,7 @@ const OG_IMAGE = `${SITE_URL}/icons/icon-512x512.png`;
 
 export const metadata: Metadata = {
   title: "Financial Goals Tracker",
-  description: "Set financial goals, track your progress, and stay motivated with visual charts and history.",
+  description: "Set financial goals, track your savings progress, and stay motivated with visual charts and transaction history.",
   manifest: `${BASE_PATH}/manifest.json`,
   appleWebApp: {
     capable: true,
@@ -29,7 +29,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: "Financial Goals Tracker",
-    description: "Set financial goals, track your progress, and stay motivated with visual charts and history.",
+    description: "Set financial goals, track your savings progress, and stay motivated with visual charts and transaction history.",
     url: SITE_URL,
     siteName: "Financial Goals Tracker",
     images: [{ url: OG_IMAGE, width: 512, height: 512, alt: "Financial Goals Tracker" }],
@@ -38,7 +38,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary",
     title: "Financial Goals Tracker",
-    description: "Set financial goals, track your progress, and stay motivated with visual charts and history.",
+    description: "Set financial goals, track your savings progress, and stay motivated with visual charts and transaction history.",
     images: [OG_IMAGE],
   },
 };

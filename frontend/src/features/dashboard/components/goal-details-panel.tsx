@@ -225,7 +225,7 @@ const LoadingSkeleton = () => (
     <span className="sr-only">Loading goal details...</span>
     <Stack gap="md">
       <Skeleton height={28} width="45%" />
-      <Skeleton height={240} radius="md" />
+      <Skeleton height={286} radius="md" />
       <Group justify="space-between" align="center">
         <Skeleton height={22} width={110} />
         <Skeleton height={36} width={130} />

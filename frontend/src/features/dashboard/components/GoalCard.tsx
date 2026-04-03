@@ -41,7 +41,7 @@ export const GoalCard = ({
     <Card
       withBorder
       radius="md"
-      p="md"
+      p="sm"
       draggable={isDraggable}
       role="button"
       tabIndex={0}
