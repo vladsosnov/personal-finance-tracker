@@ -60,7 +60,7 @@ describe('GoalOperationsTable', () => {
   it('renders empty state when no operations', () => {
     render(<GoalOperationsTable {...defaultProps} operations={[]} />);
 
-    expect(screen.getByText('No operations yet.')).toBeInTheDocument();
+    expect(screen.getByText('No operations yet. Add your first one!')).toBeInTheDocument();
   });
 
   it('calls onEdit when edit button clicked', async () => {

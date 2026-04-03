@@ -1,6 +1,6 @@
 import { useMemo, useEffect, useState } from "react";
-import { IconPencil, IconTrash } from "@tabler/icons-react";
-import { Badge, Button, Group, Pagination, Table, Text, Tooltip } from "@mantine/core";
+import { IconPencil, IconTrash, IconClockHour4 } from "@tabler/icons-react";
+import { Badge, Button, Group, Pagination, Stack, Table, Text, Tooltip } from "@mantine/core";
 import type { GoalOperation } from "@/features/dashboard/types";
 import { formatDay } from "@/shared/utils/date";
 import { formatMoney } from "@/shared/utils/number";
@@ -112,7 +112,10 @@ export const GoalOperationsTable = ({
           {!operations.length && (
             <Table.Tr>
               <Table.Td colSpan={5}>
-                <Text c="dimmed">No operations yet.</Text>
+                <Stack align="center" gap={6} py="lg">
+                  <IconClockHour4 size={32} stroke={1.5} color="var(--mantine-color-dimmed)" />
+                  <Text c="dimmed" size="sm">No operations yet. Add your first one!</Text>
+                </Stack>
               </Table.Td>
             </Table.Tr>
           )}
