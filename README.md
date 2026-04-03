@@ -49,10 +49,10 @@ The repository is split into two deployable apps:
 
 ```bash
 cd frontend
-npm install
+yarn
 
 cd ../backend
-npm install
+yarn
 ```
 
 2. Configure the backend environment:
