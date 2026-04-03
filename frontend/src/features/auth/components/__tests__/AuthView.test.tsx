@@ -10,6 +10,8 @@ describe('AuthView', () => {
     password: '',
     isLoading: false,
     error: null,
+    emailError: null,
+    passwordError: null,
     googleAuthUrl: 'http://localhost:4000/auth/google',
     setAuthMode: jest.fn(),
     setEmail: jest.fn(),

@@ -5,15 +5,21 @@ import { Alert, Anchor, Button, Card, Container, Stack, Text, TextInput, Title }
 import { API_BASE_URL } from "@/shared/constants/auth";
 import { APP_ROUTES } from "@/shared/constants/routes";
 import { trackEvent } from "@/shared/lib/analytics";
+import { isValidEmail } from "@/shared/lib/validation";
 
 const ForgotPasswordPage = () => {
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [emailError, setEmailError] = useState<string | null>(null);
 
   const handleSubmit = async () => {
-    if (!email.trim()) return;
+    setEmailError(null);
+    if (!isValidEmail(email)) {
+      setEmailError("Enter a valid email address");
+      return;
+    }
 
     trackEvent("forgot_password_click");
     setIsLoading(true);
@@ -70,7 +76,8 @@ const ForgotPasswordPage = () => {
                 required
                 aria-required
                 value={email}
-                onChange={(e) => setEmail(e.currentTarget.value)}
+                error={emailError}
+                onChange={(e) => { setEmail(e.currentTarget.value); setEmailError(null); }}
               />
               {error && <Alert color="red" role="alert">{error}</Alert>}
               <Button type="submit" loading={isLoading} disabled={!email.trim()}>

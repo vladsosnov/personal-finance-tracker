@@ -8,6 +8,7 @@ import { API_BASE_URL } from "@/shared/constants/auth";
 import { APP_ROUTES } from "@/shared/constants/routes";
 import type { AuthMode } from "@/shared/types/shared";
 import { trackEvent } from "@/shared/lib/analytics";
+import { isValidEmail } from "@/shared/lib/validation";
 
 export const AuthClient = () => {
   const apolloClient = useApolloClient();
@@ -20,11 +21,26 @@ export const AuthClient = () => {
   const [error, setError] = useState<string | null>(
     searchParams.get("error") === "google_failed" ? "Google sign-in failed. Please try again." : null
   );
+  const [emailError, setEmailError] = useState<string | null>(null);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
 
   const handleAuth = async () => {
-    if (!email.trim() || !password.trim()) {
-      return;
+    setEmailError(null);
+    setPasswordError(null);
+
+    let valid = true;
+    if (!isValidEmail(email)) {
+      setEmailError("Enter a valid email address");
+      valid = false;
     }
+    if (!password.trim()) {
+      setPasswordError("Password is required");
+      valid = false;
+    } else if (authMode === "register" && password.trim().length < 8) {
+      setPasswordError("Password must be at least 8 characters");
+      valid = false;
+    }
+    if (!valid) return;
 
     trackEvent(authMode === "register" ? "register_click" : "login_click");
 
@@ -67,10 +83,12 @@ export const AuthClient = () => {
       password={password}
       isLoading={isLoading}
       error={error}
+      emailError={emailError}
+      passwordError={passwordError}
       googleAuthUrl={googleAuthUrl}
-      setAuthMode={setAuthMode}
-      setEmail={setEmail}
-      setPassword={setPassword}
+      setAuthMode={(mode) => { setAuthMode(mode); setEmailError(null); setPasswordError(null); setError(null); }}
+      setEmail={(v) => { setEmail(v); setEmailError(null); }}
+      setPassword={(v) => { setPassword(v); setPasswordError(null); }}
       onSubmit={handleAuth}
     />
   );

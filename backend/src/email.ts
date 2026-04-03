@@ -2,24 +2,23 @@ import { createTransport } from "nodemailer";
 
 const FRONTEND_URL = process.env.FRONTEND_ORIGIN ?? "http://localhost:3000";
 
-const smtpHost = process.env.SMTP_HOST;
-const smtpPort = Number(process.env.SMTP_PORT ?? "587");
-const smtpUser = process.env.SMTP_USER;
-const smtpPass = process.env.SMTP_PASS;
-const smtpFrom = process.env.SMTP_FROM ?? "noreply@financialgoals.app";
-
-const hasSmtp = Boolean(smtpHost && smtpUser && smtpPass);
-
-const transporter = hasSmtp
-  ? createTransport({
-      host: smtpHost,
-      port: smtpPort,
-      secure: smtpPort === 465,
-      auth: { user: smtpUser, pass: smtpPass },
-    })
-  : null;
+const getTransporter = () => {
+  const smtpHost = process.env.SMTP_HOST;
+  const smtpPort = Number(process.env.SMTP_PORT ?? "587");
+  const smtpUser = process.env.SMTP_USER;
+  const smtpPass = process.env.SMTP_PASS;
+  if (!smtpHost || !smtpUser || !smtpPass) return null;
+  return createTransport({
+    host: smtpHost,
+    port: smtpPort,
+    secure: smtpPort === 465,
+    auth: { user: smtpUser, pass: smtpPass },
+  });
+};
 
 const sendEmail = async (to: string, subject: string, html: string) => {
+  const smtpFrom = process.env.SMTP_FROM ?? "noreply@financialgoals.app";
+  const transporter = getTransporter();
   if (transporter) {
     await transporter.sendMail({ from: smtpFrom, to, subject, html });
   } else {

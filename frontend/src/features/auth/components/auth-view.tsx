@@ -8,6 +8,8 @@ type AuthViewProps = {
   password: string;
   isLoading: boolean;
   error: string | null;
+  emailError: string | null;
+  passwordError: string | null;
   googleAuthUrl: string;
   setAuthMode: (value: AuthMode) => void;
   setEmail: (value: string) => void;
@@ -21,6 +23,8 @@ export const AuthView = ({
   password,
   isLoading,
   error,
+  emailError,
+  passwordError,
   googleAuthUrl,
   setAuthMode,
   setEmail,
@@ -76,6 +80,7 @@ export const AuthView = ({
               required
               aria-required
               value={email}
+              error={emailError}
               onChange={(event) => setEmail(event.currentTarget.value)}
             />
             <PasswordInput
@@ -84,6 +89,8 @@ export const AuthView = ({
               required
               aria-required
               value={password}
+              error={passwordError}
+              description={authMode === "register" ? "At least 8 characters" : undefined}
               onChange={(event) => setPassword(event.currentTarget.value)}
             />
             {error ? <Alert color="red" role="alert">{error}</Alert> : null}
