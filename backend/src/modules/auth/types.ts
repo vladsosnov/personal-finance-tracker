@@ -7,6 +7,7 @@ export type User = {
   role: UserRole;
   passwordHash: string;
   passwordSalt: string;
+  googleId?: string;
   tokenVersion: number;
   emailVerified: boolean;
   emailVerificationToken?: string;

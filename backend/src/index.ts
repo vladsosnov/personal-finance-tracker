@@ -17,9 +17,12 @@ import { sendPasswordResetEmail, sendVerificationEmail } from "./email";
 import { graphQlDocsHtml } from "./graphql-docs";
 import {
   createUser,
+  createGoogleUser,
   deleteUserById,
   findUserByEmail,
   findUserById,
+  findUserByGoogleId,
+  linkGoogleId,
   resetPassword,
   setEmailVerificationToken,
   setPasswordResetToken,
@@ -137,6 +140,96 @@ const setAuthCookies = (res: express.Response, userId: string, tokenVersion = 0)
 const clearAuthCookies = (res: express.Response) => {
   res.setHeader("Set-Cookie", [buildExpiredCookie(AUTH_ACCESS_COOKIE), buildExpiredCookie(AUTH_REFRESH_COOKIE)]);
 };
+
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID ?? "";
+const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET ?? "";
+const GOOGLE_REDIRECT_URI = process.env.GOOGLE_REDIRECT_URI ?? "http://localhost:4000/auth/google/callback";
+
+app.get("/auth/google", createRateLimit("auth-google", 20, 15 * 60 * 1000), (req, res) => {
+  if (!GOOGLE_CLIENT_ID) {
+    res.status(503).json({ error: "Google OAuth is not configured" });
+    return;
+  }
+  const params = new URLSearchParams({
+    client_id: GOOGLE_CLIENT_ID,
+    redirect_uri: GOOGLE_REDIRECT_URI,
+    response_type: "code",
+    scope: "openid email profile",
+    access_type: "online",
+    prompt: "select_account",
+  });
+  res.redirect(`https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`);
+});
+
+app.get("/auth/google/callback", createRateLimit("auth-google-callback", 20, 15 * 60 * 1000), async (req, res) => {
+  const frontendAuthUrl = `${frontendOrigin}${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/auth`;
+  try {
+    const code = typeof req.query.code === "string" ? req.query.code : "";
+    if (!code) {
+      res.redirect(`${frontendAuthUrl}?error=google_failed`);
+      return;
+    }
+
+    // Exchange code for tokens
+    const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        code,
+        client_id: GOOGLE_CLIENT_ID,
+        client_secret: GOOGLE_CLIENT_SECRET,
+        redirect_uri: GOOGLE_REDIRECT_URI,
+        grant_type: "authorization_code",
+      }).toString(),
+    });
+
+    if (!tokenRes.ok) {
+      res.redirect(`${frontendAuthUrl}?error=google_failed`);
+      return;
+    }
+
+    const tokenData = (await tokenRes.json()) as { id_token?: string };
+    const idToken = tokenData.id_token;
+    if (!idToken) {
+      res.redirect(`${frontendAuthUrl}?error=google_failed`);
+      return;
+    }
+
+    // Decode the JWT id_token payload (no signature verification needed — came directly from Google over HTTPS)
+    const payloadB64 = idToken.split(".")[1];
+    const payloadJson = Buffer.from(payloadB64.replace(/-/g, "+").replace(/_/g, "/"), "base64").toString("utf8");
+    const googlePayload = JSON.parse(payloadJson) as { sub?: string; email?: string; email_verified?: boolean };
+
+    const googleId = googlePayload.sub;
+    const email = googlePayload.email?.trim().toLowerCase();
+
+    if (!googleId || !email) {
+      res.redirect(`${frontendAuthUrl}?error=google_failed`);
+      return;
+    }
+
+    // Find or create user
+    let user = await findUserByGoogleId(googleId);
+
+    if (!user) {
+      // Check if email already exists (email/password account) — link it
+      const existing = await findUserByEmail(email);
+      if (existing) {
+        await linkGoogleId(existing.id, googleId);
+        user = { ...existing, googleId };
+      } else {
+        user = await createGoogleUser(email, googleId);
+        recordEvent("register_success", user.id).catch(() => {});
+      }
+    }
+
+    setAuthCookies(res, user.id, user.tokenVersion);
+    recordEvent("login_success", user.id).catch(() => {});
+    res.redirect(`${frontendOrigin}${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/dashboard`);
+  } catch {
+    res.redirect(`${frontendAuthUrl}?error=google_failed`);
+  }
+});
 
 app.get("/health", (_req, res) => {
   res.json({

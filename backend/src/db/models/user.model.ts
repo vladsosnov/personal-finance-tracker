@@ -7,6 +7,7 @@ export type UserDocument = {
   role: UserRole;
   passwordHash: string;
   passwordSalt: string;
+  googleId?: string;
   tokenVersion: number;
   emailVerified: boolean;
   emailVerificationToken?: string;
@@ -20,8 +21,9 @@ const userSchema = new Schema<UserDocument>(
     email: { type: String, required: true, unique: true, index: true },
     subscription: { type: String, required: true, default: "Free" },
     role: { type: String, enum: ["user", "admin"], required: true, default: "user" },
-    passwordHash: { type: String, required: true },
-    passwordSalt: { type: String, required: true },
+    passwordHash: { type: String, required: true, default: "" },
+    passwordSalt: { type: String, required: true, default: "" },
+    googleId: { type: String, index: true, sparse: true },
     tokenVersion: { type: Number, required: true, default: 0 },
     emailVerified: { type: Boolean, required: true, default: false },
     emailVerificationToken: { type: String, index: true, sparse: true },

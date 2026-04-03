@@ -14,6 +14,9 @@ jest.mock('next/navigation', () => ({
     replace: mockReplace,
     refresh: mockRefresh,
   }),
+  useSearchParams: () => ({
+    get: () => null,
+  }),
 }));
 
 jest.mock('@apollo/client/react', () => ({

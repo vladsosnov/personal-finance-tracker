@@ -9,6 +9,7 @@ type UserDoc = {
   role?: UserRole;
   passwordHash: string;
   passwordSalt: string;
+  googleId?: string;
   tokenVersion?: number;
   emailVerified?: boolean;
   emailVerificationToken?: string;
@@ -24,6 +25,7 @@ const toUser = (doc: UserDoc): User => ({
   role: doc.role ?? "user",
   passwordHash: doc.passwordHash,
   passwordSalt: doc.passwordSalt,
+  googleId: doc.googleId,
   tokenVersion: doc.tokenVersion ?? 0,
   emailVerified: doc.emailVerified ?? false,
   emailVerificationToken: doc.emailVerificationToken,
@@ -117,4 +119,25 @@ export const resetPassword = async (
 
 export const invalidateTokens = async (userId: string): Promise<void> => {
   await UserModel.updateOne({ _id: userId }, { $inc: { tokenVersion: 1 } });
+};
+
+export const findUserByGoogleId = async (googleId: string): Promise<User | undefined> => {
+  const user = await UserModel.findOne({ googleId }).lean();
+  return user ? toUser(user as unknown as UserDoc) : undefined;
+};
+
+export const createGoogleUser = async (email: string, googleId: string): Promise<User> => {
+  const user = await UserModel.create({
+    email: email.toLowerCase(),
+    subscription: "Free",
+    passwordHash: "",
+    passwordSalt: "",
+    googleId,
+    emailVerified: true,
+  });
+  return toUser(user.toObject() as unknown as UserDoc);
+};
+
+export const linkGoogleId = async (userId: string, googleId: string): Promise<void> => {
+  await UserModel.updateOne({ _id: userId }, { $set: { googleId, emailVerified: true } });
 };

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useApolloClient } from "@apollo/client/react";
 import { AuthView } from "@/features/auth/components/auth-view";
 import { API_BASE_URL } from "@/shared/constants/auth";
@@ -12,11 +12,14 @@ import { trackEvent } from "@/shared/lib/analytics";
 export const AuthClient = () => {
   const apolloClient = useApolloClient();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [authMode, setAuthMode] = useState<AuthMode>("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(
+    searchParams.get("error") === "google_failed" ? "Google sign-in failed. Please try again." : null
+  );
 
   const handleAuth = async () => {
     if (!email.trim() || !password.trim()) {
@@ -55,6 +58,8 @@ export const AuthClient = () => {
     }
   };
 
+  const googleAuthUrl = `${API_BASE_URL}/auth/google`;
+
   return (
     <AuthView
       authMode={authMode}
@@ -62,6 +67,7 @@ export const AuthClient = () => {
       password={password}
       isLoading={isLoading}
       error={error}
+      googleAuthUrl={googleAuthUrl}
       setAuthMode={setAuthMode}
       setEmail={setEmail}
       setPassword={setPassword}
