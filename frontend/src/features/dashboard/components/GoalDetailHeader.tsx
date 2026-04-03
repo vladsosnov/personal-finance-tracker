@@ -1,5 +1,5 @@
 import { IconMaximize } from "@tabler/icons-react";
-import { Badge, Button, Group, Stack, Text, Title } from "@mantine/core";
+import { Badge, Button, Checkbox, Group, Stack, Text, Title } from "@mantine/core";
 import { ChartRangePicker, type ChartRange } from "@/features/dashboard/components/ChartRangePicker";
 import type { GoalDetails } from "@/features/dashboard/types";
 import { formatDay } from "@/shared/utils/date";
@@ -7,18 +7,22 @@ import { formatDay } from "@/shared/utils/date";
 type GoalDetailHeaderProps = {
   goal: GoalDetails;
   chartRange: ChartRange;
+  showTrend: boolean;
   isRangePickerOpen: boolean;
   onToggleRangePicker: () => void;
   onChangeRange: (value: ChartRange) => void;
+  onToggleTrend: () => void;
   onExpandChart: () => void;
 };
 
 export const GoalDetailHeader = ({
   goal,
   chartRange,
+  showTrend,
   isRangePickerOpen,
   onToggleRangePicker,
   onChangeRange,
+  onToggleTrend,
   onExpandChart,
 }: GoalDetailHeaderProps) => (
   <Group justify="space-between" align="flex-start">
@@ -37,7 +41,17 @@ export const GoalDetailHeader = ({
         </Group>
       )}
     </Stack>
-    <Group gap="xs" wrap="nowrap">
+    <Group gap="xs" wrap="nowrap" align="center">
+      {chartRange === "all" && (
+        <Checkbox
+          checked={showTrend}
+          onChange={onToggleTrend}
+          label="Trend"
+          size="xs"
+          styles={{ label: { paddingLeft: 4 } }}
+          aria-label="Show trend line"
+        />
+      )}
       <ChartRangePicker
         value={chartRange}
         opened={isRangePickerOpen}

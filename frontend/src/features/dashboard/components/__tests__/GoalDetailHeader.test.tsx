@@ -13,9 +13,11 @@ describe('GoalDetailHeader', () => {
   const defaultProps = {
     goal: goalWithOperations,
     chartRange: 'all' as const,
+    showTrend: false,
     isRangePickerOpen: false,
     onToggleRangePicker: jest.fn(),
     onChangeRange: jest.fn(),
+    onToggleTrend: jest.fn(),
     onExpandChart: jest.fn(),
   };
 

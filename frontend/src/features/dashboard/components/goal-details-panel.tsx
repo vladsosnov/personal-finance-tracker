@@ -1,6 +1,6 @@
 import { useState } from "react";
 import dynamic from "next/dynamic";
-import { Button, Card, Group, Modal, ScrollArea, Skeleton, Stack, Title } from "@mantine/core";
+import { Button, Card, Checkbox, Group, Modal, ScrollArea, Skeleton, Stack, Title } from "@mantine/core";
 import { ChartRangePicker, type ChartRange } from "@/features/dashboard/components/ChartRangePicker";
 import { GoalDetailHeader } from "@/features/dashboard/components/GoalDetailHeader";
 import { GoalOperationsTable } from "@/features/dashboard/components/GoalOperationsTable";
@@ -56,6 +56,7 @@ export const GoalDetailsPanel = ({
   const [isRangePickerOpen, setIsRangePickerOpen] = useState(false);
   const [isExpandedRangePickerOpen, setIsExpandedRangePickerOpen] = useState(false);
   const [chartRange, setChartRange] = useState<ChartRange>("all");
+  const [showTrend, setShowTrend] = useState(false);
   const [pendingDeleteOperation, setPendingDeleteOperation] = useState<GoalOperation | null>(null);
 
   const { form, deletingOperationId, isUpdatingProgress, isSubmitDisabled, onStartEdit, onDelete, onSubmit } =
@@ -118,9 +119,11 @@ export const GoalDetailsPanel = ({
             <GoalDetailHeader
               goal={selectedGoal}
               chartRange={chartRange}
+              showTrend={showTrend}
               isRangePickerOpen={isRangePickerOpen}
               onToggleRangePicker={() => setIsRangePickerOpen((v) => !v)}
               onChangeRange={(value) => { setChartRange(value); setIsRangePickerOpen(false); }}
+              onToggleTrend={() => setShowTrend((v) => !v)}
               onExpandChart={() => setIsChartModalOpen(true)}
             />
 
@@ -132,6 +135,7 @@ export const GoalDetailsPanel = ({
               currentAmount={selectedGoal.currentAmount}
               isCompleted={selectedGoal.isCompleted}
               range={chartRange}
+              showTrend={showTrend}
             />
 
             <Group justify="space-between" align="center">
@@ -178,7 +182,17 @@ export const GoalDetailsPanel = ({
               size="calc(100vw - 96px)"
             >
               <Stack gap="md">
-                <Group justify="flex-end">
+                <Group justify="flex-end" align="center">
+                  {chartRange === "all" && (
+                    <Checkbox
+                      checked={showTrend}
+                      onChange={() => setShowTrend((v) => !v)}
+                      label="Trend"
+                      size="xs"
+                      styles={{ label: { paddingLeft: 4 } }}
+                      aria-label="Show trend line"
+                    />
+                  )}
                   <ChartRangePicker
                     value={chartRange}
                     opened={isExpandedRangePickerOpen}
@@ -194,6 +208,7 @@ export const GoalDetailsPanel = ({
                   currentAmount={selectedGoal.currentAmount}
                   isCompleted={selectedGoal.isCompleted}
                   range={chartRange}
+                  showTrend={showTrend}
                   height={520}
                 />
               </Stack>

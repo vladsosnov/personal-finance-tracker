@@ -21,6 +21,7 @@ type GoalChartProps = {
   isCompleted: boolean;
   height?: number;
   range: "all" | "7d" | "1m" | "6m" | "12m";
+  showTrend?: boolean;
 };
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -117,6 +118,7 @@ export const GoalChart = ({
   isCompleted,
   height = 320,
   range,
+  showTrend = false,
 }: GoalChartProps) => {
   const computedColorScheme = useComputedColorScheme("light", { getInitialValueInEffect: true });
   const isDark = computedColorScheme === "dark";
@@ -176,7 +178,7 @@ export const GoalChart = ({
     },
   ];
 
-  if (trendResult.points.length > 0) {
+  if (showTrend && trendResult.points.length > 0) {
     const predictionLabel = trendResult.predictedDate
       ? `Predicted completion: ${trendResult.predictedDate}`
       : "Trend line";
