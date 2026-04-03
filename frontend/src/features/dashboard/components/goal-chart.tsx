@@ -169,38 +169,40 @@ export const GoalChart = ({
     [seriesData, currentAmount, targetAmount, isCompleted]
   );
 
-  const series: Options["series"] = [
-    {
-      type: "line",
-      name: "Amount",
-      data: seriesData,
-      color,
-    },
-  ];
-
-  if (showTrend && trendResult.points.length > 0) {
-    const predictionLabel = trendResult.predictedDate
-      ? `Predicted completion: ${trendResult.predictedDate}`
-      : "Trend line";
-
-    series.push({
-      type: "line",
-      name: "Trend",
-      data: trendResult.points,
-      color: isDark ? "#94A3B8" : "#9CA3AF",
-      dashStyle: "Dash",
-      lineWidth: 1.5,
-      marker: {
-        enabled: false,
+  const series = useMemo<Options["series"]>(() => {
+    const result: Options["series"] = [
+      {
+        type: "line",
+        name: "Amount",
+        data: seriesData,
+        color,
       },
-      showInLegend: false,
-      enableMouseTracking: true,
-      tooltip: {
-        headerFormat: "",
-        pointFormat: `<span style="font-size: 12px">${predictionLabel}</span>`,
-      },
-    });
-  }
+    ];
+
+    if (showTrend && trendResult.points.length > 0) {
+      const predictionLabel = trendResult.predictedDate
+        ? `Predicted completion: ${trendResult.predictedDate}`
+        : "Trend line";
+
+      result.push({
+        type: "line",
+        name: "Trend",
+        data: trendResult.points,
+        color: isDark ? "#94A3B8" : "#9CA3AF",
+        dashStyle: "Dash",
+        lineWidth: 1.5,
+        marker: { enabled: false },
+        showInLegend: false,
+        enableMouseTracking: true,
+        tooltip: {
+          headerFormat: "",
+          pointFormat: `<span style="font-size: 12px">${predictionLabel}</span>`,
+        },
+      });
+    }
+
+    return result;
+  }, [seriesData, color, showTrend, trendResult, isDark]);
 
   const options = useMemo<Options>(
     () => ({
@@ -269,7 +271,7 @@ export const GoalChart = ({
         },
       },
     }),
-    [color, height, isDark, seriesData, trendResult, targetAmount, series]
+    [height, isDark, targetAmount, series]
   );
 
   return <HighchartsReact highcharts={Highcharts} options={options} />;

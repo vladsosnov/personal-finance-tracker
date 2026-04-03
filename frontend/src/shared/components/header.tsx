@@ -28,7 +28,8 @@ export const Header = () => {
         credentials: "include",
       });
     } finally {
-      await apolloClient.resetStore();
+      apolloClient.writeQuery({ query: GET_ME, data: { me: null } });
+      await apolloClient.clearStore();
       router.push(APP_ROUTES.home);
     }
   };
