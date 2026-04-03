@@ -325,7 +325,7 @@ app.post("/auth/login", createRateLimit("auth-login", 15, 15 * 60 * 1000), async
     }
 
     const user = await findUserByEmail(email);
-    if (!user || !verifyPassword(password, user.passwordHash, user.passwordSalt)) {
+    if (!user || !user.passwordHash || !verifyPassword(password, user.passwordHash, user.passwordSalt)) {
       res.status(401).json({ error: "Invalid credentials" });
       return;
     }

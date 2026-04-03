@@ -1,5 +1,4 @@
 export {};
-const API_URL = "http://localhost:4000";
 
 const meResponse = {
   me: { id: "user-1", email: "test@example.com", subscription: "Free", role: "user", emailVerified: true },
@@ -34,7 +33,7 @@ const mockGoalDetails = {
 };
 
 function stubDashboardGraphQL(goals = [mockGoal], goalDetails = mockGoalDetails) {
-  cy.intercept("POST", `${API_URL}/graphql`, (req) => {
+  cy.intercept("POST", `${Cypress.env("apiUrl")}/graphql`, (req) => {
     const query = req.body.query ?? "";
     const operationName = req.body.operationName ?? "";
     if (operationName === "Me" || query.includes("query Me")) {
@@ -66,7 +65,7 @@ function stubDashboardGraphQL(goals = [mockGoal], goalDetails = mockGoalDetails)
     }
   }).as("graphql");
 
-  cy.intercept("POST", `${API_URL}/analytics/track`, { statusCode: 200, body: { ok: true } });
+  cy.intercept("POST", `${Cypress.env("apiUrl")}/analytics/track`, { statusCode: 200, body: { ok: true } });
 }
 
 // Use testIsolation: false because the dashboard page's dynamic import + React concurrent
@@ -141,6 +140,94 @@ describe("Dashboard", { testIsolation: false }, () => {
 
     // Exit manage mode
     cy.get("[aria-label='Exit manage mode']").click();
+  });
+
+  it("opens edit goal modal and shows current values", () => {
+    cy.get("[aria-label='Manage goals']").click();
+    cy.get("[aria-label='Edit Emergency Fund']").click();
+
+    cy.get("[role='dialog']").should("be.visible");
+    cy.get("[role='dialog']").within(() => {
+      cy.get("input[placeholder='Buy a house']").should("have.value", "Emergency Fund");
+    });
+
+    cy.get("[role='dialog']").within(() => {
+      cy.contains("button", /cancel/i).click();
+    });
+    cy.get("[aria-label='Exit manage mode']").click();
+  });
+
+  it("opens delete goal modal and cancels", () => {
+    cy.get("[aria-label='Manage goals']").click();
+    cy.get("[aria-label='Remove Emergency Fund']").click();
+
+    cy.get("[role='dialog']").should("be.visible");
+    cy.contains("Emergency Fund").should("be.visible");
+
+    cy.get("[role='dialog']").within(() => {
+      cy.contains("button", /cancel/i).click();
+    });
+
+    cy.get("[role='dialog']").should("not.exist");
+    cy.get("[aria-label='Exit manage mode']").click();
+  });
+
+  it("deletes a goal after confirmation", () => {
+    stubDashboardGraphQL([]);
+    cy.get("[aria-label='Manage goals']").click();
+    cy.get("[aria-label='Remove Emergency Fund']").click();
+
+    cy.get("[role='dialog']").within(() => {
+      cy.contains("button", /^delete$/i).click();
+    });
+
+    cy.wait("@graphql");
+    cy.get("[aria-label='Exit manage mode']").click();
+  });
+
+  it("edits an operation from the operations table", () => {
+    cy.contains("Emergency Fund").click();
+
+    cy.get("[aria-label='Edit operation']").first().click();
+
+    cy.get("[role='dialog']").should("be.visible");
+    cy.get("[role='dialog']").within(() => {
+      cy.contains("Edit operation").should("be.visible");
+      cy.contains("button", /cancel/i).click();
+    });
+  });
+
+  it("opens delete operation modal and cancels", () => {
+    cy.contains("Emergency Fund").click();
+
+    cy.get("[aria-label='Delete operation']").first().click();
+
+    cy.get("[role='dialog']").should("be.visible");
+    cy.get("[role='dialog']").within(() => {
+      cy.contains("button", /cancel/i).click();
+    });
+
+    cy.get("[role='dialog']").should("not.exist");
+  });
+
+  it("shows empty state when no goal is selected", () => {
+    // No goal selected on fresh load — panel shows placeholder
+    cy.contains(/choose a goal|select a goal/i).should("be.visible");
+  });
+
+  it("disables add operation button when amount is empty", () => {
+    cy.contains("Emergency Fund").click();
+    cy.get("[aria-label='Add operation']").click();
+
+    cy.get("[role='dialog']").within(() => {
+      // Clear amount so it's empty
+      cy.get("input[placeholder='500']").clear();
+      cy.contains("button", "Add").should("be.disabled");
+    });
+
+    cy.get("[role='dialog']").within(() => {
+      cy.contains("button", /cancel/i).click();
+    });
   });
 });
 

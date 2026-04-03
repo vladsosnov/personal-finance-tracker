@@ -15,11 +15,9 @@ Cypress.on("uncaught:exception", (err) => {
   }
 });
 
-const API_URL = "http://localhost:4000";
-
 // Stub the GraphQL endpoint with a custom command
 Cypress.Commands.add("interceptGraphQL", (operationName: string, response: object, alias?: string) => {
-  cy.intercept("POST", `${API_URL}/graphql`, (req) => {
+  cy.intercept("POST", `${Cypress.env("apiUrl")}/graphql`, (req) => {
     if (req.body.query?.includes(operationName)) {
       req.reply({ body: { data: response } });
     }
@@ -28,7 +26,7 @@ Cypress.Commands.add("interceptGraphQL", (operationName: string, response: objec
 
 // Stub the REST auth endpoints
 Cypress.Commands.add("interceptAuth", (endpoint: string, statusCode: number, body: object) => {
-  cy.intercept("POST", `${API_URL}/auth/${endpoint}`, {
+  cy.intercept("POST", `${Cypress.env("apiUrl")}/auth/${endpoint}`, {
     statusCode,
     body,
   }).as(endpoint);
@@ -44,7 +42,7 @@ Cypress.Commands.add("loginByStub", (user?: { id?: string; email?: string; subsc
     emailVerified: true,
   };
 
-  cy.intercept("POST", `${API_URL}/graphql`, (req) => {
+  cy.intercept("POST", `${Cypress.env("apiUrl")}/graphql`, (req) => {
     if (req.body.query?.includes("Me")) {
       req.reply({ body: { data: { me } } });
     }

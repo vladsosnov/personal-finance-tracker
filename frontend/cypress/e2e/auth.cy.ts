@@ -1,5 +1,4 @@
 export {};
-const API_URL = "http://localhost:4000";
 
 describe("Auth Page", () => {
   beforeEach(() => {
@@ -32,12 +31,12 @@ describe("Auth Page", () => {
 
   describe("Login", () => {
     it("submits login and redirects to dashboard on success", () => {
-      cy.intercept("POST", `${API_URL}/auth/login`, {
+      cy.intercept("POST", `${Cypress.env("apiUrl")}/auth/login`, {
         statusCode: 200,
         body: { user: { id: "user-1", email: "test@example.com", subscription: "Free" } },
       }).as("login");
 
-      cy.intercept("POST", `${API_URL}/graphql`, (req) => {
+      cy.intercept("POST", `${Cypress.env("apiUrl")}/graphql`, (req) => {
         if (req.body.query?.includes("Me")) {
           req.reply({
             body: {
@@ -58,7 +57,7 @@ describe("Auth Page", () => {
     });
 
     it("displays error on failed login", () => {
-      cy.intercept("POST", `${API_URL}/auth/login`, {
+      cy.intercept("POST", `${Cypress.env("apiUrl")}/auth/login`, {
         statusCode: 401,
         body: { error: "Invalid credentials" },
       }).as("loginFail");
@@ -72,14 +71,40 @@ describe("Auth Page", () => {
     });
   });
 
+    it("shows email validation error for invalid email format", () => {
+      cy.get("input[type='email']").type("notanemail");
+      cy.get("[type='password']").type("password123");
+      cy.get("button[type='submit']").click();
+
+      cy.contains("Enter a valid email address").should("be.visible");
+      cy.get("@login").should("not.exist");
+    });
+
+    it("shows password required error when password is empty", () => {
+      cy.get("input[type='email']").type("test@example.com");
+      cy.get("button[type='submit']").click();
+
+      cy.contains("Password is required").should("be.visible");
+    });
+
+    it("clears email error when user starts typing", () => {
+      cy.get("input[type='email']").type("bad");
+      cy.get("button[type='submit']").click();
+      cy.contains("Enter a valid email address").should("be.visible");
+
+      cy.get("input[type='email']").type("@example.com");
+      cy.contains("Enter a valid email address").should("not.exist");
+    });
+  });
+
   describe("Register", () => {
     it("submits registration and redirects to dashboard", () => {
-      cy.intercept("POST", `${API_URL}/auth/register`, {
+      cy.intercept("POST", `${Cypress.env("apiUrl")}/auth/register`, {
         statusCode: 201,
         body: { user: { id: "user-2", email: "new@example.com", subscription: "Free" } },
       }).as("register");
 
-      cy.intercept("POST", `${API_URL}/graphql`, (req) => {
+      cy.intercept("POST", `${Cypress.env("apiUrl")}/graphql`, (req) => {
         if (req.body.query?.includes("Me")) {
           req.reply({
             body: {
@@ -101,7 +126,7 @@ describe("Auth Page", () => {
     });
 
     it("displays error when email already exists", () => {
-      cy.intercept("POST", `${API_URL}/auth/register`, {
+      cy.intercept("POST", `${Cypress.env("apiUrl")}/auth/register`, {
         statusCode: 409,
         body: { error: "Email already exists" },
       }).as("registerFail");
@@ -113,6 +138,40 @@ describe("Auth Page", () => {
 
       cy.wait("@registerFail");
       cy.contains("Email already exists").should("be.visible");
+    });
+
+    it("shows password too short error in register mode", () => {
+      cy.contains("Register").click();
+      cy.get("input[type='email']").type("test@example.com");
+      cy.get("[type='password']").type("short");
+      cy.get("button[type='submit']").click();
+
+      cy.contains("Password must be at least 8 characters").should("be.visible");
+    });
+
+    it("shows invalid email error in register mode", () => {
+      cy.contains("Register").click();
+      cy.get("input[type='email']").type("invalidemail");
+      cy.get("[type='password']").type("password123");
+      cy.get("button[type='submit']").click();
+
+      cy.contains("Enter a valid email address").should("be.visible");
+    });
+
+    it("clears errors when switching modes", () => {
+      cy.get("input[type='email']").type("bad");
+      cy.get("button[type='submit']").click();
+      cy.contains("Enter a valid email address").should("be.visible");
+
+      cy.contains("Register").click();
+      cy.contains("Enter a valid email address").should("not.exist");
+    });
+  });
+
+  describe("Forgot Password", () => {
+    it("navigates to forgot password page", () => {
+      cy.contains("Forgot password?").click();
+      cy.url().should("include", "/auth/forgot-password");
     });
   });
 });

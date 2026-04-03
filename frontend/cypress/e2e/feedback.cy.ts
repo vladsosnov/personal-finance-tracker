@@ -1,5 +1,4 @@
 export {};
-const API_URL = "http://localhost:4000";
 
 const mockProposals = [
   {
@@ -25,7 +24,7 @@ const mockProposals = [
 ];
 
 function stubFeedbackGraphQL(proposals = mockProposals) {
-  cy.intercept("POST", `${API_URL}/graphql`, (req) => {
+  cy.intercept("POST", `${Cypress.env("apiUrl")}/graphql`, (req) => {
     const query = req.body.query ?? "";
     if (query.includes("query Me")) {
       req.reply({

@@ -1,6 +1,7 @@
 import { Button, Group, Modal, NumberInput, Stack, TextInput } from "@mantine/core";
 import type { OperationType } from "@/shared/gql/__generated__/schema-types";
 import { MONEY_INPUT_PROPS, numberOrZero } from "@/shared/utils/number";
+import { getTodayDateValue } from "@/shared/utils/date";
 
 type OperationModalProps = {
   opened: boolean;
@@ -79,12 +80,14 @@ export const OperationModal = ({
           type="date"
           required
           aria-required
+          max={getTodayDateValue()}
           value={operationDate}
           onChange={(e) => onChangeDate(e.currentTarget.value)}
         />
         <TextInput
           label="Note"
           placeholder="Salary transfer..."
+          maxLength={500}
           value={operationNote}
           onChange={(e) => onChangeNote(e.currentTarget.value)}
         />

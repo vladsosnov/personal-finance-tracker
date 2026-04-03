@@ -205,13 +205,11 @@ export const deleteAllGoalsByUser = async (userId: string): Promise<number> => {
 
 export const reorderGoals = async (userId: string, orderedGoalIds: string[]): Promise<void> => {
   const goals = await GoalModel.find({ userId }).select("_id").lean();
-  if (goals.length !== orderedGoalIds.length) {
-    throw new Error("Goal order payload is invalid");
-  }
-
   const existingIds = new Set(goals.map((goal) => goal._id.toString()));
-  const incomingIds = new Set(orderedGoalIds);
-  if (existingIds.size !== incomingIds.size || orderedGoalIds.some((goalId) => !existingIds.has(goalId))) {
+
+  // Validate that every incoming ID belongs to this user (subset check — completed goals
+  // are not included in the reorder payload but should not cause an error)
+  if (orderedGoalIds.some((goalId) => !existingIds.has(goalId))) {
     throw new Error("Goal order payload is invalid");
   }
 

@@ -1,8 +1,7 @@
 export {};
-const API_URL = "http://localhost:4000";
 
 function stubProfileGraphQL() {
-  cy.intercept("POST", `${API_URL}/graphql`, (req) => {
+  cy.intercept("POST", `${Cypress.env("apiUrl")}/graphql`, (req) => {
     const query = req.body.query ?? "";
     if (query.includes("query Me")) {
       req.reply({
@@ -44,7 +43,7 @@ function stubProfileGraphQL() {
   }).as("graphql");
 
   // Stub analytics track endpoint
-  cy.intercept("POST", `${API_URL}/analytics/track`, { statusCode: 200, body: { ok: true } });
+  cy.intercept("POST", `${Cypress.env("apiUrl")}/analytics/track`, { statusCode: 200, body: { ok: true } });
 }
 
 describe("Profile Page", () => {
