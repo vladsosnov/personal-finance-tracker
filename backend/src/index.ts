@@ -49,7 +49,11 @@ const port = Number(process.env.PORT ?? "4000");
 const mongoUri = process.env.MONGODB_URI;
 const frontendOrigin = process.env.FRONTEND_ORIGIN ?? "http://localhost:3000";
 
-app.use(helmet());
+app.use(
+  helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+  })
+);
 app.use(
   cors({
     origin: frontendOrigin,
@@ -74,11 +78,31 @@ const csrfProtection = (req: express.Request, res: express.Response, next: expre
 
   const origin = req.headers.origin;
   const referer = req.headers.referer;
+  const secFetchSite = req.headers["sec-fetch-site"];
 
-  // Check if request comes from allowed origin
-  const isValidOrigin = origin === frontendOrigin || (referer && referer.startsWith(frontendOrigin + "/"));
+  // If browser explicitly marks the request as cross-site from a different origin, block it
+  if (secFetchSite && secFetchSite !== "same-origin" && secFetchSite !== "same-site" && secFetchSite !== "none") {
+    // cross-site fetch — validate origin strictly
+    if (origin !== frontendOrigin) {
+      res.status(403).json({ error: "Invalid origin" });
+      return;
+    }
+    next();
+    return;
+  }
 
-  if (!isValidOrigin) {
+  // Check if request comes from allowed origin (origin header present)
+  if (origin) {
+    if (origin !== frontendOrigin) {
+      res.status(403).json({ error: "Invalid origin" });
+      return;
+    }
+    next();
+    return;
+  }
+
+  // No origin header — fall back to referer
+  if (referer && !referer.startsWith(frontendOrigin + "/")) {
     res.status(403).json({ error: "Invalid origin" });
     return;
   }
