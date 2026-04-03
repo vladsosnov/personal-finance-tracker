@@ -55,7 +55,16 @@ export const Header = () => {
         aria-current={pathname.startsWith(APP_ROUTES.dashboard) ? "page" : undefined}
         onClick={closeMenu}
       >
-        Dashboard
+        Goals
+      </Button>
+      <Button
+        component={Link}
+        href={APP_ROUTES.expenses}
+        variant={pathname.startsWith(APP_ROUTES.expenses) ? "light" : "subtle"}
+        aria-current={pathname.startsWith(APP_ROUTES.expenses) ? "page" : undefined}
+        onClick={closeMenu}
+      >
+        Expenses
       </Button>
       <Button
         component={Link}

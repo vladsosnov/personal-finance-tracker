@@ -77,7 +77,7 @@ describe('Header', () => {
     render(<Header />, { mocks: [getMeMock] });
 
     expect(screen.getByRole('link', { name: 'Home' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Dashboard' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Goals' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Feedback' })).toBeInTheDocument();
   });
 
