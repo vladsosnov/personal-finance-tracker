@@ -207,9 +207,8 @@ export const useDataManagement = () => {
         const payload = (await response.json().catch(() => null)) as { error?: string } | null;
         throw new Error(payload?.error ?? "Failed to delete account");
       }
-      await apolloClient.clearStore();
+      await apolloClient.resetStore();
       router.replace(APP_ROUTES.home);
-      router.refresh();
     } catch (error) {
       showToast(error instanceof Error ? error.message : "Failed to delete account", "red");
     } finally {

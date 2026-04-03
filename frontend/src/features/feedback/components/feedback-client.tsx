@@ -72,7 +72,7 @@ export const FeedbackClient = () => {
         </Stack>
 
         <div className={anim.stagger1}>
-          <Group justify="space-between" align="flex-end" wrap="wrap">
+          <Stack gap="sm">
             <Group gap="sm" align="flex-end" wrap="wrap">
               <Select
                 label="Category"
@@ -81,7 +81,7 @@ export const FeedbackClient = () => {
                 onChange={(value) => setFilterCategory((value ?? "all") as FilterCategory)}
                 allowDeselect={false}
                 size="sm"
-                style={{ width: 160 }}
+                style={{ minWidth: 130, flex: 1 }}
                 aria-label="Filter by category"
               />
               <Select
@@ -91,9 +91,11 @@ export const FeedbackClient = () => {
                 onChange={(value) => setFilterStatus((value ?? "all") as FilterStatus)}
                 allowDeselect={false}
                 size="sm"
-                style={{ width: 160 }}
+                style={{ minWidth: 130, flex: 1 }}
                 aria-label="Filter by status"
               />
+            </Group>
+            <Group justify="space-between" align="center" wrap="wrap">
               <SegmentedControl
                 value={sortBy}
                 onChange={(value) => setSortBy(value as SortOption)}
@@ -104,11 +106,11 @@ export const FeedbackClient = () => {
                 size="sm"
                 aria-label="Sort proposals"
               />
+              <Button leftSection={<IconPlus size={16} stroke={2} />} onClick={() => setIsModalOpen(true)}>
+                Submit feedback
+              </Button>
             </Group>
-            <Button leftSection={<IconPlus size={16} stroke={2} />} onClick={() => setIsModalOpen(true)}>
-              Submit feedback
-            </Button>
-          </Group>
+          </Stack>
         </div>
 
         <div className={anim.stagger2}>

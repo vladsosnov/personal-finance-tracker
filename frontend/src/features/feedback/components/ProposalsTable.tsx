@@ -45,10 +45,10 @@ export const ProposalsTable = ({ proposals, onVote, onUpdateStatus }: ProposalsT
         <Table.Thead>
           <Table.Tr>
             <Table.Th style={{ width: 60 }}>Votes</Table.Th>
-            <Table.Th style={{ width: 110 }}>Category</Table.Th>
+            <Table.Th visibleFrom="xs" style={{ width: 110 }}>Category</Table.Th>
             <Table.Th>Title</Table.Th>
             <Table.Th style={{ width: onUpdateStatus ? 140 : 100 }}>Status</Table.Th>
-            <Table.Th style={{ width: 120 }}>Date</Table.Th>
+            <Table.Th visibleFrom="sm" style={{ width: 120 }}>Date</Table.Th>
           </Table.Tr>
         </Table.Thead>
         <Table.Tbody>
@@ -79,7 +79,7 @@ export const ProposalsTable = ({ proposals, onVote, onUpdateStatus }: ProposalsT
                     <Text size="sm" fw={500}>{proposal.votes}</Text>
                   </Group>
                 </Table.Td>
-                <Table.Td>
+                <Table.Td visibleFrom="xs">
                   <Badge
                     color={CATEGORY_COLORS[proposal.category as ProposalCategory]}
                     variant="light"
@@ -89,16 +89,7 @@ export const ProposalsTable = ({ proposals, onVote, onUpdateStatus }: ProposalsT
                   </Badge>
                 </Table.Td>
                 <Table.Td>
-                  <Text
-                    size="sm"
-                    fw={500}
-                    style={{
-                      maxWidth: 400,
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      whiteSpace: "nowrap",
-                    }}
-                  >
+                  <Text size="sm" fw={500} style={{ wordBreak: "break-word" }}>
                     {proposal.title}
                   </Text>
                 </Table.Td>
@@ -122,7 +113,7 @@ export const ProposalsTable = ({ proposals, onVote, onUpdateStatus }: ProposalsT
                     </Badge>
                   )}
                 </Table.Td>
-                <Table.Td>
+                <Table.Td visibleFrom="sm">
                   <Text size="sm" c="dimmed">{formatDate(proposal.createdAt)}</Text>
                 </Table.Td>
               </Table.Tr>
