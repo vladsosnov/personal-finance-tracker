@@ -1,5 +1,6 @@
 const CACHE_NAME = "fintracker-v1";
-const PRECACHE_URLS = ["/", "/offline.html"];
+const BASE_PATH = self.location.pathname.replace(/\/sw\.js$/, "");
+const PRECACHE_URLS = [`${BASE_PATH}/`, `${BASE_PATH}/offline.html`];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(

@@ -11,7 +11,7 @@ import { ProductPreviewSection } from "@/features/landing/components/ProductPrev
 
 const LandingPage = () => (
   <PageContainer>
-    <Stack gap={64}>
+    <Stack gap={{ base: 40, sm: 64 }}>
       <HeroSection />
       <ProductPreviewSection />
       <FeaturesSection />

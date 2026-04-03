@@ -103,13 +103,17 @@ export const verifyJwt = (token?: string): TokenResult => verifyToken(token, "ac
 export const verifyRefreshJwt = (token?: string): TokenResult => verifyToken(token, "refresh");
 
 export const buildCookie = (name: string, value: string, maxAgeSec: number): string => {
-  const secure = process.env.NODE_ENV === "production" ? "; Secure" : "";
-  return `${name}=${value}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${maxAgeSec}${secure}`;
+  const isProduction = process.env.NODE_ENV === "production";
+  const sameSite = isProduction ? "None" : "Lax";
+  const secure = isProduction ? "; Secure" : "";
+  return `${name}=${value}; Path=/; HttpOnly; SameSite=${sameSite}; Max-Age=${maxAgeSec}${secure}`;
 };
 
 export const buildExpiredCookie = (name: string): string => {
-  const secure = process.env.NODE_ENV === "production" ? "; Secure" : "";
-  return `${name}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0${secure}`;
+  const isProduction = process.env.NODE_ENV === "production";
+  const sameSite = isProduction ? "None" : "Lax";
+  const secure = isProduction ? "; Secure" : "";
+  return `${name}=; Path=/; HttpOnly; SameSite=${sameSite}; Max-Age=0${secure}`;
 };
 
 export const authCookieHeaders = (userId: string, tokenVersion = 0): string[] => [

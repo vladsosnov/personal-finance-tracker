@@ -32,8 +32,9 @@ const logoutAndRedirect = async () => {
     // Ignore logout cleanup failures on the client.
   }
 
-  if (typeof window !== "undefined" && window.location.pathname !== "/auth") {
-    window.location.href = "/auth";
+  if (typeof window !== "undefined" && !window.location.pathname.endsWith("/auth")) {
+    const base = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
+    window.location.href = `${base}/auth`;
   }
 };
 
