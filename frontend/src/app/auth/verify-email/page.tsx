@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Anchor, Card, Container, Loader, Stack, Text, Title } from "@mantine/core";
 import { API_BASE_URL } from "@/shared/constants/auth";
 import { APP_ROUTES } from "@/shared/constants/routes";
 
-const VerifyEmailPage = () => {
+const VerifyEmailContent = () => {
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
 
@@ -78,5 +78,11 @@ const VerifyEmailPage = () => {
     </Container>
   );
 };
+
+const VerifyEmailPage = () => (
+  <Suspense fallback={<Container size="sm" py={72}><Card withBorder radius="md" p="xl"><Stack align="center"><Loader size="lg" /></Stack></Card></Container>}>
+    <VerifyEmailContent />
+  </Suspense>
+);
 
 export default VerifyEmailPage;

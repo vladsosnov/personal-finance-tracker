@@ -1,13 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Alert, Anchor, Button, Card, Container, PasswordInput, Stack, Text, Title } from "@mantine/core";
+import { Alert, Anchor, Button, Card, Container, Loader, PasswordInput, Stack, Text, Title } from "@mantine/core";
 import { API_BASE_URL } from "@/shared/constants/auth";
 import { APP_ROUTES } from "@/shared/constants/routes";
 import { trackEvent } from "@/shared/lib/analytics";
 
-const ResetPasswordPage = () => {
+const ResetPasswordContent = () => {
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
 
@@ -119,5 +119,11 @@ const ResetPasswordPage = () => {
     </Container>
   );
 };
+
+const ResetPasswordPage = () => (
+  <Suspense fallback={<Container size="sm" py={72}><Card withBorder radius="md" p="xl"><Stack align="center"><Loader size="lg" /></Stack></Card></Container>}>
+    <ResetPasswordContent />
+  </Suspense>
+);
 
 export default ResetPasswordPage;
