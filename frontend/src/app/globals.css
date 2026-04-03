@@ -140,6 +140,12 @@ html[data-mantine-color-scheme="dark"] .app-header {
   padding-top: var(--app-header-height);
 }
 
+@media (max-width: 768px) {
+  .app-main {
+    padding-top: 52px;
+  }
+}
+
 .app-footer {
   border-top: 1px solid rgba(0, 0, 0, 0.08);
   background: rgba(255, 255, 255, 0.7);

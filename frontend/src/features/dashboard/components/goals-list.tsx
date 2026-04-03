@@ -1,5 +1,6 @@
 import { IconDotsVertical, IconX } from "@tabler/icons-react";
 import { Button, Card, Group, ScrollArea, Skeleton, Stack, Text } from "@mantine/core";
+import { useMediaQuery } from "@mantine/hooks";
 import type { Goal } from "@/features/dashboard/types";
 import type { useGoalDrag } from "@/features/dashboard/hooks/useGoalDrag";
 import { GoalCard } from "@/features/dashboard/components/GoalCard";
@@ -44,6 +45,7 @@ export const GoalsList = ({
   onSelectGoal,
   onRetry,
 }: GoalsListProps) => {
+  const isMobile = useMediaQuery("(max-width: 768px)");
   const emptyTitle = emptyState?.title ?? "No goals yet";
   const emptyDescription = emptyState?.description ?? "Create your first goal to start tracking progress.";
   const isDraggable = allowDrag && !manageMode.isActive;
@@ -71,7 +73,7 @@ export const GoalsList = ({
             </Button>
           )}
         </Group>
-        <ScrollArea h={520} offsetScrollbars scrollbarSize={8}>
+        <ScrollArea h={isMobile ? 360 : 520} offsetScrollbars scrollbarSize={8}>
           <Stack gap="sm" pr={4}>
             {isLoadingGoals ? (
               <GoalsLoadingSkeleton />

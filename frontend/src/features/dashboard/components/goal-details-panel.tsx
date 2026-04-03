@@ -34,13 +34,14 @@ export type GoalOperationActions = {
   onSubmit: () => Promise<void>;
 };
 
-type GoalDetailsPanelProps = {
+export type GoalDetailsPanelProps = {
   hasGoals: boolean;
   selectedGoal: GoalDetails | null;
   isLoadingGoalDetails: boolean;
   goalDetailsErrorMessage?: string | null;
   operationActions: GoalOperationActions;
   onRetryGoalDetails?: () => void;
+  scrollHeight?: number;
 };
 
 export const GoalDetailsPanel = ({
@@ -50,6 +51,7 @@ export const GoalDetailsPanel = ({
   goalDetailsErrorMessage,
   operationActions,
   onRetryGoalDetails,
+  scrollHeight,
 }: GoalDetailsPanelProps) => {
   const [isOperationModalOpen, setIsOperationModalOpen] = useState(false);
   const [isChartModalOpen, setIsChartModalOpen] = useState(false);
@@ -114,7 +116,7 @@ export const GoalDetailsPanel = ({
           }
         />
       ) : (
-        <ScrollArea h={610} offsetScrollbars scrollbarSize={8}>
+        <ScrollArea h={scrollHeight} offsetScrollbars scrollbarSize={8}>
           <Stack gap="md" pr={4}>
             <GoalDetailHeader
               goal={selectedGoal}

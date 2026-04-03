@@ -39,11 +39,12 @@ export const GoalOperationsTable = ({
 
   return (
     <>
+      <Table.ScrollContainer minWidth={480}>
       <Table striped highlightOnHover aria-label="Goal operations">
         <Table.Thead>
           <Table.Tr>
-            <Table.Th>Date</Table.Th>
-            <Table.Th>Type</Table.Th>
+            <Table.Th w={112}>Date</Table.Th>
+            <Table.Th w={112}>Type</Table.Th>
             <Table.Th>Amount</Table.Th>
             <Table.Th>Note</Table.Th>
             <Table.Th ta="right">Actions</Table.Th>
@@ -52,8 +53,8 @@ export const GoalOperationsTable = ({
         <Table.Tbody>
           {paginatedOperations.map((operation) => (
             <Table.Tr key={operation.id}>
-              <Table.Td>{formatDay(operation.operationDate)}</Table.Td>
-              <Table.Td>
+              <Table.Td w={112}>{formatDay(operation.operationDate)}</Table.Td>
+              <Table.Td w={112}>
                 <Badge color={operation.type === "INCREASE" ? "teal" : "red"} variant="light">
                   {operation.type}
                 </Badge>
@@ -121,6 +122,7 @@ export const GoalOperationsTable = ({
           )}
         </Table.Tbody>
       </Table>
+      </Table.ScrollContainer>
       {operations.length > OPERATIONS_PER_PAGE && (
         <Group justify="space-between" align="center">
           <Text size="sm" c="dimmed">
