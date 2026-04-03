@@ -48,8 +48,8 @@ export const Header = () => {
       <Button
         component={Link}
         href={APP_ROUTES.dashboard}
-        variant={pathname === APP_ROUTES.dashboard ? "light" : "subtle"}
-        aria-current={pathname === APP_ROUTES.dashboard ? "page" : undefined}
+        variant={pathname.startsWith(APP_ROUTES.dashboard) ? "light" : "subtle"}
+        aria-current={pathname.startsWith(APP_ROUTES.dashboard) ? "page" : undefined}
         onClick={closeMenu}
       >
         Dashboard
@@ -57,8 +57,8 @@ export const Header = () => {
       <Button
         component={Link}
         href={APP_ROUTES.feedback}
-        variant={pathname === APP_ROUTES.feedback ? "light" : "subtle"}
-        aria-current={pathname === APP_ROUTES.feedback ? "page" : undefined}
+        variant={pathname.startsWith(APP_ROUTES.feedback) ? "light" : "subtle"}
+        aria-current={pathname.startsWith(APP_ROUTES.feedback) ? "page" : undefined}
         onClick={closeMenu}
       >
         Feedback
@@ -69,8 +69,8 @@ export const Header = () => {
             <Button
               component={Link}
               href={APP_ROUTES.adminLogs}
-              variant={pathname === APP_ROUTES.adminLogs ? "light" : "subtle"}
-              aria-current={pathname === APP_ROUTES.adminLogs ? "page" : undefined}
+              variant={pathname.startsWith(APP_ROUTES.adminLogs) ? "light" : "subtle"}
+              aria-current={pathname.startsWith(APP_ROUTES.adminLogs) ? "page" : undefined}
               color="red"
               onClick={closeMenu}
             >
@@ -80,8 +80,8 @@ export const Header = () => {
           <Button
             component={Link}
             href={APP_ROUTES.profile}
-            variant={pathname === APP_ROUTES.profile ? "light" : "subtle"}
-            aria-current={pathname === APP_ROUTES.profile ? "page" : undefined}
+            variant={pathname.startsWith(APP_ROUTES.profile) ? "light" : "subtle"}
+            aria-current={pathname.startsWith(APP_ROUTES.profile) ? "page" : undefined}
             onClick={closeMenu}
           >
             Profile

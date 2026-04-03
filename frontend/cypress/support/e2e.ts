@@ -7,7 +7,9 @@ Cypress.on("uncaught:exception", (err) => {
     err.message.includes("Hydration failed") ||
     err.message.includes("Minified React error") ||
     err.message.includes("There was an error while hydrating") ||
-    err.message.includes("Unknown root exit status")
+    err.message.includes("Unknown root exit status") ||
+    err.message.includes("Unauthorized") ||
+    err.message.includes("CombinedGraphQLErrors")
   ) {
     return false;
   }

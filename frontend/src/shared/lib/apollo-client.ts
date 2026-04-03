@@ -3,6 +3,7 @@
 import { ApolloClient, ApolloLink, HttpLink, InMemoryCache, Observable } from "@apollo/client";
 import { ErrorLink } from "@apollo/client/link/error";
 import { API_BASE_URL } from "@/shared/constants/auth";
+import { GET_ME } from "@/shared/gql/queries";
 
 const graphQLEndpoint = process.env.NEXT_PUBLIC_GRAPHQL_URL ?? `${API_BASE_URL}/graphql`;
 
@@ -22,6 +23,9 @@ const refreshSession = async () => {
   }
 };
 
+// eslint-disable-next-line prefer-const
+let apolloClient: ApolloClient;
+
 const errorLink = new ErrorLink(({ error, operation, forward }) => {
   const unauthorized =
     error?.message?.includes("Unauthorized") || error?.message?.includes("Access token expired") || false;
@@ -31,8 +35,14 @@ const errorLink = new ErrorLink(({ error, operation, forward }) => {
     return undefined;
   }
 
-  // Only attempt refresh for authenticated-only operations (not GET_ME)
+  // Skip refresh for GET_ME itself
   if (operation.operationName === "Me") {
+    return undefined;
+  }
+
+  // Skip refresh if GET_ME cache already shows no session — user is logged out
+  const cached = apolloClient.readQuery<{ me: { id: string } | null }>({ query: GET_ME });
+  if (cached?.me === null || cached?.me === undefined) {
     return undefined;
   }
 
@@ -50,7 +60,7 @@ const errorLink = new ErrorLink(({ error, operation, forward }) => {
   });
 });
 
-export const apolloClient = new ApolloClient({
+apolloClient = new ApolloClient({
   link: ApolloLink.from([errorLink, httpLink]),
   cache: new InMemoryCache({
     typePolicies: {
@@ -59,3 +69,5 @@ export const apolloClient = new ApolloClient({
     },
   }),
 });
+
+export { apolloClient };

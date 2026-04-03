@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { IconArrowUp, IconTrash } from "@tabler/icons-react";
 import { ActionIcon, Badge, Card, Group, Pagination, Select, Stack, Table, Text, Tooltip } from "@mantine/core";
 import type { Proposal, ProposalCategory, ProposalStatus } from "@/features/feedback/types";
@@ -54,9 +54,8 @@ export const ProposalsTable = ({ proposals, onVote, onUpdateStatus, onDelete }: 
         </Table.Thead>
         <Table.Tbody>
           {paginatedProposals.map((proposal) => (
-            <>
+            <React.Fragment key={proposal.id}>
               <Table.Tr
-                key={proposal.id}
                 style={{ cursor: "pointer" }}
                 onClick={() => setExpandedRow(expandedRow === proposal.id ? null : proposal.id)}
               >
@@ -134,7 +133,7 @@ export const ProposalsTable = ({ proposals, onVote, onUpdateStatus, onDelete }: 
                 </Table.Td>
               </Table.Tr>
               {expandedRow === proposal.id && (
-                <Table.Tr key={`${proposal.id}-description`}>
+                <Table.Tr>
                   <Table.Td colSpan={5} style={{ backgroundColor: "var(--mantine-color-gray-0)", padding: "12px 16px" }}>
                     <Text size="sm" c="dimmed" style={{ whiteSpace: "pre-wrap" }}>
                       {proposal.description}
@@ -142,7 +141,7 @@ export const ProposalsTable = ({ proposals, onVote, onUpdateStatus, onDelete }: 
                   </Table.Td>
                 </Table.Tr>
               )}
-            </>
+            </React.Fragment>
           ))}
         </Table.Tbody>
       </Table>

@@ -36,7 +36,8 @@ const mockGoalDetails = {
 function stubDashboardGraphQL(goals = [mockGoal], goalDetails = mockGoalDetails) {
   cy.intercept("POST", `${API_URL}/graphql`, (req) => {
     const query = req.body.query ?? "";
-    if (query.includes("query Me")) {
+    const operationName = req.body.operationName ?? "";
+    if (operationName === "Me" || query.includes("query Me")) {
       req.reply({ body: { data: meResponse } });
     } else if (query.includes("query Goals")) {
       req.reply({ body: { data: { goals } } });
