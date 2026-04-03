@@ -61,7 +61,7 @@ export const GoalDetailHeader = ({
           onToggleRangePicker();
         }}
       />
-      <Button variant="light" px={10} aria-label="Expand chart" onClick={onExpandChart}>
+      <Button variant="subtle" px={10} aria-label="Expand chart" onClick={onExpandChart}>
         <IconMaximize size={16} stroke={2} />
       </Button>
     </Group>

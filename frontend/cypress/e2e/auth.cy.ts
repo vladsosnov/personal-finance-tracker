@@ -53,7 +53,7 @@ describe("Auth Page", () => {
       cy.get("button[type='submit']").click();
 
       cy.wait("@login");
-      cy.url().should("include", "/dashboard");
+      cy.url().should("include", "/goals");
     });
 
     it("displays error on failed login", () => {
@@ -120,7 +120,7 @@ describe("Auth Page", () => {
       cy.get("button[type='submit']").click();
 
       cy.wait("@register");
-      cy.url().should("include", "/dashboard");
+      cy.url().should("include", "/goals");
     });
 
     it("displays error when email already exists", () => {

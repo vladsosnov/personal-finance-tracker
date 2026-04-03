@@ -70,11 +70,11 @@ function stubDashboardGraphQL(goals = [mockGoal], goalDetails = mockGoalDetails)
 
 // Use testIsolation: false because the dashboard page's dynamic import + React concurrent
 // rendering causes "Unknown root exit status" errors that corrupt the Next.js page cache,
-// preventing subsequent cy.visit("/dashboard") from rendering the client component.
+// preventing subsequent cy.visit("/goals") from rendering the client component.
 describe("Dashboard", { testIsolation: false }, () => {
   before(() => {
     stubDashboardGraphQL();
-    cy.visit("/dashboard");
+    cy.visit("/goals");
     cy.contains("Emergency Fund", { timeout: 10000 }).should("be.visible");
   });
 

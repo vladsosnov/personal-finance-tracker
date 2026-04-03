@@ -40,7 +40,6 @@ export const CreateGoalFormFields = ({
     aria-label="Create goal"
   >
     <Stack gap="sm">
-      {limitMessage && <Text size="sm" c="orange">{limitMessage}</Text>}
       <Grid align="flex-end">
         <Grid.Col span={{ base: 12, md: 4 }}>
           <TextInput
@@ -97,7 +96,10 @@ type CreateGoalFormProps = CreateGoalFormFieldsProps;
 export const CreateGoalForm = (props: CreateGoalFormProps) => (
   <Card withBorder radius="md" p="lg" className={styles.stagger4}>
     <Stack gap="sm">
-      <Title order={4}>Create goal</Title>
+      <Group justify="space-between" align="center">
+        <Title order={4}>Create goal</Title>
+        {props.limitMessage && <Text size="sm" c="orange">{props.limitMessage}</Text>}
+      </Group>
       <CreateGoalFormFields {...props} />
     </Stack>
   </Card>

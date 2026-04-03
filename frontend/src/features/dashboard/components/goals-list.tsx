@@ -74,7 +74,7 @@ export const GoalsList = ({
           )}
         </Group>
         <ScrollArea h={isMobile ? 360 : 520} offsetScrollbars scrollbarSize={8}>
-          <Stack gap="sm" pr={4}>
+          <Stack gap="sm">
             {isLoadingGoals ? (
               <GoalsLoadingSkeleton />
             ) : errorMessage ? (

@@ -11,7 +11,7 @@ describe("Landing Page", () => {
   it("renders navigation links", () => {
     cy.get("nav").within(() => {
       cy.contains("Home").should("be.visible");
-      cy.contains("Dashboard").should("be.visible");
+      cy.contains("Goals").should("be.visible");
       cy.contains("Feedback").should("be.visible");
     });
   });
@@ -29,8 +29,8 @@ describe("Landing Page", () => {
   });
 
   it("navigates to dashboard page", () => {
-    cy.get("nav").contains("Dashboard").click();
-    cy.url().should("include", "/dashboard");
+    cy.get("nav").contains("Goals").click();
+    cy.url().should("include", "/goals");
   });
 
   it("navigates to feedback page", () => {
