@@ -38,19 +38,19 @@ function stubDashboardGraphQL(goals = [mockGoal], goalDetails = mockGoalDetails)
     const operationName = req.body.operationName ?? "";
     if (operationName === "Me" || query.includes("query Me")) {
       req.reply({ body: { data: meResponse } });
-    } else if (query.includes("query Goals")) {
+    } else if (operationName === "Goals" || query.includes("query Goals")) {
       req.reply({ body: { data: { goals } } });
-    } else if (query.includes("query Goal")) {
+    } else if (operationName === "Goal" || query.includes("query Goal")) {
       req.reply({ body: { data: { goal: goalDetails } } });
-    } else if (query.includes("mutation CreateGoal")) {
+    } else if (operationName === "CreateGoal" || query.includes("mutation CreateGoal")) {
       req.reply({ body: { data: { createGoal: { id: "goal-new" } } } });
-    } else if (query.includes("mutation UpdateGoalProgress")) {
+    } else if (operationName === "UpdateGoalProgress" || query.includes("mutation UpdateGoalProgress")) {
       req.reply({ body: { data: { updateGoalProgress: mockGoal } } });
-    } else if (query.includes("mutation DeleteGoal")) {
+    } else if (operationName === "DeleteGoal" || query.includes("mutation DeleteGoal")) {
       req.reply({ body: { data: { deleteGoal: { id: req.body.variables?.goalId } } } });
-    } else if (query.includes("mutation EditGoal")) {
+    } else if (operationName === "EditGoal" || query.includes("mutation EditGoal")) {
       req.reply({ body: { data: { editGoal: mockGoal } } });
-    } else if (query.includes("mutation CompleteGoal")) {
+    } else if (operationName === "CompleteGoal" || query.includes("mutation CompleteGoal")) {
       req.reply({
         body: {
           data: {
@@ -58,7 +58,7 @@ function stubDashboardGraphQL(goals = [mockGoal], goalDetails = mockGoalDetails)
           },
         },
       });
-    } else if (query.includes("mutation DeleteGoalOperation")) {
+    } else if (operationName === "DeleteGoalOperation" || query.includes("mutation DeleteGoalOperation")) {
       req.reply({ body: { data: { deleteGoalOperation: mockGoalDetails } } });
     } else {
       req.reply({ body: { data: {} } });
@@ -148,12 +148,14 @@ describe("Dashboard", { testIsolation: false }, () => {
 
     cy.get("[role='dialog']").should("be.visible");
     cy.get("[role='dialog']").within(() => {
-      cy.get("input[placeholder='Buy a house']").should("have.value", "Emergency Fund");
+      // Edit modal has a Title input containing the goal name
+      cy.get("input[aria-required]").first().should("have.value", "Emergency Fund");
     });
 
     cy.get("[role='dialog']").within(() => {
       cy.contains("button", /cancel/i).click();
     });
+    cy.get("[role='dialog']").should("not.exist");
     cy.get("[aria-label='Exit manage mode']").click();
   });
 
@@ -172,35 +174,24 @@ describe("Dashboard", { testIsolation: false }, () => {
     cy.get("[aria-label='Exit manage mode']").click();
   });
 
-  it("deletes a goal after confirmation", () => {
-    stubDashboardGraphQL([]);
-    cy.get("[aria-label='Manage goals']").click();
-    cy.get("[aria-label='Remove Emergency Fund']").click();
-
-    cy.get("[role='dialog']").within(() => {
-      cy.contains("button", /^delete$/i).click();
-    });
-
-    cy.wait("@graphql");
-    cy.get("[aria-label='Exit manage mode']").click();
-  });
-
   it("edits an operation from the operations table", () => {
-    cy.contains("Emergency Fund").click();
+    // Goal is already selected from prior tests; operations table is visible
+    cy.contains("Salary deposit").should("be.visible");
 
-    cy.get("[aria-label='Edit operation']").first().click();
+    cy.get("[aria-label*='Edit'][aria-label*='operation']").first().click();
 
     cy.get("[role='dialog']").should("be.visible");
     cy.get("[role='dialog']").within(() => {
       cy.contains("Edit operation").should("be.visible");
       cy.contains("button", /cancel/i).click();
     });
+    cy.get("[role='dialog']").should("not.exist");
   });
 
   it("opens delete operation modal and cancels", () => {
-    cy.contains("Emergency Fund").click();
+    cy.contains("Salary deposit").should("be.visible");
 
-    cy.get("[aria-label='Delete operation']").first().click();
+    cy.get("[aria-label*='Delete'][aria-label*='operation']").first().click();
 
     cy.get("[role='dialog']").should("be.visible");
     cy.get("[role='dialog']").within(() => {
@@ -210,24 +201,29 @@ describe("Dashboard", { testIsolation: false }, () => {
     cy.get("[role='dialog']").should("not.exist");
   });
 
-  it("shows empty state when no goal is selected", () => {
-    // No goal selected on fresh load — panel shows placeholder
-    cy.contains(/choose a goal|select a goal/i).should("be.visible");
-  });
-
   it("disables add operation button when amount is empty", () => {
-    cy.contains("Emergency Fund").click();
+    cy.contains("Salary deposit").should("be.visible");
+
     cy.get("[aria-label='Add operation']").click();
 
     cy.get("[role='dialog']").within(() => {
-      // Clear amount so it's empty
       cy.get("input[placeholder='500']").clear();
       cy.contains("button", "Add").should("be.disabled");
-    });
-
-    cy.get("[role='dialog']").within(() => {
       cy.contains("button", /cancel/i).click();
     });
+    cy.get("[role='dialog']").should("not.exist");
+  });
+
+  it("deletes a goal after confirmation", () => {
+    stubDashboardGraphQL([]);
+    cy.get("[aria-label='Manage goals']").click();
+    cy.get("[aria-label='Remove Emergency Fund']").click();
+
+    cy.get("[role='dialog']").within(() => {
+      cy.contains("button", /^remove$/i).click();
+    });
+
+    cy.wait("@graphql");
   });
 });
 

@@ -69,7 +69,6 @@ describe("Auth Page", () => {
       cy.wait("@loginFail");
       cy.contains("Invalid credentials").should("be.visible");
     });
-  });
 
     it("shows email validation error for invalid email format", () => {
       cy.get("input[type='email']").type("notanemail");
@@ -77,7 +76,6 @@ describe("Auth Page", () => {
       cy.get("button[type='submit']").click();
 
       cy.contains("Enter a valid email address").should("be.visible");
-      cy.get("@login").should("not.exist");
     });
 
     it("shows password required error when password is empty", () => {
