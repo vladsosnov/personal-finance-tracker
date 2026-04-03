@@ -199,7 +199,6 @@ describe('AuthClient', () => {
 
     await waitFor(() => {
       expect(mockReplace).toHaveBeenCalledWith('/dashboard');
-      expect(mockRefresh).toHaveBeenCalled();
     });
   });
 

@@ -22,28 +22,17 @@ const refreshSession = async () => {
   }
 };
 
-const logoutAndRedirect = async () => {
-  try {
-    await fetch(`${API_BASE_URL}/auth/logout`, {
-      method: "POST",
-      credentials: "include",
-    });
-  } catch {
-    // Ignore logout cleanup failures on the client.
-  }
-
-  if (typeof window !== "undefined" && !window.location.pathname.endsWith("/auth")) {
-    const base = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
-    window.location.href = `${base}/auth`;
-  }
-};
-
 const errorLink = new ErrorLink(({ error, operation, forward }) => {
   const unauthorized =
     error?.message?.includes("Unauthorized") || error?.message?.includes("Access token expired") || false;
 
   const alreadyRetried = operation.getContext().retried === true;
   if (!unauthorized || alreadyRetried) {
+    return undefined;
+  }
+
+  // Only attempt refresh for authenticated-only operations (not GET_ME)
+  if (operation.operationName === "Me") {
     return undefined;
   }
 
@@ -54,8 +43,8 @@ const errorLink = new ErrorLink(({ error, operation, forward }) => {
         const subscription = forward(operation).subscribe(observer);
         return () => subscription.unsubscribe();
       })
-      .catch(async () => {
-        await logoutAndRedirect();
+      .catch(() => {
+        // Refresh failed — just propagate the error, let the UI handle it
         observer.error(error);
       });
   });

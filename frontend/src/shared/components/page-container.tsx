@@ -6,7 +6,7 @@ type PageContainerProps = {
 };
 
 export const PageContainer = ({ children }: PageContainerProps) => (
-  <Container size="xl" py={24} px={{ base: 16, sm: 24 }}>
+  <Container size="xl" py={24} px={16}>
     {children}
   </Container>
 );
