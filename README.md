@@ -2,10 +2,7 @@
 
 A full-stack app for tracking savings goals, logging deposits and withdrawals, and monitoring progress over time.
 
-The repository is split into two deployable apps:
-
-- `frontend/`: Next.js 14 application
-- `backend/`: Express 5 + GraphQL API
+**Live demo:** [vladsosnov.github.io/personal-finance-tracker](https://vladsosnov.github.io/personal-finance-tracker/)
 
 ## What It Does
 
@@ -21,38 +18,36 @@ The repository is split into two deployable apps:
 
 | Layer | Stack |
 | --- | --- |
-| Frontend | Next.js 14, React 18, TypeScript, Mantine, Apollo Client, Highcharts |
-| Backend | Node.js, Express 5, TypeScript, GraphQL (`graphql-http`), Mongoose |
+| Frontend | Next.js 14, React 18, TypeScript, Mantine 8, Apollo Client, Highcharts, Zustand |
+| Backend | Node.js 20+, Express 5, TypeScript, GraphQL (`graphql-http`), Mongoose |
 | Database | MongoDB |
-| Auth | JWT access + refresh cookies |
-| Email | Nodemailer with SMTP or console fallback in development |
+| Auth | JWT access + refresh HttpOnly cookies |
+| Email | Nodemailer (SMTP or console fallback in dev) |
+| CI/CD | GitHub Actions, GitHub Pages |
 
 ## Repository Layout
 
 ```text
 .
-├── frontend/   Next.js app
-├── backend/    Express + GraphQL API
-├── DEPLOYMENT.md
+├── frontend/       Next.js app (static export, deployed to GitHub Pages)
+├── backend/        Express + GraphQL API
+├── .github/        CI/CD workflows
 └── README.md
 ```
 
 ## Prerequisites
 
 - Node.js 20+
-- npm
-- MongoDB instance, local or hosted
+- Yarn
+- MongoDB instance (local or hosted)
 
 ## Quick Start
 
 1. Install dependencies:
 
 ```bash
-cd frontend
-yarn
-
-cd ../backend
-yarn
+cd frontend && yarn
+cd ../backend && yarn
 ```
 
 2. Configure the backend environment:
@@ -61,141 +56,136 @@ yarn
 cp backend/.env.example backend/.env
 ```
 
-Required backend values:
-
-- `MONGODB_URI`
-- `JWT_SECRET`
+Required backend values: `MONGODB_URI`, `JWT_SECRET`
 
 3. Start the backend:
 
 ```bash
 cd backend
-npm run dev
+yarn dev
 ```
 
 4. Start the frontend in a second terminal:
 
 ```bash
 cd frontend
-npm run dev
+yarn dev
 ```
 
 Default local URLs:
 
 - Frontend: `http://localhost:3000`
 - Backend: `http://localhost:4000`
-- GraphQL docs page in development: `http://localhost:4000/graphql`
+- GraphQL docs (dev only): `http://localhost:4000/graphql`
 
 ## Environment Variables
 
 ### Backend
 
-Use [`backend/.env.example`](backend/.env.example) as the baseline.
+See [`backend/.env.example`](backend/.env.example) for the full list.
 
 | Variable | Required | Notes |
 | --- | --- | --- |
 | `PORT` | No | Defaults to `4000` |
 | `MONGODB_URI` | Yes | MongoDB connection string |
-| `JWT_SECRET` | Yes | Use a long random secret in production |
+| `JWT_SECRET` | Yes | Long random secret for production |
 | `FRONTEND_ORIGIN` | No | Defaults to `http://localhost:3000` |
-| `SMTP_HOST` | No | Optional SMTP provider |
-| `SMTP_PORT` | No | Optional SMTP port |
-| `SMTP_USER` | No | Optional SMTP username |
-| `SMTP_PASS` | No | Optional SMTP password |
-| `SMTP_FROM` | No | Optional sender address |
+| `SMTP_HOST` | No | SMTP provider host |
+| `SMTP_PORT` | No | SMTP port |
+| `SMTP_USER` | No | SMTP username |
+| `SMTP_PASS` | No | SMTP password |
+| `SMTP_FROM` | No | Sender address |
 
-If SMTP is not configured, the backend falls back to logging email content in development.
+If SMTP is not configured, the backend logs email content in development.
 
 ### Frontend
 
-The frontend works without a local env file when the backend runs on `http://localhost:4000`.
+Works without a local env file when the backend runs on `http://localhost:4000`.
 
 | Variable | Required | Notes |
 | --- | --- | --- |
-| `NEXT_PUBLIC_API_URL` | No | Override the backend URL when needed |
+| `NEXT_PUBLIC_API_URL` | No | Override the backend URL |
+| `NEXT_PUBLIC_GOOGLE_CLIENT_ID` | No | Google OAuth client ID |
 
 ## Available Scripts
 
-### Frontend
+### Frontend (`frontend/`)
 
-```bash
-npm run dev
-npm run build
-npm run start
-npm run lint
-npm run type-check
-npm run test
-npm run test:watch
-npm run test:coverage
-npm run generate:types
-```
+| Command | Description |
+| --- | --- |
+| `yarn dev` | Start dev server |
+| `yarn build` | Production build (static export) |
+| `yarn start` | Serve the static build locally |
+| `yarn lint` | Run ESLint |
+| `yarn type-check` | Run TypeScript type checker |
+| `yarn test` | Run unit tests (Jest) |
+| `yarn test:watch` | Run tests in watch mode |
+| `yarn test:coverage` | Run tests with coverage report |
+| `yarn cypress` | Open Cypress E2E runner |
+| `yarn cypress:run` | Run Cypress E2E headless |
 
-### Backend
+### Backend (`backend/`)
 
-```bash
-npm run dev
-npm run build
-npm run start
-npm run type-check
-npm run lint
-npm run test
-```
-
-Note: backend `lint` and `test` are currently placeholders in `backend/package.json`.
+| Command | Description |
+| --- | --- |
+| `yarn dev` | Start dev server with hot reload |
+| `yarn build` | Compile TypeScript |
+| `yarn start` | Run compiled output |
+| `yarn lint` | Run ESLint |
+| `yarn type-check` | Run TypeScript type checker |
+| `yarn test` | Run unit tests (Jest) |
 
 ## API Surface
 
-### REST auth endpoints
+### REST Auth Endpoints
 
-- `POST /auth/register`
-- `POST /auth/login`
-- `POST /auth/refresh`
-- `POST /auth/logout`
-- `GET /auth/verify-email?token=...`
-- `POST /auth/request-verification`
-- `POST /auth/forgot-password`
-- `POST /auth/reset-password`
-- `POST /auth/delete-account`
+| Method | Endpoint |
+| --- | --- |
+| POST | `/auth/register` |
+| POST | `/auth/login` |
+| POST | `/auth/refresh` |
+| POST | `/auth/logout` |
+| GET | `/auth/verify-email?token=...` |
+| POST | `/auth/request-verification` |
+| POST | `/auth/forgot-password` |
+| POST | `/auth/reset-password` |
+| POST | `/auth/delete-account` |
 
-### Health endpoints
+### Health
 
 - `GET /health`
 - `GET /healthcheck`
 
 ### GraphQL
 
-All application data operations are exposed through `POST /graphql`.
+All application data operations go through `POST /graphql`. Main query/mutation groups:
 
-Main query and mutation groups include:
+- User and account data
+- Goals and goal operations
+- Data export and import
+- Proposals and voting
+- Admin analytics
 
-- user/account data
-- goals and goal operations
-- data export and import
-- proposals and voting
-- admin analytics
+## CI/CD
+
+The GitHub Actions pipeline runs on every push and PR to `main`:
+
+1. **Backend** -- type check, lint, unit tests
+2. **Frontend** -- type check, lint, unit tests, build
+3. **E2E** -- Cypress tests (non-blocking)
+4. **Deploy** -- static export to GitHub Pages (on push to `main`)
 
 ## Development Notes
 
-- The backend uses HttpOnly auth cookies.
-- CSRF protection is applied to state-changing auth and analytics requests through origin checks.
-- In non-production mode, the backend exposes a GraphQL docs page at `GET /graphql`.
-- Rate limiting for auth endpoints is in-memory and single-process. Replace it for multi-instance production deployments.
-
-## Deployment
-
-Deployment guidance lives in [`DEPLOYMENT.md`](DEPLOYMENT.md).
-
-Typical setup:
-
-- deploy `frontend/` to Vercel
-- deploy `backend/` to Railway, Render, or Fly.io
-- provide MongoDB and production environment variables
+- Auth uses HttpOnly cookies with CSRF origin checks
+- The backend exposes a GraphQL docs page at `/graphql` in non-production mode
+- Rate limiting for auth endpoints is in-memory; replace for multi-instance deployments
+- The frontend uses `output: 'export'` for static site generation with `basePath: '/personal-finance-tracker'` in production
 
 ## Additional Docs
 
-- [`backend/README.md`](backend/README.md)
-- [`frontend/README.md`](frontend/README.md)
-- [`DEPLOYMENT.md`](DEPLOYMENT.md)
+- [`backend/README.md`](backend/README.md) -- backend architecture and API details
+- [`frontend/README.md`](frontend/README.md) -- frontend architecture and component structure
 
 ## License
 
