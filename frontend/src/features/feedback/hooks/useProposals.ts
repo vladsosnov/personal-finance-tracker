@@ -1,5 +1,5 @@
 import { useMutation, useQuery } from "@apollo/client/react";
-import { CREATE_PROPOSAL, GET_PROPOSALS, VOTE_PROPOSAL, UPDATE_PROPOSAL_STATUS } from "@/features/feedback/gql/feedback";
+import { CREATE_PROPOSAL, DELETE_PROPOSAL, GET_PROPOSALS, VOTE_PROPOSAL, UPDATE_PROPOSAL_STATUS } from "@/features/feedback/gql/feedback";
 import type { Proposal, ProposalCategory, ProposalStatus } from "@/features/feedback/types";
 
 type ProposalsQueryData = {
@@ -26,6 +26,7 @@ export const useProposals = () => {
   const [createProposalMutation, { loading: isCreating }] = useMutation<CreateProposalData>(CREATE_PROPOSAL);
   const [voteProposalMutation] = useMutation<VoteProposalData>(VOTE_PROPOSAL);
   const [updateStatusMutation] = useMutation<UpdateProposalStatusData>(UPDATE_PROPOSAL_STATUS);
+  const [deleteProposalMutation] = useMutation<{ deleteProposal: boolean }>(DELETE_PROPOSAL);
 
   const proposals = data?.proposals ?? [];
 
@@ -55,6 +56,11 @@ export const useProposals = () => {
     await refetch();
   };
 
+  const deleteProposal = async (proposalId: string) => {
+    await deleteProposalMutation({ variables: { proposalId } });
+    await refetch();
+  };
+
   return {
     proposals,
     isLoading: loading,
@@ -63,6 +69,7 @@ export const useProposals = () => {
     createProposal,
     voteForProposal,
     updateProposalStatus,
+    deleteProposal,
     refetch,
   };
 };

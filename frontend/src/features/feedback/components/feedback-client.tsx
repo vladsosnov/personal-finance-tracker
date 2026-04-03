@@ -28,7 +28,7 @@ const STATUS_FILTER_OPTIONS = [
 ];
 
 export const FeedbackClient = () => {
-  const { proposals, isLoading, error, isCreating, createProposal, voteForProposal, updateProposalStatus, refetch } = useProposals();
+  const { proposals, isLoading, error, isCreating, createProposal, voteForProposal, updateProposalStatus, deleteProposal, refetch } = useProposals();
   const { data: meData } = useQuery<{ me: { id: string; email: string; role: string } | null }>(GET_ME);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [filterCategory, setFilterCategory] = useState<FilterCategory>("all");
@@ -139,6 +139,7 @@ export const FeedbackClient = () => {
               proposals={filteredAndSorted}
               onVote={voteForProposal}
               onUpdateStatus={isAdmin ? updateProposalStatus : undefined}
+              onDelete={isAdmin ? deleteProposal : undefined}
             />
           )}
         </div>

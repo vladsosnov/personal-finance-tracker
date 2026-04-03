@@ -98,3 +98,8 @@ export const updateProposalStatus = async (
 
   return doc ? toProposal(doc as unknown as DocShape) : null;
 };
+
+export const deleteProposal = async (proposalId: string): Promise<boolean> => {
+  const result = await ProposalModel.deleteOne({ _id: proposalId });
+  return result.deletedCount === 1;
+};

@@ -48,3 +48,9 @@ export const UPDATE_PROPOSAL_STATUS = gql`
     }
   }
 `;
+
+export const DELETE_PROPOSAL = gql`
+  mutation DeleteProposal($proposalId: ID!) {
+    deleteProposal(proposalId: $proposalId)
+  }
+`;

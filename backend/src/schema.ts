@@ -4,7 +4,7 @@ import { getEventCounts, getUniqueUserLogins, getRecentEvents } from "./modules/
 import { bulkCreateGoals, countGoalsByUser, createGoal, deleteAllGoalsByUser, deleteGoal, getGoalById, listGoalsByUser, reorderGoals, updateGoal, updateGoalColor, updateGoalCompletion } from "./modules/goals/goal.repository";
 import { bulkCreateGoalOperations, createGoalOperation, deleteAllOperationsByUser, deleteGoalOperation, deleteOperationsByGoal, getGoalOperationById, updateGoalOperation } from "./modules/goals/operation.repository";
 import { buildGoalView, buildGoalViews } from "./modules/goals/goal.service";
-import { createProposal, listProposals, voteProposal, updateProposalStatus } from "./modules/proposals/proposal.repository";
+import { createProposal, deleteProposal, listProposals, voteProposal, updateProposalStatus } from "./modules/proposals/proposal.repository";
 import type { OperationType } from "./modules/goals/types";
 import type { UserRole } from "./modules/auth/types";
 import {
@@ -233,6 +233,7 @@ export const schema = buildSchema(`
     createProposal(category: ProposalCategory!, title: String!, description: String!, contactEmail: String): Proposal!
     voteProposal(proposalId: ID!): Proposal
     updateProposalStatus(proposalId: ID!, status: ProposalStatus!): Proposal
+    deleteProposal(proposalId: ID!): Boolean!
   }
 `);
 
@@ -675,6 +676,12 @@ export const rootValue = {
       hasVoted: true,
       createdAt: proposal.createdAt,
     };
+  },
+  deleteProposal: async ({ proposalId }: { proposalId: string }, context: Context) => {
+    ensureAdmin(context);
+    const deleted = await deleteProposal(proposalId);
+    if (!deleted) throw new Error("Proposal not found");
+    return true;
   },
   updateProposalStatus: async ({ proposalId, status }: { proposalId: string; status: string }, context: Context) => {
     ensureAdmin(context);

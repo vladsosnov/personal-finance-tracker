@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { IconArrowUp } from "@tabler/icons-react";
+import { IconArrowUp, IconTrash } from "@tabler/icons-react";
 import { ActionIcon, Badge, Card, Group, Pagination, Select, Stack, Table, Text, Tooltip } from "@mantine/core";
 import type { Proposal, ProposalCategory, ProposalStatus } from "@/features/feedback/types";
 import { CATEGORY_COLORS, CATEGORY_LABELS, STATUS_COLORS, STATUS_LABELS } from "@/features/feedback/types";
@@ -10,6 +10,7 @@ type ProposalsTableProps = {
   proposals: Proposal[];
   onVote: (proposalId: string) => void;
   onUpdateStatus?: (proposalId: string, status: ProposalStatus) => void;
+  onDelete?: (proposalId: string) => void;
 };
 
 const formatDate = (iso: string) => {
@@ -17,7 +18,7 @@ const formatDate = (iso: string) => {
   return date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 };
 
-export const ProposalsTable = ({ proposals, onVote, onUpdateStatus }: ProposalsTableProps) => {
+export const ProposalsTable = ({ proposals, onVote, onUpdateStatus, onDelete }: ProposalsTableProps) => {
   const [page, setPage] = useState(1);
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
 
@@ -94,24 +95,39 @@ export const ProposalsTable = ({ proposals, onVote, onUpdateStatus }: ProposalsT
                   </Text>
                 </Table.Td>
                 <Table.Td onClick={(e) => e.stopPropagation()}>
-                  {onUpdateStatus ? (
-                    <Select
-                      size="xs"
-                      data={Object.entries(STATUS_LABELS).map(([value, label]) => ({ value, label }))}
-                      value={proposal.status}
-                      onChange={(value) => value && onUpdateStatus(proposal.id, value as ProposalStatus)}
-                      allowDeselect={false}
-                      styles={{ input: { fontSize: "12px" } }}
-                    />
-                  ) : (
-                    <Badge
-                      color={STATUS_COLORS[proposal.status as ProposalStatus]}
-                      variant="light"
-                      size="sm"
-                    >
-                      {STATUS_LABELS[proposal.status as ProposalStatus] ?? proposal.status}
-                    </Badge>
-                  )}
+                  <Group gap={6} wrap="nowrap">
+                    {onUpdateStatus ? (
+                      <Select
+                        size="xs"
+                        data={Object.entries(STATUS_LABELS).map(([value, label]) => ({ value, label }))}
+                        value={proposal.status}
+                        onChange={(value) => value && onUpdateStatus(proposal.id, value as ProposalStatus)}
+                        allowDeselect={false}
+                        styles={{ input: { fontSize: "12px" } }}
+                      />
+                    ) : (
+                      <Badge
+                        color={STATUS_COLORS[proposal.status as ProposalStatus]}
+                        variant="light"
+                        size="sm"
+                      >
+                        {STATUS_LABELS[proposal.status as ProposalStatus] ?? proposal.status}
+                      </Badge>
+                    )}
+                    {onDelete && (
+                      <Tooltip label="Delete">
+                        <ActionIcon
+                          variant="subtle"
+                          color="red"
+                          size="sm"
+                          aria-label={`Delete "${proposal.title}"`}
+                          onClick={(e) => { e.stopPropagation(); onDelete(proposal.id); }}
+                        >
+                          <IconTrash size={14} stroke={2} />
+                        </ActionIcon>
+                      </Tooltip>
+                    )}
+                  </Group>
                 </Table.Td>
                 <Table.Td visibleFrom="sm">
                   <Text size="sm" c="dimmed">{formatDate(proposal.createdAt)}</Text>
