@@ -1,4 +1,4 @@
-import { isValidEmail } from "../validation";
+import { isValidEmail, emailRegex } from "../validation";
 
 describe("isValidEmail", () => {
   it("accepts a standard email", () => {
@@ -47,5 +47,15 @@ describe("isValidEmail", () => {
 
   it("rejects email with spaces in local part", () => {
     expect(isValidEmail("user name@example.com")).toBe(false);
+  });
+});
+
+describe("emailRegex", () => {
+  it("matches a valid email", () => {
+    expect(emailRegex.test("user@example.com")).toBe(true);
+  });
+
+  it("does not match an invalid email", () => {
+    expect(emailRegex.test("notanemail")).toBe(false);
   });
 });
