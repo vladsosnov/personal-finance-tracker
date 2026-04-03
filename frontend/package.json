@@ -32,6 +32,9 @@
     "react-dom": "^18",
     "zustand": "^5.0.11"
   },
+  "resolutions": {
+    "picomatch": "^2.3.2"
+  },
   "devDependencies": {
     "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.9.1",

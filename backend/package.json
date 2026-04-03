@@ -27,6 +27,9 @@
     "mongoose": "^8.19.1",
     "nodemailer": "^8.0.4"
   },
+  "resolutions": {
+    "picomatch": "^2.3.2"
+  },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@types/cors": "^2.8.19",

@@ -23,6 +23,7 @@ A full-stack app for tracking savings goals, logging deposits and withdrawals, a
 | Database | MongoDB |
 | Auth | JWT access + refresh HttpOnly cookies |
 | Email | Nodemailer (SMTP or console fallback in dev) |
+| Backend hosting | Render |
 | CI/CD | GitHub Actions, GitHub Pages |
 
 ## Repository Layout
@@ -174,6 +175,8 @@ The GitHub Actions pipeline runs on every push and PR to `main`:
 2. **Frontend** -- type check, lint, unit tests, build
 3. **E2E** -- Cypress tests (non-blocking)
 4. **Deploy** -- static export to GitHub Pages (on push to `main`)
+
+The backend is deployed to Render at `https://personal-finance-tracker-7r75.onrender.com`.
 
 ## Development Notes
 
