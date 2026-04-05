@@ -9,7 +9,7 @@ describe("Auth Page", () => {
     cy.contains("Financial Goals Tracker").should("be.visible");
     cy.contains("Log In").should("be.visible");
     cy.get("input[type='email']").should("be.visible");
-    cy.get("[type='password']").should("exist");
+    cy.get(".mantine-PasswordInput-innerInput").should("exist");
   });
 
   it("toggles between login and register modes", () => {
@@ -49,7 +49,7 @@ describe("Auth Page", () => {
       });
 
       cy.get("input[type='email']").type("test@example.com");
-      cy.get("[type='password']").type("password123");
+      cy.get(".mantine-PasswordInput-innerInput").type("password123");
       cy.get("button[type='submit']").click();
 
       cy.wait("@login");
@@ -63,7 +63,7 @@ describe("Auth Page", () => {
       }).as("loginFail");
 
       cy.get("input[type='email']").type("wrong@example.com");
-      cy.get("[type='password']").type("wrongpass");
+      cy.get(".mantine-PasswordInput-innerInput").type("wrongpass");
       cy.get("button[type='submit']").click();
 
       cy.wait("@loginFail");
@@ -72,7 +72,7 @@ describe("Auth Page", () => {
 
     it("shows email validation error for invalid email format", () => {
       cy.get("input[type='email']").type("notanemail");
-      cy.get("[type='password']").type("password123");
+      cy.get(".mantine-PasswordInput-innerInput").type("password123");
       cy.get("button[type='submit']").click();
 
       cy.contains("Enter a valid email address").should("be.visible");
@@ -116,7 +116,7 @@ describe("Auth Page", () => {
 
       cy.contains("Register").click();
       cy.get("input[type='email']").type("new@example.com");
-      cy.get("[type='password']").type("newpassword123");
+      cy.get(".mantine-PasswordInput-innerInput").type("newpassword123");
       cy.get("button[type='submit']").click();
 
       cy.wait("@register");
@@ -131,7 +131,7 @@ describe("Auth Page", () => {
 
       cy.contains("Register").click();
       cy.get("input[type='email']").type("existing@example.com");
-      cy.get("[type='password']").type("password123");
+      cy.get(".mantine-PasswordInput-innerInput").type("password123");
       cy.get("button[type='submit']").click();
 
       cy.wait("@registerFail");
@@ -141,7 +141,7 @@ describe("Auth Page", () => {
     it("shows password too short error in register mode", () => {
       cy.contains("Register").click();
       cy.get("input[type='email']").type("test@example.com");
-      cy.get("[type='password']").type("short");
+      cy.get(".mantine-PasswordInput-innerInput").type("short");
       cy.get("button[type='submit']").click();
 
       cy.contains("Password must be at least 8 characters").should("be.visible");
@@ -150,7 +150,7 @@ describe("Auth Page", () => {
     it("shows invalid email error in register mode", () => {
       cy.contains("Register").click();
       cy.get("input[type='email']").type("invalidemail");
-      cy.get("[type='password']").type("password123");
+      cy.get(".mantine-PasswordInput-innerInput").type("password123");
       cy.get("button[type='submit']").click();
 
       cy.contains("Enter a valid email address").should("be.visible");

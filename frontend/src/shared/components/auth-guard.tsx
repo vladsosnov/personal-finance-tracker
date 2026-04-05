@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useQuery } from "@apollo/client/react";
 import { GET_ME } from "@/shared/gql/queries";
 
-const PROTECTED_PATHS = ["/dashboard", "/profile", "/admin"];
+const PROTECTED_PATHS = ["/goals", "/profile", "/admin"];
 const AUTH_ONLY_PATHS = ["/auth"];
 const AUTH_BYPASS_PATHS = ["/auth/verify-email", "/auth/forgot-password", "/auth/reset-password"];
 
@@ -30,7 +30,7 @@ export const AuthGuard = ({ children }: { children: React.ReactNode }) => {
     if (isProtected && !isAuthed) {
       router.replace("/auth");
     } else if (isAuthOnly && isAuthed) {
-      router.replace("/dashboard");
+      router.replace("/goals");
     }
   }, [pathname, router, data, loading]);
 

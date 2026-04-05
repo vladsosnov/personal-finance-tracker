@@ -9,8 +9,8 @@ const DashboardClient = dynamic(
   }
 );
 
-const DashboardPage = () => {
+const GoalsPage = () => {
   return <DashboardClient />;
 };
 
-export default DashboardPage;
+export default GoalsPage;

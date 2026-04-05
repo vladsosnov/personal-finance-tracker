@@ -1,7 +1,7 @@
 export const APP_ROUTES = {
   home: "/",
   auth: "/auth",
-  dashboard: "/dashboard",
+  dashboard: "/goals",
   expenses: "/expenses",
   profile: "/profile",
   feedback: "/feedback",
