@@ -71,7 +71,7 @@ export const GoalsList = ({
             <Text size="xs" c="dimmed" aria-hidden="true">
               Drag and drop cards to change their order.
             </Text>
-          ) : null}
+          ) : <span />}
           {manageMode.showToggle !== false && (manageMode.canManage ?? goals.length > 0) && (
             <Button
               variant={manageMode.isActive ? "light" : "subtle"}

@@ -45,19 +45,19 @@ export const DashboardOverviewStats = ({ totalTarget, totalCurrent }: DashboardO
   const touchStartX = useRef<number | null>(null);
 
   const cards = [
-    <Card key="target" withBorder radius="md" p="lg" className={styles.statCard}>
+    <Card key="target" withBorder radius="md" p="lg">
       <Text c="dimmed" size="sm" id="stat-target-label">Total target</Text>
       <Title order={3} aria-labelledby="stat-target-label" aria-live="polite">
         {formatMoney(animatedTarget)}
       </Title>
     </Card>,
-    <Card key="current" withBorder radius="md" p="lg" className={styles.statCard}>
+    <Card key="current" withBorder radius="md" p="lg">
       <Text c="dimmed" size="sm" id="stat-current-label">Total current</Text>
       <Title order={3} aria-labelledby="stat-current-label" aria-live="polite">
         {formatMoney(animatedCurrent)}
       </Title>
     </Card>,
-    <Card key="progress" withBorder radius="md" p="lg" className={styles.statCard}>
+    <Card key="progress" withBorder radius="md" p="lg">
       <Group justify="space-between" align="center" wrap="nowrap">
         <div>
           <Text c="dimmed" size="sm" id="stat-progress-label">Overall progress</Text>
@@ -85,8 +85,8 @@ export const DashboardOverviewStats = ({ totalTarget, totalCurrent }: DashboardO
         onTouchEnd={(e) => {
           if (touchStartX.current === null) return;
           const diff = touchStartX.current - e.changedTouches[0].clientX;
-          if (diff > 40) setActiveSlide((s) => Math.min(s + 1, cards.length - 1));
-          else if (diff < -40) setActiveSlide((s) => Math.max(s - 1, 0));
+          if (diff > 40) setActiveSlide((s) => (s + 1) % cards.length);
+          else if (diff < -40) setActiveSlide((s) => (s - 1 + cards.length) % cards.length);
           touchStartX.current = null;
         }}
       >

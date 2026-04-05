@@ -154,42 +154,6 @@ html[data-mantine-color-scheme="dark"] .hoverLift:hover {
     0 0 0 1px rgba(49, 98, 99, 0.2);
 }
 
-/* ── Stat card with number highlight ───────────────────────── */
-
-.statCard {
-  transition:
-    transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
-    box-shadow 0.25s ease,
-    border-color 0.25s ease;
-  overflow: hidden;
-  position: relative;
-}
-
-.statCard::after {
-  content: "";
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: linear-gradient(90deg, #316263, #C36A4A);
-  opacity: 0;
-  transition: opacity 0.25s ease;
-}
-
-.statCard:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
-}
-
-.statCard:hover::after {
-  opacity: 1;
-}
-
-html[data-mantine-color-scheme="dark"] .statCard:hover {
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
-}
-
 /* ── Header brand gradient ─────────────────────────────────── */
 
 .headerBrand {
@@ -331,7 +295,6 @@ html[data-mantine-color-scheme="dark"] .statCard:hover {
   }
 
   .hoverLift:hover,
-  .statCard:hover,
   .planCard:hover {
     transform: none;
   }
@@ -346,11 +309,5 @@ html[data-mantine-color-scheme="dark"] .statCard:hover {
 
   .orb {
     animation: none;
-  }
-}
-
-@media (max-width: 768px) {
-  .statCard {
-    padding: var(--mantine-spacing-xs) var(--mantine-spacing-sm) !important;
   }
 }
