@@ -52,6 +52,36 @@ describe('usePwaInstall', () => {
     expect(result.current.isIos).toBe(false);
   });
 
+  it('dismissIosHint sets isIos to false and persists to localStorage', () => {
+    Object.defineProperty(window.navigator, 'userAgent', {
+      value: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15',
+      configurable: true,
+    });
+    Object.defineProperty(window.navigator, 'standalone', { value: false, configurable: true });
+
+    const { result } = renderHook(() => usePwaInstall());
+    expect(result.current.isIos).toBe(true);
+
+    act(() => {
+      result.current.dismissIosHint();
+    });
+
+    expect(result.current.isIos).toBe(false);
+    expect(localStorage.getItem('pwa_ios_hint_dismissed')).toBe('1');
+  });
+
+  it('returns isIos false when hint was previously dismissed', () => {
+    localStorage.setItem('pwa_ios_hint_dismissed', '1');
+    Object.defineProperty(window.navigator, 'userAgent', {
+      value: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15',
+      configurable: true,
+    });
+    Object.defineProperty(window.navigator, 'standalone', { value: false, configurable: true });
+
+    const { result } = renderHook(() => usePwaInstall());
+    expect(result.current.isIos).toBe(false);
+  });
+
   it('sets canInstall true when beforeinstallprompt fires', () => {
     const { result } = renderHook(() => usePwaInstall());
     const event = makePromptEvent('accepted');

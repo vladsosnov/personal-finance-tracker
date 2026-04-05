@@ -7,6 +7,8 @@ interface BeforeInstallPromptEvent extends Event {
   userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
 }
 
+const IOS_HINT_DISMISSED_KEY = "pwa_ios_hint_dismissed";
+
 const isIosSafari = () => {
   if (typeof window === "undefined") return false;
   const ua = window.navigator.userAgent;
@@ -18,9 +20,11 @@ const isIosSafari = () => {
 export const usePwaInstall = () => {
   const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isIos, setIsIos] = useState(false);
+  const [iosHintDismissed, setIosHintDismissed] = useState(false);
 
   useEffect(() => {
     setIsIos(isIosSafari());
+    setIosHintDismissed(localStorage.getItem(IOS_HINT_DISMISSED_KEY) === "1");
 
     const handler = (e: Event) => {
       e.preventDefault();
@@ -40,5 +44,10 @@ export const usePwaInstall = () => {
     }
   };
 
-  return { canInstall: Boolean(installPrompt), install, isIos };
+  const dismissIosHint = () => {
+    localStorage.setItem(IOS_HINT_DISMISSED_KEY, "1");
+    setIosHintDismissed(true);
+  };
+
+  return { canInstall: Boolean(installPrompt), install, isIos: isIos && !iosHintDismissed, dismissIosHint };
 };
