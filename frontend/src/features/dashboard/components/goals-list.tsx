@@ -1,3 +1,4 @@
+import { useCallback } from "react";
 import { IconDotsVertical, IconX } from "@tabler/icons-react";
 import { Button, Card, Group, ScrollArea, Skeleton, Stack, Text } from "@mantine/core";
 import { useMediaQuery } from "@mantine/hooks";
@@ -50,6 +51,16 @@ export const GoalsList = ({
   const emptyDescription = emptyState?.description ?? "Create your first goal to start tracking progress.";
   const isDraggable = allowDrag && !manageMode.isActive;
 
+  const handleListKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (!goals.length || (e.key !== "ArrowDown" && e.key !== "ArrowUp")) return;
+    e.preventDefault();
+    const currentIndex = goals.findIndex((g) => g.id === selectedGoalId);
+    const nextIndex = e.key === "ArrowDown"
+      ? Math.min(currentIndex + 1, goals.length - 1)
+      : Math.max(currentIndex - 1, 0);
+    if (nextIndex !== currentIndex) onSelectGoal(goals[nextIndex].id);
+  }, [goals, selectedGoalId, onSelectGoal]);
+
   return (
     <Card withBorder radius="md" p="lg">
       <Stack gap={6}>
@@ -73,7 +84,7 @@ export const GoalsList = ({
             </Button>
           )}
         </Group>
-        <ScrollArea h={isMobile ? 360 : 520} offsetScrollbars scrollbarSize={8}>
+        <ScrollArea h={isMobile ? 360 : 520} offsetScrollbars scrollbarSize={8} onKeyDown={handleListKeyDown}>
           <Stack gap="sm">
             {isLoadingGoals ? (
               <GoalsLoadingSkeleton />

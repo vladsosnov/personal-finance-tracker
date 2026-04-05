@@ -126,6 +126,7 @@ export const DashboardClient = () => {
     selectedGoal,
     isLoadingGoalDetails: shouldShowGoalDetailsSkeleton,
     goalDetailsErrorMessage: selectedGoal ? null : goalDetailsError?.message ?? null,
+    onCreateGoal: isMobile ? () => setIsCreateModalOpen(true) : undefined,
     operationActions: {
       form: operationForm,
       deletingOperationId: actions.deletingOperationId,

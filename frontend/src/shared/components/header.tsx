@@ -4,12 +4,13 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useApolloClient, useQuery } from "@apollo/client/react";
 import { IconDownload } from "@tabler/icons-react";
-import { Box, Burger, Button, Container, Drawer, Group, Stack, Text } from "@mantine/core";
+import { Badge, Box, Burger, Button, Container, Drawer, Group, Stack, Text } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { GET_ME } from "@/shared/gql/queries";
 import { API_BASE_URL } from "@/shared/constants/auth";
 import { APP_ROUTES } from "@/shared/constants/routes";
 import { usePwaInstall } from "@/shared/hooks/usePwaInstall";
+import anim from "@/shared/styles/page-animations.module.css";
 
 export const Header = () => {
   const apolloClient = useApolloClient();
@@ -17,11 +18,13 @@ export const Header = () => {
   const pathname = usePathname();
   const [menuOpened, { toggle: toggleMenu, close: closeMenu }] = useDisclosure(false);
   const { canInstall, install } = usePwaInstall();
-  const { data: meData } = useQuery<{ me: { id: string; role: string } | null }>(GET_ME, {
+  const { data: meData } = useQuery<{ me: { id: string; role: string; subscription: string } | null }>(GET_ME, {
     fetchPolicy: "cache-and-network",
   });
   const isAuthed = Boolean(meData?.me);
   const isAdmin = meData?.me?.role === "admin";
+  const subscription = meData?.me?.subscription ?? "Free";
+  const showSubBadge = isAuthed && subscription.toLowerCase() !== "free";
 
   const handleLogout = async () => {
     closeMenu();
@@ -95,6 +98,11 @@ export const Header = () => {
             variant={pathname.startsWith(APP_ROUTES.profile) ? "light" : "subtle"}
             aria-current={pathname.startsWith(APP_ROUTES.profile) ? "page" : undefined}
             onClick={closeMenu}
+            rightSection={showSubBadge ? (
+              <Badge size="xs" variant="light" color={subscription === "Lifetime" ? "teal" : "blue"} px={5}>
+                {subscription}
+              </Badge>
+            ) : undefined}
           >
             Profile
           </Button>
@@ -110,7 +118,9 @@ export const Header = () => {
     <header className="app-header">
       <Container size="xl" py="sm">
         <Group justify="space-between">
-          <Text fw={800}>Financial Goals Tracker</Text>
+          <Text fw={800} component={Link} href={APP_ROUTES.home} className={anim.headerBrand} style={{ fontSize: "1.1rem" }}>
+            Financial Goals Tracker
+          </Text>
 
           {/* Desktop nav */}
           <Box visibleFrom="sm">

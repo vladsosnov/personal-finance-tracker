@@ -1,6 +1,7 @@
 import { useState } from "react";
 import dynamic from "next/dynamic";
-import { Button, Card, Checkbox, Group, Modal, ScrollArea, Skeleton, Stack, Title } from "@mantine/core";
+import { IconChartLine, IconPlus, IconTarget } from "@tabler/icons-react";
+import { Button, Card, Checkbox, Group, Modal, ScrollArea, Skeleton, Stack, Text, ThemeIcon, Title, Tooltip } from "@mantine/core";
 import { ChartRangePicker, type ChartRange } from "@/features/dashboard/components/ChartRangePicker";
 import { GoalDetailHeader } from "@/features/dashboard/components/GoalDetailHeader";
 import { GoalOperationsTable } from "@/features/dashboard/components/GoalOperationsTable";
@@ -41,6 +42,7 @@ export type GoalDetailsPanelProps = {
   goalDetailsErrorMessage?: string | null;
   operationActions: GoalOperationActions;
   onRetryGoalDetails?: () => void;
+  onCreateGoal?: () => void;
   scrollHeight?: number;
 };
 
@@ -51,6 +53,7 @@ export const GoalDetailsPanel = ({
   goalDetailsErrorMessage,
   operationActions,
   onRetryGoalDetails,
+  onCreateGoal,
   scrollHeight,
 }: GoalDetailsPanelProps) => {
   const [isOperationModalOpen, setIsOperationModalOpen] = useState(false);
@@ -107,14 +110,24 @@ export const GoalDetailsPanel = ({
           onAction={onRetryGoalDetails}
         />
       ) : !selectedGoal ? (
-        <StateMessage
-          title={hasGoals ? "Choose a goal" : "No goals yet"}
-          description={
-            hasGoals
-              ? "Select a goal to view details, operations, and chart."
-              : "Create your first goal to start tracking progress."
-          }
-        />
+        <Stack gap="md" align="center" justify="center" ta="center" py="xl">
+          <ThemeIcon size={56} radius="xl" variant="light" color="teal">
+            {hasGoals ? <IconChartLine size={28} /> : <IconTarget size={28} />}
+          </ThemeIcon>
+          <div>
+            <Title order={5}>{hasGoals ? "Select a goal" : "No goals yet"}</Title>
+            <Text c="dimmed" size="sm" mt={4}>
+              {hasGoals
+                ? "Pick a goal from the list to view its chart and operations."
+                : "Create your first goal to start tracking your progress."}
+            </Text>
+          </div>
+          {!hasGoals && onCreateGoal && (
+            <Button leftSection={<IconPlus size={16} />} variant="light" color="teal" size="sm" onClick={onCreateGoal}>
+              Create a goal
+            </Button>
+          )}
+        </Stack>
       ) : (
         <ScrollArea h={scrollHeight} offsetScrollbars scrollbarSize={8}>
           <Stack gap="md" pr={4}>
@@ -142,7 +155,11 @@ export const GoalDetailsPanel = ({
 
             <Group justify="space-between" align="center">
               <Title order={5}>Operations</Title>
-              <Button onClick={handleOpenAddOperation} aria-label="Add operation">Add</Button>
+              <Tooltip label="Add operation" position="left">
+                <Button leftSection={<IconPlus size={15} />} onClick={handleOpenAddOperation} aria-label="Add operation">
+                  Add operation
+                </Button>
+              </Tooltip>
             </Group>
 
             <GoalOperationsTable

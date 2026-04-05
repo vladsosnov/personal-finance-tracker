@@ -1,5 +1,5 @@
 import { IconMaximize } from "@tabler/icons-react";
-import { Badge, Button, Checkbox, Group, Stack, Text, Title } from "@mantine/core";
+import { Badge, Button, Checkbox, Group, Stack, Text, Title, Tooltip } from "@mantine/core";
 import { ChartRangePicker, type ChartRange } from "@/features/dashboard/components/ChartRangePicker";
 import type { GoalDetails } from "@/features/dashboard/types";
 import { formatDay } from "@/shared/utils/date";
@@ -61,9 +61,11 @@ export const GoalDetailHeader = ({
           onToggleRangePicker();
         }}
       />
-      <Button variant="subtle" px={10} aria-label="Expand chart" onClick={onExpandChart}>
-        <IconMaximize size={16} stroke={2} />
-      </Button>
+      <Tooltip label="Expand chart" position="left">
+        <Button variant="subtle" px={10} aria-label="Expand chart" onClick={onExpandChart}>
+          <IconMaximize size={16} stroke={2} />
+        </Button>
+      </Tooltip>
     </Group>
   </Group>
 );
