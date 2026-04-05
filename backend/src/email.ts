@@ -13,6 +13,9 @@ const getTransporter = () => {
     port: smtpPort,
     secure: smtpPort === 465,
     auth: { user: smtpUser, pass: smtpPass },
+    connectionTimeout: 5000,
+    greetingTimeout: 5000,
+    socketTimeout: 10000,
   });
 };
 

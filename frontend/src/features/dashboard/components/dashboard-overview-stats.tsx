@@ -66,7 +66,7 @@ export const DashboardOverviewStats = ({ totalTarget, totalCurrent }: DashboardO
           </Title>
         </div>
         <RingProgress
-          size={51}
+          size={50}
           thickness={6}
           roundCaps
           aria-hidden="true"
