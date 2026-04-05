@@ -201,7 +201,7 @@ describe('AuthClient', () => {
     await user.click(submitButton);
 
     await waitFor(() => {
-      expect(mockReplace).toHaveBeenCalledWith('/dashboard');
+      expect(mockReplace).toHaveBeenCalledWith('/goals');
     });
   });
 

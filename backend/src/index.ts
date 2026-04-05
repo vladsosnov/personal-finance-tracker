@@ -249,7 +249,7 @@ app.get("/auth/google/callback", createRateLimit("auth-google-callback", 20, 15 
 
     setAuthCookies(res, user.id, user.tokenVersion);
     recordEvent("login_success", user.id).catch(() => {});
-    res.redirect(`${frontendOrigin}${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/dashboard`);
+    res.redirect(`${frontendOrigin}${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/goals`);
   } catch {
     res.redirect(`${frontendAuthUrl}?error=google_failed`);
   }

@@ -5,7 +5,7 @@ const robots = (): MetadataRoute.Robots => ({
     {
       userAgent: "*",
       allow: "/",
-      disallow: ["/auth/", "/dashboard/", "/profile/", "/expenses/"],
+      disallow: ["/auth/", "/goals/", "/profile/", "/expenses/"],
     },
   ],
   sitemap: `${process.env.NEXT_PUBLIC_SITE_URL ?? "https://localhost:3000"}/sitemap.xml`,

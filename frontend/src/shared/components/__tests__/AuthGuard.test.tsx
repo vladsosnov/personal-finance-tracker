@@ -39,19 +39,19 @@ describe('AuthGuard', () => {
   });
 
   it('redirects unauthenticated user from protected path to /auth', async () => {
-    mockUsePathname.mockReturnValue('/dashboard');
+    mockUsePathname.mockReturnValue('/goals');
     render(<AuthGuard><div>content</div></AuthGuard>, { mocks: [unauthedMock] });
     await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/auth'));
   });
 
-  it('redirects authenticated user from /auth to /dashboard', async () => {
+  it('redirects authenticated user from /auth to /goals', async () => {
     mockUsePathname.mockReturnValue('/auth');
     render(<AuthGuard><div>content</div></AuthGuard>, { mocks: [authedMock] });
-    await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/dashboard'));
+    await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/goals'));
   });
 
   it('does not redirect authenticated user on protected path', async () => {
-    mockUsePathname.mockReturnValue('/dashboard');
+    mockUsePathname.mockReturnValue('/goals');
     render(<AuthGuard><div>content</div></AuthGuard>, { mocks: [authedMock] });
     await waitFor(() => expect(mockReplace).not.toHaveBeenCalled());
   });

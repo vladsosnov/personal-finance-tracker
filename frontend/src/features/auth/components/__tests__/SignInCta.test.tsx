@@ -53,7 +53,7 @@ describe('SignInCta', () => {
     const dashboardButton = await screen.findByRole('link', { name: /open dashboard/i });
 
     expect(dashboardButton).toBeInTheDocument();
-    expect(dashboardButton).toHaveAttribute('href', '/dashboard');
+    expect(dashboardButton).toHaveAttribute('href', '/goals');
     expect(screen.queryByRole('link', { name: /get started/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: /sign in/i })).not.toBeInTheDocument();
   });
