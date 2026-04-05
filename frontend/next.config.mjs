@@ -1,17 +1,18 @@
 /** @type {import('next').NextConfig} */
-const basePath = process.env.NODE_ENV === 'production' ? '/personal-finance-tracker' : '';
+const isGithubPages = process.env.GITHUB_ACTIONS === 'true';
+const basePath = isGithubPages ? '/personal-finance-tracker' : '';
 
 const nextConfig = {
-  output: 'export',
-  images: {
-    unoptimized: true,
-  },
+  ...(isGithubPages && {
+    output: 'export',
+    images: { unoptimized: true },
+    assetPrefix: '/personal-finance-tracker/',
+    trailingSlash: true,
+  }),
   basePath,
-  assetPrefix: process.env.NODE_ENV === 'production' ? '/personal-finance-tracker/' : '',
   env: {
     NEXT_PUBLIC_BASE_PATH: basePath,
   },
-  trailingSlash: true,
   reactStrictMode: true,
   poweredByHeader: false,
 };
