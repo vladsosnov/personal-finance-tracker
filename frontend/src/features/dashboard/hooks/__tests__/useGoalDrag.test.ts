@@ -143,7 +143,7 @@ describe('useGoalDrag', () => {
 
       const fakeCard = document.createElement('div');
       fakeCard.dataset.goalId = 'goal-2';
-      jest.spyOn(document, 'elementFromPoint').mockReturnValue(fakeCard);
+      document.elementFromPoint = jest.fn().mockReturnValue(fakeCard);
 
       act(() => {
         result.current.handleTouchStart('goal-1');
@@ -161,7 +161,6 @@ describe('useGoalDrag', () => {
       });
 
       expect(result.current.dragOverGoalId).toBe('goal-2');
-      jest.restoreAllMocks();
     });
 
     it('handleTouchEnd calls onDrop when dragging to a different goal', async () => {
