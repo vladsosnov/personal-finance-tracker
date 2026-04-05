@@ -11,6 +11,9 @@ const defaultDrag = {
   handleDragOver: jest.fn(),
   handleDrop: jest.fn(),
   handleDragEnd: jest.fn(),
+  handleTouchStart: jest.fn(),
+  handleTouchMove: jest.fn(),
+  handleTouchEnd: jest.fn(),
 };
 
 const defaultManageMode = {
