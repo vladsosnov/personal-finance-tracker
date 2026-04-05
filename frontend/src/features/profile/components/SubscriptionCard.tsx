@@ -32,7 +32,13 @@ export const SubscriptionCard = ({ currentSubscription }: SubscriptionCardProps)
                     <Title order={5}>{plan.name}</Title>
                     <Text fw={700}>{plan.price}</Text>
                   </Stack>
-                  {isCurrentPlan ? <Badge color="teal">Current</Badge> : <Badge variant="light">Soon</Badge>}
+                  {isCurrentPlan ? (
+                    <Badge color="teal">Current</Badge>
+                  ) : plan.name === "Free" ? (
+                    <Badge variant="light" color="gray">Available</Badge>
+                  ) : (
+                    <Badge variant="light">Soon</Badge>
+                  )}
                 </Group>
                 <Text c="dimmed">{plan.description}</Text>
                 <Table aria-label={`${plan.name} plan features`}>

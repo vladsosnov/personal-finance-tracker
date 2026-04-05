@@ -26,11 +26,23 @@ describe('SubscriptionCard', () => {
     expect(screen.getByText('Current')).toBeInTheDocument();
   });
 
-  it('marks non-current plans with Soon badge', () => {
+  it('marks paid non-current plans with Soon badge', () => {
     render(<SubscriptionCard currentSubscription="Free" />);
 
     const badges = screen.getAllByText('Soon');
     expect(badges).toHaveLength(2);
+  });
+
+  it('marks free plan as Available when not current', () => {
+    render(<SubscriptionCard currentSubscription="Pro" />);
+
+    expect(screen.getByText('Available')).toBeInTheDocument();
+  });
+
+  it('does not show Available badge when Free is current plan', () => {
+    render(<SubscriptionCard currentSubscription="Free" />);
+
+    expect(screen.queryByText('Available')).not.toBeInTheDocument();
   });
 
   it('handles case-insensitive plan matching', () => {

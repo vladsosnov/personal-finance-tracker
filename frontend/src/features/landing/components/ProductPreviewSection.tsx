@@ -11,7 +11,7 @@ import styles from "@/features/landing/styles/landing.module.css";
 export const ProductPreviewSection = () => (
   <section aria-labelledby="product-preview-heading">
     <AnimateOnScroll variant="scale">
-      <Card withBorder radius="lg" p="xl" className={styles.previewCard}>
+      <Card withBorder radius="lg" p={{ base: "md", sm: "xl" }} className={styles.previewCard}>
         <SimpleGrid cols={{ base: 1, md: 2 }} spacing="xl" verticalSpacing="xl">
           <Stack gap="md">
             <Stack gap={6}>

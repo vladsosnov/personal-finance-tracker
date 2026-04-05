@@ -8,7 +8,7 @@ import styles from "@/features/landing/styles/landing.module.css";
 export const CtaSection = () => (
   <section aria-labelledby="cta-heading">
     <AnimateOnScroll variant="scale">
-      <Card withBorder radius="lg" p="xl" className={styles.ctaCard}>
+      <Card withBorder radius="lg" p={{ base: "md", sm: "xl" }} className={styles.ctaCard}>
         <div className={styles.ctaGlow} />
         <Stack gap="sm" ta="center" maw={720} mx="auto" style={{ position: "relative", zIndex: 1 }}>
           <Title order={2} id="cta-heading">Start tracking with Financial Goals Tracker</Title>

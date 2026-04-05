@@ -113,7 +113,7 @@
 .heroWrapper {
   position: relative;
   overflow: hidden;
-  padding: 40px 0 32px;
+  padding: 21px 0 21px;
 }
 
 @media (min-width: 48em) {
