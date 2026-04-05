@@ -15,11 +15,41 @@ const makePromptEvent = (outcome: 'accepted' | 'dismissed') => {
 describe('usePwaInstall', () => {
   afterEach(() => {
     jest.clearAllMocks();
+    Object.defineProperty(window.navigator, 'userAgent', { value: '', configurable: true });
   });
 
   it('returns canInstall false initially', () => {
     const { result } = renderHook(() => usePwaInstall());
     expect(result.current.canInstall).toBe(false);
+  });
+
+  it('returns isIos false on non-iOS user agent', () => {
+    Object.defineProperty(window.navigator, 'userAgent', {
+      value: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120',
+      configurable: true,
+    });
+    const { result } = renderHook(() => usePwaInstall());
+    expect(result.current.isIos).toBe(false);
+  });
+
+  it('returns isIos true on iPhone user agent not in standalone mode', () => {
+    Object.defineProperty(window.navigator, 'userAgent', {
+      value: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15',
+      configurable: true,
+    });
+    Object.defineProperty(window.navigator, 'standalone', { value: false, configurable: true });
+    const { result } = renderHook(() => usePwaInstall());
+    expect(result.current.isIos).toBe(true);
+  });
+
+  it('returns isIos false when already installed (standalone mode)', () => {
+    Object.defineProperty(window.navigator, 'userAgent', {
+      value: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15',
+      configurable: true,
+    });
+    Object.defineProperty(window.navigator, 'standalone', { value: true, configurable: true });
+    const { result } = renderHook(() => usePwaInstall());
+    expect(result.current.isIos).toBe(false);
   });
 
   it('sets canInstall true when beforeinstallprompt fires', () => {

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useApolloClient, useQuery } from "@apollo/client/react";
 import { IconDownload } from "@tabler/icons-react";
-import { Badge, Box, Burger, Button, Container, Drawer, Group, Stack, Text } from "@mantine/core";
+import { Badge, Box, Burger, Button, Container, Drawer, Group, Popover, Stack, Text } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { GET_ME } from "@/shared/gql/queries";
 import { API_BASE_URL } from "@/shared/constants/auth";
@@ -18,7 +18,7 @@ export const Header = () => {
   const router = useRouter();
   const pathname = usePathname();
   const [menuOpened, { toggle: toggleMenu, close: closeMenu }] = useDisclosure(false);
-  const { canInstall, install } = usePwaInstall();
+  const { canInstall, install, isIos } = usePwaInstall();
   const { data: meData } = useQuery<{ me: { id: string; role: string; subscription: string } | null }>(GET_ME, {
     fetchPolicy: "cache-and-network",
   });
@@ -141,6 +141,23 @@ export const Header = () => {
                   Install App
                 </Button>
               )}
+              {isIos && (
+                <Popover width={220} position="bottom-end" withArrow>
+                  <Popover.Target>
+                    <Button variant="light" size="sm" leftSection={<IconDownload size={16} />} aria-label="Install app">
+                      Install App
+                    </Button>
+                  </Popover.Target>
+                  <Popover.Dropdown>
+                    <Stack gap={6}>
+                      <Text size="sm" fw={600}>Add to Home Screen</Text>
+                      <Text size="xs" c="dimmed">
+                        Tap the <strong>Share</strong> button in Safari, then choose <strong>Add to Home Screen</strong>.
+                      </Text>
+                    </Stack>
+                  </Popover.Dropdown>
+                </Popover>
+              )}
             </Group>
           </Box>
 
@@ -176,6 +193,14 @@ export const Header = () => {
               >
                 Install App
               </Button>
+            )}
+            {isIos && (
+              <Stack gap={6} p="xs" style={{ border: "1px solid var(--mantine-color-default-border)", borderRadius: "var(--mantine-radius-sm)" }}>
+                <Text size="sm" fw={600}>Add to Home Screen</Text>
+                <Text size="xs" c="dimmed">
+                  Tap the <strong>Share</strong> button in Safari, then choose <strong>Add to Home Screen</strong>.
+                </Text>
+              </Stack>
             )}
           </Stack>
         </nav>
