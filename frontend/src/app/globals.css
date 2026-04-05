@@ -140,6 +140,10 @@ html[data-mantine-color-scheme="dark"] .app-header {
   padding-top: var(--app-header-height);
 }
 
+.mobile-nav .mantine-Button-inner {
+  justify-content: flex-start;
+}
+
 @media (max-width: 768px) {
   .app-main {
     padding-top: 52px;

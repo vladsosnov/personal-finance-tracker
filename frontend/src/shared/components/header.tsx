@@ -186,7 +186,7 @@ export const Header = () => {
         size="xs"
         hiddenFrom="sm"
       >
-        <nav aria-label="Mobile navigation">
+        <nav aria-label="Mobile navigation" className="mobile-nav">
           <Stack gap="xs">
             {navLinks}
             {canInstall && (
