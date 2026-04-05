@@ -172,4 +172,16 @@ describe("Auth Page", () => {
       cy.url().should("include", "/auth/forgot-password");
     });
   });
+
+  describe("Google OAuth", () => {
+    it("renders the Continue with Google button", () => {
+      cy.contains("Continue with Google").should("be.visible");
+    });
+
+    it("Google button is a link pointing to the OAuth endpoint", () => {
+      cy.contains("a", "Continue with Google")
+        .should("have.attr", "href")
+        .and("include", "/auth/google");
+    });
+  });
 });

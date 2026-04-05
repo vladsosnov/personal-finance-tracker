@@ -126,4 +126,95 @@ describe("Profile Page", () => {
       });
     });
   });
+
+  describe("Import Progress", () => {
+    it("shows the import progress card", () => {
+      cy.contains("Import progress").should("be.visible");
+    });
+
+    it("shows the file input", () => {
+      cy.contains("Progress file").should("be.visible");
+    });
+
+    it("does not show import button before file is selected", () => {
+      cy.contains("button", /^import$/i).should("not.exist");
+    });
+
+    it("shows import button, preview table, remove button, and can remove a goal", () => {
+      const fileContent = JSON.stringify([
+        {
+          title: "Emergency fund",
+          targetValue: 10000,
+          initialValue: 500,
+          history: [
+            { date: "2026-01-31T10:00:00Z", value: 1200 },
+            { date: "2026-02-28T10:00:00Z", value: 1800, note: "Monthly top-up" },
+          ],
+        },
+      ]);
+
+      cy.get("input[type='file']").selectFile(
+        { contents: Cypress.Buffer.from(fileContent), fileName: "progress.txt", mimeType: "text/plain" },
+        { force: true }
+      );
+
+      cy.contains("button", /^import$/i).should("be.visible");
+      cy.get("[aria-label='Goals ready to import']").should("be.visible");
+      cy.contains("Emergency fund").should("be.visible");
+      cy.get("[aria-label='Remove Emergency fund from import']").should("be.visible");
+
+      cy.get("[aria-label='Remove Emergency fund from import']").click();
+      cy.get("[aria-label='Goals ready to import']").should("not.exist");
+    });
+  });
+
+  describe("Custom Colors", () => {
+    beforeEach(() => {
+      stubProfileGraphQL();
+      cy.visit("/profile");
+    });
+
+    it("shows the custom color palette card", () => {
+      cy.contains("Custom color palette").should("be.visible");
+    });
+
+    it("shows the color input and label input", () => {
+      cy.get("input[placeholder='#FF5500']").should("be.visible");
+      cy.get("input[placeholder='Color name']").should("be.visible");
+    });
+
+    it("shows validation error for invalid hex", () => {
+      cy.get("input[placeholder='#FF5500']").type("notahex");
+      cy.contains("button", "Add").click();
+      cy.contains("Enter a valid hex color").should("be.visible");
+    });
+
+    it("adds a valid color to the palette", () => {
+      cy.get("input[placeholder='#FF5500']").clear().type("#FF5500");
+      cy.get("input[placeholder='Color name']").type("Sunset Orange");
+      cy.contains("button", "Add").click();
+      cy.contains("Sunset Orange").should("be.visible");
+    });
+
+    it("shows duplicate color error", () => {
+      // Add first
+      cy.get("input[placeholder='#FF5500']").clear().type("#FF5500");
+      cy.get("input[placeholder='Color name']").type("Orange");
+      cy.contains("button", "Add").click();
+      // Try to add same hex again
+      cy.get("input[placeholder='#FF5500']").clear().type("#FF5500");
+      cy.contains("button", "Add").click();
+      cy.contains("already in your palette").should("be.visible");
+    });
+
+    it("removes a color from the palette", () => {
+      cy.get("input[placeholder='#FF5500']").clear().type("#AABBCC");
+      cy.get("input[placeholder='Color name']").type("Custom Blue");
+      cy.contains("button", "Add").click();
+      cy.contains("Custom Blue").should("be.visible");
+
+      cy.get("[aria-label='Remove Custom Blue']").click();
+      cy.contains("Custom Blue").should("not.exist");
+    });
+  });
 });
