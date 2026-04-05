@@ -29,8 +29,7 @@ describe('GoalCard', () => {
     render(<GoalCard {...defaultProps} />);
 
     expect(screen.getByText(mockGoal.title)).toBeInTheDocument();
-    expect(screen.getByText(/\$5 000\.00/)).toBeInTheDocument();
-    expect(screen.getByText(/\$10 000\.00/)).toBeInTheDocument();
+    expect(screen.getByText(/5 000\.00 \/ 10 000\.00/)).toBeInTheDocument();
   });
 
   it('displays progress percentage for active goal', () => {
@@ -138,7 +137,7 @@ describe('GoalCard', () => {
 
     expect(
       screen.getByRole('button', {
-        name: `${mockGoal.title}, $5 000.00 of $10 000.00, 50.0% progress`,
+        name: `${mockGoal.title}, 5 000.00 of 10 000.00, 50.0% progress`,
       })
     ).toBeInTheDocument();
   });
@@ -148,7 +147,7 @@ describe('GoalCard', () => {
 
     expect(
       screen.getByRole('button', {
-        name: `${mockCompletedGoal.title}, $5 000.00 of $5 000.00, completed`,
+        name: `${mockCompletedGoal.title}, 5 000.00 of 5 000.00, completed`,
       })
     ).toBeInTheDocument();
   });

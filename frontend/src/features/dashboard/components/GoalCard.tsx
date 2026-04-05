@@ -140,7 +140,7 @@ export const GoalCard = ({
             </Text>
             {!goal.isCompleted && remaining > 0 && (
               <Text size="xs" c="dimmed" style={{ color: goal.color, opacity: 0.8, whiteSpace: "nowrap" }}>
-                {formatMoney(remaining).replace("$", "")} left
+                {formatMoney(remaining)} left
               </Text>
             )}
           </Group>

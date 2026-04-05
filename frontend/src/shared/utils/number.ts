@@ -1,7 +1,7 @@
 export const formatMoney = (value: number) => {
   const [whole, decimals] = value.toFixed(2).split(".");
   const withSpaces = whole.replace(/\B(?=(\d{3})+(?!\d))/g, " ");
-  return `$${withSpaces}.${decimals}`;
+  return `${withSpaces}.${decimals}`;
 };
 
 export const MONEY_INPUT_PROPS = {

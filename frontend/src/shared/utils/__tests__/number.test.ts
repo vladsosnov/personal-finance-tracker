@@ -2,24 +2,24 @@ import { formatMoney, numberOrZero, getProgressPercentage } from '../number';
 
 describe('formatMoney', () => {
   it('formats positive numbers with thousands separator', () => {
-    expect(formatMoney(1234.56)).toBe('$1 234.56');
+    expect(formatMoney(1234.56)).toBe('1 234.56');
   });
 
   it('formats large numbers', () => {
-    expect(formatMoney(1234567.89)).toBe('$1 234 567.89');
+    expect(formatMoney(1234567.89)).toBe('1 234 567.89');
   });
 
   it('formats small numbers', () => {
-    expect(formatMoney(12.34)).toBe('$12.34');
+    expect(formatMoney(12.34)).toBe('12.34');
   });
 
   it('formats zero', () => {
-    expect(formatMoney(0)).toBe('$0.00');
+    expect(formatMoney(0)).toBe('0.00');
   });
 
   it('always includes two decimal places', () => {
-    expect(formatMoney(100)).toBe('$100.00');
-    expect(formatMoney(100.1)).toBe('$100.10');
+    expect(formatMoney(100)).toBe('100.00');
+    expect(formatMoney(100.1)).toBe('100.10');
   });
 });
 

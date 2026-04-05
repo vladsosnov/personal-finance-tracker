@@ -45,8 +45,8 @@ describe('GoalOperationsTable', () => {
   it('displays operation details correctly', () => {
     render(<GoalOperationsTable {...defaultProps} />);
 
-    expect(screen.getByText('$1 000.00')).toBeInTheDocument();
-    expect(screen.getByText('$500.00')).toBeInTheDocument();
+    expect(screen.getByText('1 000.00')).toBeInTheDocument();
+    expect(screen.getByText('500.00')).toBeInTheDocument();
     expect(screen.getByText('Salary')).toBeInTheDocument();
   });
 
@@ -104,7 +104,7 @@ describe('GoalOperationsTable', () => {
     render(<GoalOperationsTable {...defaultProps} />);
 
     expect(
-      screen.getByLabelText(/Edit increase operation for \$1 000\.00/)
+      screen.getByLabelText(/Edit increase operation for 1 000\.00/)
     ).toBeInTheDocument();
   });
 
@@ -112,7 +112,7 @@ describe('GoalOperationsTable', () => {
     render(<GoalOperationsTable {...defaultProps} />);
 
     expect(
-      screen.getByLabelText(/Delete increase operation for \$1 000\.00/)
+      screen.getByLabelText(/Delete increase operation for 1 000\.00/)
     ).toBeInTheDocument();
   });
 

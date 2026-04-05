@@ -27,7 +27,7 @@ describe('DeleteOperationModal', () => {
 
     expect(screen.getByText('Delete Operation')).toBeInTheDocument();
     expect(screen.getByText(/increase operation/i)).toBeInTheDocument();
-    expect(screen.getByText(/\$1 000\.00/)).toBeInTheDocument();
+    expect(screen.getByText(/1 000\.00/)).toBeInTheDocument();
   });
 
   it('does not render when operation is null', () => {
