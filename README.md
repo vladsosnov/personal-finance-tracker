@@ -2,7 +2,7 @@
 
 A full-stack app for tracking savings goals, logging deposits and withdrawals, and monitoring progress over time.
 
-**Live demo:** [vladsosnov.github.io/personal-finance-tracker](https://vladsosnov.github.io/personal-finance-tracker/)
+**Live demo:** [personal-finance-tracker-xyz.vercel.app](https://personal-finance-tracker-xyz.vercel.app/)
 
 ## What It Does
 
@@ -24,13 +24,13 @@ A full-stack app for tracking savings goals, logging deposits and withdrawals, a
 | Auth | JWT access + refresh HttpOnly cookies |
 | Email | Nodemailer (SMTP or console fallback in dev) |
 | Backend hosting | Render |
-| CI/CD | GitHub Actions, GitHub Pages |
+| CI/CD | GitHub Actions, Vercel |
 
 ## Repository Layout
 
 ```text
 .
-├── frontend/       Next.js app (static export, deployed to GitHub Pages)
+├── frontend/       Next.js app (deployed to Vercel)
 ├── backend/        Express + GraphQL API
 ├── .github/        CI/CD workflows
 └── README.md
@@ -174,7 +174,7 @@ The GitHub Actions pipeline runs on every push and PR to `main`:
 1. **Backend** -- type check, lint, unit tests
 2. **Frontend** -- type check, lint, unit tests, build
 3. **E2E** -- Cypress tests (non-blocking)
-4. **Deploy** -- static export to GitHub Pages (on push to `main`)
+4. **Deploy** -- Vercel deployment (on push to `main`)
 
 The backend is deployed to Render at `https://personal-finance-tracker-7r75.onrender.com`.
 
@@ -183,7 +183,7 @@ The backend is deployed to Render at `https://personal-finance-tracker-7r75.onre
 - Auth uses HttpOnly cookies with CSRF origin checks
 - The backend exposes a GraphQL docs page at `/graphql` in non-production mode
 - Rate limiting for auth endpoints is in-memory; replace for multi-instance deployments
-- The frontend uses `output: 'export'` for static site generation with `basePath: '/personal-finance-tracker'` in production
+- The frontend is deployed to Vercel at `https://personal-finance-tracker-xyz.vercel.app`
 
 ## Additional Docs
 
