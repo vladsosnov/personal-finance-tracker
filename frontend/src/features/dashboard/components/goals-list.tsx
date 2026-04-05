@@ -49,7 +49,7 @@ export const GoalsList = ({
   const isMobile = useMediaQuery("(max-width: 768px)");
   const emptyTitle = emptyState?.title ?? "No goals yet";
   const emptyDescription = emptyState?.description ?? "Create your first goal to start tracking progress.";
-  const isDraggable = allowDrag && !manageMode.isActive;
+  const isDraggable = allowDrag && !manageMode.isActive && !isMobile;
 
   const handleListKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (!goals.length || (e.key !== "ArrowDown" && e.key !== "ArrowUp")) return;
@@ -67,7 +67,7 @@ export const GoalsList = ({
         <Group justify="space-between" align="center">
           {isLoadingGoals ? (
             <Skeleton height={24} width={240} />
-          ) : goals.length > 0 ? (
+          ) : goals.length > 0 && !isMobile ? (
             <Text size="xs" c="dimmed" aria-hidden="true">
               Drag and drop cards to change their order.
             </Text>
