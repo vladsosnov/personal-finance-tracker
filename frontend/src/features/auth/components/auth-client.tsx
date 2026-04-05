@@ -9,6 +9,7 @@ import { APP_ROUTES } from "@/shared/constants/routes";
 import type { AuthMode } from "@/shared/types/shared";
 import { trackEvent } from "@/shared/lib/analytics";
 import { isValidEmail } from "@/shared/lib/validation";
+import { tokenStorage } from "@/shared/lib/token-storage";
 
 export const AuthClient = () => {
   const apolloClient = useApolloClient();
@@ -60,9 +61,14 @@ export const AuthClient = () => {
         }),
       });
 
+      const payload = (await response.json().catch(() => null)) as { error?: string; accessToken?: string; refreshToken?: string } | null;
+
       if (!response.ok) {
-        const payload = (await response.json().catch(() => null)) as { error?: string } | null;
         throw new Error(payload?.error ?? "Authentication failed");
+      }
+
+      if (payload?.accessToken && payload?.refreshToken) {
+        tokenStorage.set(payload.accessToken, payload.refreshToken);
       }
 
       await apolloClient.resetStore();

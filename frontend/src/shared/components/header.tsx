@@ -10,6 +10,7 @@ import { GET_ME } from "@/shared/gql/queries";
 import { API_BASE_URL } from "@/shared/constants/auth";
 import { APP_ROUTES } from "@/shared/constants/routes";
 import { usePwaInstall } from "@/shared/hooks/usePwaInstall";
+import { tokenStorage } from "@/shared/lib/token-storage";
 import anim from "@/shared/styles/page-animations.module.css";
 
 export const Header = () => {
@@ -34,6 +35,7 @@ export const Header = () => {
         credentials: "include",
       });
     } finally {
+      tokenStorage.clear();
       apolloClient.writeQuery({ query: GET_ME, data: { me: null } });
       await apolloClient.clearStore();
       router.push(APP_ROUTES.home);

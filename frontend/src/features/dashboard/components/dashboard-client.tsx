@@ -22,6 +22,7 @@ import { EmailVerificationBanner } from "@/features/auth/components/email-verifi
 import { GET_ME } from "@/shared/gql/queries";
 import { getPlanByName } from "@/shared/constants/plans";
 import { StateMessage } from "@/shared/components/state-message";
+import { tokenStorage } from "@/shared/lib/token-storage";
 import anim from "@/shared/styles/page-animations.module.css";
 
 const EditGoalModal = dynamic(() => import("@/features/dashboard/components/modals/EditGoalModal").then(mod => ({ default: mod.EditGoalModal })), { ssr: false });
@@ -75,6 +76,20 @@ export const DashboardClient = () => {
     : null;
 
   const isOperationSubmitDisabled = !selectedGoalId || !operationForm.operationAmount || Number(operationForm.operationAmount) <= 0;
+
+  // Pick up tokens passed as URL params after Google OAuth redirect on mobile
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const access = params.get("access_token");
+    const refresh = params.get("refresh_token");
+    if (access && refresh) {
+      tokenStorage.set(access, refresh);
+      const url = new URL(window.location.href);
+      url.searchParams.delete("access_token");
+      url.searchParams.delete("refresh_token");
+      window.history.replaceState({}, "", url.toString());
+    }
+  }, []);
 
   useEffect(() => {
     if (!goals.length && isManageMode) setIsManageMode(false);

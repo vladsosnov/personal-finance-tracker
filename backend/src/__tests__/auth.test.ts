@@ -9,6 +9,7 @@ import {
   buildExpiredCookie,
   authCookieHeaders,
   generateSecureToken,
+  signAuthTokens,
   AUTH_ACCESS_COOKIE,
   AUTH_REFRESH_COOKIE,
 } from "../auth";
@@ -145,6 +146,44 @@ describe("auth", () => {
       const b = generateSecureToken();
 
       expect(a).not.toBe(b);
+    });
+  });
+
+  describe("signAuthTokens", () => {
+    it("returns accessToken and refreshToken", () => {
+      const { accessToken, refreshToken } = signAuthTokens("user-1", 0);
+
+      expect(accessToken).toBeTruthy();
+      expect(refreshToken).toBeTruthy();
+    });
+
+    it("accessToken is a valid access JWT", () => {
+      const { accessToken } = signAuthTokens("user-1", 0);
+      const result = verifyJwt(accessToken);
+
+      expect(result).not.toBeNull();
+      expect(result?.userId).toBe("user-1");
+    });
+
+    it("refreshToken is a valid refresh JWT", () => {
+      const { refreshToken } = signAuthTokens("user-1", 0);
+      const result = verifyRefreshJwt(refreshToken);
+
+      expect(result).not.toBeNull();
+      expect(result?.userId).toBe("user-1");
+    });
+
+    it("tokens are different from each other", () => {
+      const { accessToken, refreshToken } = signAuthTokens("user-1", 0);
+
+      expect(accessToken).not.toBe(refreshToken);
+    });
+
+    it("respects tokenVersion", () => {
+      const { accessToken } = signAuthTokens("user-1", 5);
+      const result = verifyJwt(accessToken);
+
+      expect(result?.tokenVersion).toBe(5);
     });
   });
 

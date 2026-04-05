@@ -121,4 +121,9 @@ export const authCookieHeaders = (userId: string, tokenVersion = 0): string[] =>
   buildCookie(AUTH_REFRESH_COOKIE, signRefreshJwt(userId, tokenVersion), REFRESH_TOKEN_TTL_SEC),
 ];
 
+export const signAuthTokens = (userId: string, tokenVersion = 0) => ({
+  accessToken: signJwt(userId, tokenVersion),
+  refreshToken: signRefreshJwt(userId, tokenVersion),
+});
+
 export const generateSecureToken = (): string => randomBytes(32).toString("hex");

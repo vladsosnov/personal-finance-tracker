@@ -4,6 +4,7 @@ import { ApolloClient, ApolloLink, HttpLink, InMemoryCache, Observable } from "@
 import { ErrorLink } from "@apollo/client/link/error";
 import { API_BASE_URL } from "@/shared/constants/auth";
 import { GET_ME } from "@/shared/gql/queries";
+import { tokenStorage } from "@/shared/lib/token-storage";
 
 const graphQLEndpoint = process.env.NEXT_PUBLIC_GRAPHQL_URL ?? `${API_BASE_URL}/graphql`;
 
@@ -12,14 +13,36 @@ const httpLink = new HttpLink({
   credentials: "include",
 });
 
+// Attach Bearer token from localStorage when available (cross-site environments
+// where cookies are blocked by Safari ITP / mobile browsers).
+const authLink = new ApolloLink((operation, forward) => {
+  const token = tokenStorage.getAccess();
+  if (token) {
+    operation.setContext(({ headers = {} }: { headers?: Record<string, string> }) => ({
+      headers: { ...headers, authorization: `Bearer ${token}` },
+    }));
+  }
+  return forward(operation);
+});
+
 const refreshSession = async () => {
+  const refreshToken = tokenStorage.getRefresh();
+  const headers: Record<string, string> = {};
+  if (refreshToken) headers["authorization"] = `Bearer ${refreshToken}`;
+
   const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
     method: "POST",
     credentials: "include",
+    headers,
   });
 
   if (!response.ok) {
     throw new Error("Session refresh failed");
+  }
+
+  const data = (await response.json().catch(() => null)) as { accessToken?: string; refreshToken?: string } | null;
+  if (data?.accessToken && data?.refreshToken) {
+    tokenStorage.set(data.accessToken, data.refreshToken);
   }
 };
 
@@ -61,7 +84,7 @@ const errorLink = new ErrorLink(({ error, operation, forward }) => {
 });
 
 apolloClient = new ApolloClient({
-  link: ApolloLink.from([errorLink, httpLink]),
+  link: ApolloLink.from([errorLink, authLink, httpLink]),
   cache: new InMemoryCache({
     typePolicies: {
       Goal: { keyFields: ["id"] },

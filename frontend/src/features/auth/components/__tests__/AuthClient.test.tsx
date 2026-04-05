@@ -2,6 +2,7 @@ import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { render } from '@/__tests__/test-utils';
 import { AuthClient } from '../auth-client';
+import { tokenStorage } from '@/shared/lib/token-storage';
 
 const mockPush = jest.fn();
 const mockReplace = jest.fn();
@@ -29,6 +30,18 @@ jest.mock('@apollo/client/react', () => ({
 jest.mock('@/shared/lib/analytics', () => ({
   trackEvent: jest.fn(),
 }));
+
+jest.mock('@/shared/lib/token-storage', () => ({
+  tokenStorage: {
+    set: jest.fn(),
+    clear: jest.fn(),
+    getAccess: jest.fn(() => null),
+    getRefresh: jest.fn(() => null),
+  },
+}));
+
+const mockTokenSet = tokenStorage.set as jest.Mock;
+const mockTokenClear = tokenStorage.clear as jest.Mock;
 
 global.fetch = jest.fn();
 
@@ -249,7 +262,7 @@ describe('AuthClient', () => {
   it('shows loading state during submission', async () => {
     const user = userEvent.setup();
     (global.fetch as jest.Mock).mockImplementationOnce(
-      () => new Promise((resolve) => setTimeout(() => resolve({ ok: true }), 100))
+      () => new Promise((resolve) => setTimeout(() => resolve({ ok: true, json: async () => ({}) }), 100))
     );
 
     render(<AuthClient />);
@@ -332,6 +345,81 @@ describe('AuthClient', () => {
         })
       );
     });
+  });
+
+  it('stores tokens in localStorage on successful login', async () => {
+    const user = userEvent.setup();
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ accessToken: 'access-abc', refreshToken: 'refresh-xyz' }),
+    });
+
+    render(<AuthClient />);
+
+    await user.type(screen.getByLabelText(/email/i), 'test@example.com');
+    await user.type(screen.getByLabelText(/password/i), 'password123');
+    await user.click(screen.getByRole('button', { name: /log in/i }));
+
+    await waitFor(() => {
+      expect(mockTokenSet).toHaveBeenCalledWith('access-abc', 'refresh-xyz');
+    });
+  });
+
+  it('stores tokens in localStorage on successful register', async () => {
+    const user = userEvent.setup();
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ accessToken: 'access-new', refreshToken: 'refresh-new' }),
+    });
+
+    render(<AuthClient />);
+
+    await user.click(screen.getByRole('radio', { name: /register/i }));
+    await user.type(screen.getByLabelText(/email/i), 'new@example.com');
+    await user.type(screen.getByLabelText(/password/i), 'newpassword');
+    await user.click(screen.getByRole('button', { name: /create account/i }));
+
+    await waitFor(() => {
+      expect(mockTokenSet).toHaveBeenCalledWith('access-new', 'refresh-new');
+    });
+  });
+
+  it('does not store tokens when response has no tokens', async () => {
+    const user = userEvent.setup();
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({}),
+    });
+
+    render(<AuthClient />);
+
+    await user.type(screen.getByLabelText(/email/i), 'test@example.com');
+    await user.type(screen.getByLabelText(/password/i), 'password123');
+    await user.click(screen.getByRole('button', { name: /log in/i }));
+
+    await waitFor(() => {
+      expect(mockReplace).toHaveBeenCalled();
+    });
+    expect(mockTokenSet).not.toHaveBeenCalled();
+  });
+
+  it('does not store tokens on failed login', async () => {
+    const user = userEvent.setup();
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: false,
+      json: async () => ({ error: 'Invalid credentials' }),
+    });
+
+    render(<AuthClient />);
+
+    await user.type(screen.getByLabelText(/email/i), 'test@example.com');
+    await user.type(screen.getByLabelText(/password/i), 'wrongpassword');
+    await user.click(screen.getByRole('button', { name: /log in/i }));
+
+    await waitFor(() => {
+      expect(screen.getByRole('alert')).toBeInTheDocument();
+    });
+    expect(mockTokenSet).not.toHaveBeenCalled();
   });
 
   it('handles response with invalid JSON gracefully', async () => {

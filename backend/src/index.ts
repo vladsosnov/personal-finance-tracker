@@ -10,6 +10,7 @@ import {
   authCookieHeaders,
   buildExpiredCookie,
   generateSecureToken,
+  signAuthTokens,
   verifyJwt,
   verifyRefreshJwt,
 } from "./auth";
@@ -249,7 +250,9 @@ app.get("/auth/google/callback", createRateLimit("auth-google-callback", 20, 15 
 
     setAuthCookies(res, user.id, user.tokenVersion);
     recordEvent("login_success", user.id).catch(() => {});
-    res.redirect(`${frontendOrigin}${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/goals`);
+    const { accessToken, refreshToken } = signAuthTokens(user.id, user.tokenVersion);
+    const params = new URLSearchParams({ access_token: accessToken, refresh_token: refreshToken });
+    res.redirect(`${frontendOrigin}${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/goals?${params.toString()}`);
   } catch {
     res.redirect(`${frontendAuthUrl}?error=google_failed`);
   }
@@ -332,7 +335,7 @@ app.post("/auth/register", createRateLimit("auth-register", 10, 15 * 60 * 1000),
 
     setAuthCookies(res, user.id, user.tokenVersion);
     recordEvent("register_success", user.id).catch(() => {});
-    res.status(201).json({ user: { id: user.id, email: user.email, subscription: user.subscription } });
+    res.status(201).json({ user: { id: user.id, email: user.email, subscription: user.subscription }, ...signAuthTokens(user.id, user.tokenVersion) });
   } catch {
     res.status(500).json({ error: "Failed to register" });
   }
@@ -356,7 +359,7 @@ app.post("/auth/login", createRateLimit("auth-login", 15, 15 * 60 * 1000), async
 
     setAuthCookies(res, user.id, user.tokenVersion);
     recordEvent("login_success", user.id).catch(() => {});
-    res.json({ user: { id: user.id, email: user.email, subscription: user.subscription } });
+    res.json({ user: { id: user.id, email: user.email, subscription: user.subscription }, ...signAuthTokens(user.id, user.tokenVersion) });
   } catch {
     res.status(500).json({ error: "Failed to log in" });
   }
@@ -365,7 +368,9 @@ app.post("/auth/login", createRateLimit("auth-login", 15, 15 * 60 * 1000), async
 app.post("/auth/refresh", createRateLimit("auth-refresh", 30, 15 * 60 * 1000), async (req, res) => {
   try {
     const cookies = parseCookies(req.headers.cookie);
-    const tokenResult = verifyRefreshJwt(cookies[AUTH_REFRESH_COOKIE]);
+    const authHeader = req.headers.authorization;
+    const bearerToken = authHeader?.startsWith("Bearer ") ? authHeader.slice("Bearer ".length) : undefined;
+    const tokenResult = verifyRefreshJwt(bearerToken ?? cookies[AUTH_REFRESH_COOKIE]);
 
     if (!tokenResult) {
       clearAuthCookies(res);
@@ -381,7 +386,7 @@ app.post("/auth/refresh", createRateLimit("auth-refresh", 30, 15 * 60 * 1000), a
     }
 
     setAuthCookies(res, user.id, user.tokenVersion);
-    res.json({ ok: true });
+    res.json({ ok: true, ...signAuthTokens(user.id, user.tokenVersion) });
   } catch {
     clearAuthCookies(res);
     res.status(401).json({ error: "Unauthorized" });

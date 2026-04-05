@@ -4,6 +4,18 @@ import { GET_ME } from '@/shared/gql/queries';
 import { APP_ROUTES } from '@/shared/constants/routes';
 import userEvent from '@testing-library/user-event';
 import type { MockedResponse } from '@apollo/client/testing';
+import { tokenStorage } from '@/shared/lib/token-storage';
+
+jest.mock('@/shared/lib/token-storage', () => ({
+  tokenStorage: {
+    clear: jest.fn(),
+    set: jest.fn(),
+    getAccess: jest.fn(() => null),
+    getRefresh: jest.fn(() => null),
+  },
+}));
+
+const mockTokenClear = tokenStorage.clear as jest.Mock;
 
 const mockPush = jest.fn();
 const mockRefresh = jest.fn();
@@ -133,6 +145,23 @@ describe('Header', () => {
     render(<Header />, { mocks: [getMeMock] });
 
     expect(screen.getByRole('navigation', { name: 'Main navigation' })).toBeInTheDocument();
+  });
+
+  it('clears tokens from localStorage on logout', async () => {
+    const user = userEvent.setup();
+    (global.fetch as jest.Mock).mockResolvedValueOnce({ ok: true, json: async () => ({}) });
+
+    render(<Header />, { mocks: [getMeMock] });
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Log Out' })).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByRole('button', { name: 'Log Out' }));
+
+    await waitFor(() => {
+      expect(mockTokenClear).toHaveBeenCalled();
+    });
   });
 
   it('renders as header element', () => {
