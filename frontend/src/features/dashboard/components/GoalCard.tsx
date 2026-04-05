@@ -20,6 +20,9 @@ export type GoalCardProps = {
   onDragOver: (e: React.DragEvent) => void;
   onDrop: (e: React.DragEvent) => void;
   onDragEnd: () => void;
+  onTouchStart?: () => void;
+  onTouchMove?: (e: React.TouchEvent) => void;
+  onTouchEnd?: () => void;
 };
 
 export const GoalCard = ({
@@ -36,6 +39,9 @@ export const GoalCard = ({
   onDragOver,
   onDrop,
   onDragEnd,
+  onTouchStart,
+  onTouchMove,
+  onTouchEnd,
 }: GoalCardProps) => {
   const goalProgress = getProgressPercentage(goal.currentAmount, goal.targetAmount);
   const remaining = goal.targetAmount - goal.currentAmount;
@@ -53,6 +59,7 @@ export const GoalCard = ({
         radius="md"
         p="sm"
         draggable={isDraggable}
+        data-goal-id={goal.id}
         role="button"
         tabIndex={0}
         aria-pressed={isSelected}
@@ -69,6 +76,9 @@ export const GoalCard = ({
         onDragOver={onDragOver}
         onDrop={onDrop}
         onDragEnd={onDragEnd}
+        onTouchStart={isDraggable ? onTouchStart : undefined}
+        onTouchMove={isDraggable ? onTouchMove : undefined}
+        onTouchEnd={isDraggable ? onTouchEnd : undefined}
         onClick={onSelect}
         onKeyDown={(e: React.KeyboardEvent) => {
           if (e.key === "Enter" || e.key === " ") {

@@ -68,7 +68,7 @@ export const GoalsList = ({
           {isLoadingGoals ? (
             <Skeleton height={24} width={240} />
           ) : goals.length > 0 ? (
-            <Text size="sm" c="dimmed" aria-hidden="true">
+            <Text size="xs" c="dimmed" aria-hidden="true">
               Drag and drop cards to change their order.
             </Text>
           ) : null}
@@ -109,6 +109,9 @@ export const GoalsList = ({
                   onDragOver={(e) => { if (isDraggable) { e.preventDefault(); drag.handleDragOver(goal.id); } }}
                   onDrop={(e) => { if (isDraggable) { e.preventDefault(); drag.handleDrop(goal.id); } }}
                   onDragEnd={() => { if (isDraggable) drag.handleDragEnd(); }}
+                  onTouchStart={() => { if (isDraggable) drag.handleTouchStart(goal.id); }}
+                  onTouchMove={(e) => { if (isDraggable) drag.handleTouchMove(e); }}
+                  onTouchEnd={() => { if (isDraggable) drag.handleTouchEnd(); }}
                 />
               ))
             )}
