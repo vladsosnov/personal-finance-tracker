@@ -81,17 +81,17 @@ export const DashboardClient = () => {
     try { return JSON.parse(ratesData.exchangeRates.rates); } catch { return {}; }
   }, [ratesData]);
 
+  const ratesReady = !needsRates || Object.keys(rates).length > 0;
+
   const convertToUserCurrency = (amount: number, fromCurrency: string) => {
     if (fromCurrency === userCurrency) return amount;
-    // rates are from userCurrency base, so we need the inverse:
-    // if rates[EUR] = 0.92 (1 USD = 0.92 EUR), to convert EUR→USD we divide by rate
     const rate = rates[fromCurrency];
     if (!rate) return amount;
     return amount / rate;
   };
 
-  const totalTarget = useMemo(() => activeGoals.reduce((sum, g) => sum + convertToUserCurrency(g.targetAmount, g.currency), 0), [activeGoals, rates, userCurrency]);
-  const totalCurrent = useMemo(() => activeGoals.reduce((sum, g) => sum + convertToUserCurrency(g.currentAmount, g.currency), 0), [activeGoals, rates, userCurrency]);
+  const totalTarget = useMemo(() => ratesReady ? activeGoals.reduce((sum, g) => sum + convertToUserCurrency(g.targetAmount, g.currency), 0) : null, [activeGoals, rates, userCurrency, ratesReady]);
+  const totalCurrent = useMemo(() => ratesReady ? activeGoals.reduce((sum, g) => sum + convertToUserCurrency(g.currentAmount, g.currency), 0) : null, [activeGoals, rates, userCurrency, ratesReady]);
 
   const plan = getPlanByName(meData?.me?.subscription ?? "Free");
   const goalLimitMessage = plan.maxGoals !== null && goals.length >= plan.maxGoals

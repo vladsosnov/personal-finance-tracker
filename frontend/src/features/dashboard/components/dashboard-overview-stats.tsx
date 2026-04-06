@@ -1,14 +1,14 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Card, Grid, Group, RingProgress, Text, Title } from "@mantine/core";
+import { Card, Grid, Group, RingProgress, Skeleton, Text, Title } from "@mantine/core";
 import { useMediaQuery } from "@mantine/hooks";
 import { formatMoney, getProgressPercentage } from "@/shared/utils/number";
 import styles from "@/shared/styles/page-animations.module.css";
 
 type DashboardOverviewStatsProps = {
-  totalTarget: number;
-  totalCurrent: number;
+  totalTarget: number | null;
+  totalCurrent: number | null;
   currency: string;
 };
 
@@ -37,9 +37,10 @@ const useDashboardCounter = (target: number, duration = 900) => {
 };
 
 export const DashboardOverviewStats = ({ totalTarget, totalCurrent, currency }: DashboardOverviewStatsProps) => {
-  const animatedTarget = useDashboardCounter(totalTarget);
-  const animatedCurrent = useDashboardCounter(totalCurrent);
-  const progress = getProgressPercentage(totalCurrent, totalTarget);
+  const isLoading = totalTarget === null || totalCurrent === null;
+  const animatedTarget = useDashboardCounter(totalTarget ?? 0);
+  const animatedCurrent = useDashboardCounter(totalCurrent ?? 0);
+  const progress = getProgressPercentage(totalCurrent ?? 0, totalTarget ?? 0);
   const animatedProgress = useDashboardCounter(Math.round(progress * 10) / 10, 900);
   const isMobile = useMediaQuery("(max-width: 768px)");
   const [activeSlide, setActiveSlide] = useState(0);
@@ -48,31 +49,39 @@ export const DashboardOverviewStats = ({ totalTarget, totalCurrent, currency }: 
   const cards = [
     <Card key="target" withBorder radius="md" p="lg">
       <Text c="dimmed" size="sm" id="stat-target-label">Total target</Text>
-      <Title order={3} aria-labelledby="stat-target-label" aria-live="polite">
-        {formatMoney(animatedTarget, currency)}
-      </Title>
+      {isLoading ? <Skeleton height={28} width="60%" mt={4} /> : (
+        <Title order={3} aria-labelledby="stat-target-label" aria-live="polite">
+          {formatMoney(animatedTarget, currency)}
+        </Title>
+      )}
     </Card>,
     <Card key="current" withBorder radius="md" p="lg">
       <Text c="dimmed" size="sm" id="stat-current-label">Total current</Text>
-      <Title order={3} aria-labelledby="stat-current-label" aria-live="polite">
-        {formatMoney(animatedCurrent, currency)}
-      </Title>
+      {isLoading ? <Skeleton height={28} width="60%" mt={4} /> : (
+        <Title order={3} aria-labelledby="stat-current-label" aria-live="polite">
+          {formatMoney(animatedCurrent, currency)}
+        </Title>
+      )}
     </Card>,
     <Card key="progress" withBorder radius="md" p="lg">
       <Group justify="space-between" align="center" wrap="nowrap">
         <div>
           <Text c="dimmed" size="sm" id="stat-progress-label">Overall progress</Text>
-          <Title order={3} aria-labelledby="stat-progress-label" aria-live="polite">
-            {`${animatedProgress.toFixed(1)}%`}
-          </Title>
+          {isLoading ? <Skeleton height={28} width={80} mt={4} /> : (
+            <Title order={3} aria-labelledby="stat-progress-label" aria-live="polite">
+              {`${animatedProgress.toFixed(1)}%`}
+            </Title>
+          )}
         </div>
-        <RingProgress
-          size={50}
-          thickness={6}
-          roundCaps
-          aria-hidden="true"
-          sections={[{ value: Math.min(progress, 100), color: "#316263" }]}
-        />
+        {!isLoading && (
+          <RingProgress
+            size={50}
+            thickness={6}
+            roundCaps
+            aria-hidden="true"
+            sections={[{ value: Math.min(progress, 100), color: "#316263" }]}
+          />
+        )}
       </Group>
     </Card>,
   ];
