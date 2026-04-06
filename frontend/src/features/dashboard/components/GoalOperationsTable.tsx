@@ -42,21 +42,21 @@ export const GoalOperationsTable = ({
   return (
     <>
       <Table.ScrollContainer minWidth={480}>
-      <Table striped highlightOnHover aria-label="Goal operations">
+      <Table striped highlightOnHover aria-label="Goal operations" layout="fixed">
         <Table.Thead>
           <Table.Tr>
-            <Table.Th style={{ minWidth: 112 }}>Date</Table.Th>
-            <Table.Th style={{ minWidth: 112 }}>Type</Table.Th>
-            <Table.Th style={{ minWidth: 90 }}>Amount</Table.Th>
+            <Table.Th style={{ width: 112 }}>Date</Table.Th>
+            <Table.Th style={{ width: 112 }}>Type</Table.Th>
+            <Table.Th>Amount</Table.Th>
             <Table.Th>Note</Table.Th>
-            <Table.Th ta="right" style={{ minWidth: 88 }}>Actions</Table.Th>
+            <Table.Th ta="right" style={{ width: 88 }}>Actions</Table.Th>
           </Table.Tr>
         </Table.Thead>
         <Table.Tbody>
           {paginatedOperations.map((operation) => (
             <Table.Tr key={operation.id}>
-              <Table.Td style={{ minWidth: 112 }}>{formatDay(operation.operationDate)}</Table.Td>
-              <Table.Td style={{ minWidth: 112 }}>
+              <Table.Td>{formatDay(operation.operationDate)}</Table.Td>
+              <Table.Td>
                 <Badge color={operation.type === "INCREASE" ? "teal" : "red"} variant="light">
                   {operation.type}
                 </Badge>
