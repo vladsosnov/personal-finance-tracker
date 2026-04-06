@@ -11,10 +11,12 @@ import { useComputedColorScheme } from "@mantine/core";
 import type { Options } from "highcharts";
 import type { GoalOperation } from "@/features/dashboard/types";
 import { dateStringToUtcTimestamp } from "@/shared/utils/date";
+import { getCurrencySymbol } from "@/shared/constants/currencies";
 
 type GoalChartProps = {
   operations: GoalOperation[];
   color: string;
+  currency: string;
   targetAmount: number;
   initialAmount: number;
   currentAmount: number;
@@ -112,6 +114,7 @@ const buildTrendLine = (
 export const GoalChart = ({
   operations,
   color,
+  currency,
   targetAmount,
   initialAmount,
   currentAmount,
@@ -120,6 +123,7 @@ export const GoalChart = ({
   range,
   showTrend = false,
 }: GoalChartProps) => {
+  const currencySymbol = getCurrencySymbol(currency);
   const computedColorScheme = useComputedColorScheme("light", { getInitialValueInEffect: true });
   const isDark = computedColorScheme === "dark";
   const seriesData = useMemo<Array<[number, number]>>(() => {
@@ -132,7 +136,7 @@ export const GoalChart = ({
 
     const allData = sortedOperations
       .map((operation): [number, number] => {
-        total += operation.type === "INCREASE" ? operation.amount : -operation.amount;
+        total += operation.type === "INCREASE" ? operation.convertedAmount : -operation.convertedAmount;
         return [dateStringToUtcTimestamp(operation.operationDate), Number(total.toFixed(2))];
       });
 
@@ -225,7 +229,7 @@ export const GoalChart = ({
       },
       yAxis: {
         title: {
-          text: "Current amount",
+          text: `Amount (${currencySymbol})`,
           style: {
             color: isDark ? "#9a8e80" : "#475569",
           },
@@ -271,7 +275,7 @@ export const GoalChart = ({
         },
       },
     }),
-    [height, isDark, targetAmount, series]
+    [height, isDark, targetAmount, series, currencySymbol]
   );
 
   return <HighchartsReact highcharts={Highcharts} options={options} />;

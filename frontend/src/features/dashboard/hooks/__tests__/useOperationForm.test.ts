@@ -88,6 +88,8 @@ describe('useOperationForm', () => {
     const operation = {
       ...mockOperation,
       type: 'INCREASE' as const,
+      currency: 'USD',
+      convertedAmount: 1000,
       operationDate: '2024-01-10',
     };
 
@@ -107,6 +109,8 @@ describe('useOperationForm', () => {
     const operation = {
       ...mockOperation,
       type: 'INCREASE' as const,
+      currency: 'USD',
+      convertedAmount: 1000,
       note: undefined,
       operationDate: '2024-01-01'
     };

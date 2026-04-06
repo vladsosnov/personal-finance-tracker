@@ -2,6 +2,7 @@ import { Button, Group, Modal, NumberInput, Stack, TextInput } from "@mantine/co
 import type { OperationType } from "@/shared/gql/__generated__/schema-types";
 import { MONEY_INPUT_PROPS, numberOrZero } from "@/shared/utils/number";
 import { getTodayDateValue } from "@/shared/utils/date";
+import { CurrencySelect } from "@/shared/components/CurrencySelect";
 
 type OperationModalProps = {
   opened: boolean;
@@ -10,10 +11,12 @@ type OperationModalProps = {
   isSubmitDisabled: boolean;
   operationType: OperationType;
   operationAmount: number | "";
+  operationCurrency: string;
   operationNote: string;
   operationDate: string;
   onChangeType: (value: OperationType) => void;
   onChangeAmount: (value: number | "") => void;
+  onChangeCurrency: (value: string) => void;
   onChangeNote: (value: string) => void;
   onChangeDate: (value: string) => void;
   onSubmit: () => void;
@@ -27,10 +30,12 @@ export const OperationModal = ({
   isSubmitDisabled,
   operationType,
   operationAmount,
+  operationCurrency,
   operationNote,
   operationDate,
   onChangeType,
   onChangeAmount,
+  onChangeCurrency,
   onChangeNote,
   onChangeDate,
   onSubmit,
@@ -66,15 +71,18 @@ export const OperationModal = ({
             Decrease
           </Button>
         </Group>
-        <NumberInput
-          label="Amount"
-          placeholder="500"
-          required
-          aria-required
-          {...MONEY_INPUT_PROPS}
-          value={operationAmount}
-          onChange={(value) => onChangeAmount(numberOrZero(value))}
-        />
+        <Group grow>
+          <NumberInput
+            label="Amount"
+            placeholder="500"
+            required
+            aria-required
+            {...MONEY_INPUT_PROPS}
+            value={operationAmount}
+            onChange={(value) => onChangeAmount(numberOrZero(value))}
+          />
+          <CurrencySelect value={operationCurrency} onChange={onChangeCurrency} />
+        </Group>
         <TextInput
           label="Date"
           type="date"

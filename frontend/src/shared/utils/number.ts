@@ -1,7 +1,11 @@
-export const formatMoney = (value: number) => {
+import { getCurrencySymbol } from "@/shared/constants/currencies";
+
+export const formatMoney = (value: number, currencyCode?: string) => {
   const [whole, decimals] = value.toFixed(2).split(".");
   const withSpaces = whole.replace(/\B(?=(\d{3})+(?!\d))/g, " ");
-  return `${withSpaces}.${decimals}`;
+  const formatted = `${withSpaces}.${decimals}`;
+  if (!currencyCode) return formatted;
+  return `${getCurrencySymbol(currencyCode)} ${formatted}`;
 };
 
 export const MONEY_INPUT_PROPS = {

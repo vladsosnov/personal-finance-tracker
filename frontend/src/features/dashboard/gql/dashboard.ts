@@ -13,6 +13,7 @@ export const GET_GOALS = gql`
       title
       targetAmount
       initialAmount
+      currency
       color
       sortOrder
       isCompleted
@@ -31,6 +32,7 @@ export const GET_GOAL_DETAILS = gql`
       title
       targetAmount
       initialAmount
+      currency
       color
       sortOrder
       isCompleted
@@ -42,6 +44,8 @@ export const GET_GOAL_DETAILS = gql`
         id
         type
         amount
+        currency
+        convertedAmount
         note
         operationDate
         createdAt
@@ -51,20 +55,21 @@ export const GET_GOAL_DETAILS = gql`
 `;
 
 export const CREATE_GOAL = gql`
-  mutation CreateGoal($title: String!, $targetAmount: Float!, $initialAmount: Float, $color: String) {
-    createGoal(title: $title, targetAmount: $targetAmount, initialAmount: $initialAmount, color: $color) {
+  mutation CreateGoal($title: String!, $targetAmount: Float!, $initialAmount: Float, $color: String, $currency: String) {
+    createGoal(title: $title, targetAmount: $targetAmount, initialAmount: $initialAmount, color: $color, currency: $currency) {
       id
     }
   }
 `;
 
 export const EDIT_GOAL = gql`
-  mutation EditGoal($goalId: ID!, $title: String!, $targetAmount: Float!, $initialAmount: Float, $color: String!) {
-    editGoal(goalId: $goalId, title: $title, targetAmount: $targetAmount, initialAmount: $initialAmount, color: $color) {
+  mutation EditGoal($goalId: ID!, $title: String!, $targetAmount: Float!, $initialAmount: Float, $color: String!, $currency: String) {
+    editGoal(goalId: $goalId, title: $title, targetAmount: $targetAmount, initialAmount: $initialAmount, color: $color, currency: $currency) {
       id
       title
       targetAmount
       initialAmount
+      currency
       color
       sortOrder
       isCompleted
@@ -102,12 +107,13 @@ export const REORDER_GOALS = gql`
 `;
 
 export const UPDATE_GOAL_PROGRESS = gql`
-  mutation UpdateGoalProgress($goalId: ID!, $type: OperationType!, $amount: Float!, $note: String, $operationDate: String) {
-    updateGoalProgress(goalId: $goalId, type: $type, amount: $amount, note: $note, operationDate: $operationDate) {
+  mutation UpdateGoalProgress($goalId: ID!, $type: OperationType!, $amount: Float!, $currency: String, $note: String, $operationDate: String) {
+    updateGoalProgress(goalId: $goalId, type: $type, amount: $amount, currency: $currency, note: $note, operationDate: $operationDate) {
       id
       title
       targetAmount
       initialAmount
+      currency
       color
       sortOrder
       isCompleted
@@ -120,11 +126,12 @@ export const UPDATE_GOAL_PROGRESS = gql`
 `;
 
 export const EDIT_GOAL_OPERATION = gql`
-  mutation EditGoalOperation($operationId: ID!, $type: OperationType!, $amount: Float!, $note: String, $operationDate: String) {
+  mutation EditGoalOperation($operationId: ID!, $type: OperationType!, $amount: Float!, $currency: String, $note: String, $operationDate: String) {
     editGoalOperation(
       operationId: $operationId
       type: $type
       amount: $amount
+      currency: $currency
       note: $note
       operationDate: $operationDate
     ) {
@@ -132,6 +139,7 @@ export const EDIT_GOAL_OPERATION = gql`
       title
       targetAmount
       initialAmount
+      currency
       color
       sortOrder
       isCompleted
@@ -143,6 +151,8 @@ export const EDIT_GOAL_OPERATION = gql`
         id
         type
         amount
+        currency
+        convertedAmount
         note
         operationDate
         createdAt
@@ -158,6 +168,7 @@ export const DELETE_GOAL_OPERATION = gql`
       title
       targetAmount
       initialAmount
+      currency
       color
       sortOrder
       isCompleted
@@ -169,6 +180,8 @@ export const DELETE_GOAL_OPERATION = gql`
         id
         type
         amount
+        currency
+        convertedAmount
         note
         operationDate
         createdAt
@@ -184,6 +197,7 @@ export const COMPLETE_GOAL = gql`
       title
       targetAmount
       initialAmount
+      currency
       color
       sortOrder
       isCompleted
@@ -195,6 +209,8 @@ export const COMPLETE_GOAL = gql`
         id
         type
         amount
+        currency
+        convertedAmount
         note
         operationDate
         createdAt

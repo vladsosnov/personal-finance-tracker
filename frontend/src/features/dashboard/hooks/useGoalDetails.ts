@@ -39,6 +39,7 @@ export const useGoalDetails = (selectedGoalId: string | null) => {
     goalId: string;
     type: OperationType;
     amount: number;
+    currency?: string;
     note?: string;
     operationDate: string;
   }): Promise<GoalDetails | null> => {
@@ -59,6 +60,7 @@ export const useGoalDetails = (selectedGoalId: string | null) => {
     operationId: string;
     type: OperationType;
     amount: number;
+    currency?: string;
     note?: string;
     operationDate: string;
   }): Promise<GoalDetails | null> => {
@@ -103,6 +105,7 @@ export const useGoalDetails = (selectedGoalId: string | null) => {
                         title: updatedGoal.title,
                         targetAmount: updatedGoal.targetAmount,
                         initialAmount: updatedGoal.initialAmount,
+                        currency: updatedGoal.currency,
                         color: updatedGoal.color,
                         sortOrder: updatedGoal.sortOrder,
                         isCompleted: updatedGoal.isCompleted,

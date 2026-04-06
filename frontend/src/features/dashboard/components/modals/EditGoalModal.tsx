@@ -1,5 +1,6 @@
 import { Button, Group, Modal, NumberInput, Stack, TextInput } from "@mantine/core";
 import { GoalColorPicker } from "@/features/dashboard/components/goal-color-picker";
+import { CurrencySelect } from "@/shared/components/CurrencySelect";
 import { MONEY_INPUT_PROPS, numberOrZero } from "@/shared/utils/number";
 import { useGoalForm } from "@/features/dashboard/hooks/useGoalForm";
 
@@ -31,9 +32,8 @@ export const EditGoalModal = ({ opened, isLoading, form, onConfirm, onClose }: E
         <NumberInput
           label="Target amount"
           placeholder="25000"
-          required
-          aria-required
           {...MONEY_INPUT_PROPS}
+          min={0}
           value={form.targetAmount}
           onChange={(value) => form.setTargetAmount(numberOrZero(value))}
         />
@@ -45,6 +45,7 @@ export const EditGoalModal = ({ opened, isLoading, form, onConfirm, onClose }: E
           value={form.initialAmount}
           onChange={(value) => form.setInitialAmount(numberOrZero(value))}
         />
+        <CurrencySelect value={form.currency} onChange={form.setCurrency} disabled={isLoading} />
         <GoalColorPicker label="Color" value={form.color} onChange={form.setColor} disabled={isLoading} />
         <Group justify="flex-end">
           <Button variant="default" onClick={onClose} disabled={isLoading} type="button">

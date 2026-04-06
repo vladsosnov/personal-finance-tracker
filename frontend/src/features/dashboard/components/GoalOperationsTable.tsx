@@ -9,6 +9,7 @@ const OPERATIONS_PER_PAGE = 10;
 
 type GoalOperationsTableProps = {
   operations: GoalOperation[];
+  goalCurrency: string;
   deletingOperationId: string | null;
   onEdit: (operationId: string) => void;
   onDelete: (operationId: string) => void;
@@ -16,6 +17,7 @@ type GoalOperationsTableProps = {
 
 export const GoalOperationsTable = ({
   operations,
+  goalCurrency,
   deletingOperationId,
   onEdit,
   onDelete,
@@ -59,7 +61,12 @@ export const GoalOperationsTable = ({
                   {operation.type}
                 </Badge>
               </Table.Td>
-              <Table.Td>{formatMoney(operation.amount)}</Table.Td>
+              <Table.Td>
+                {formatMoney(operation.amount, operation.currency)}
+                {operation.currency !== goalCurrency && (
+                  <Text span size="xs" c="dimmed"> ({formatMoney(operation.convertedAmount, goalCurrency)})</Text>
+                )}
+              </Table.Td>
               <Table.Td>
                 {operation.note ? (
                   <Tooltip label={operation.note} withArrow multiline maw={360}>
@@ -89,7 +96,7 @@ export const GoalOperationsTable = ({
                     size="compact-sm"
                     px={8}
                     styles={{ root: { minHeight: 28, backgroundColor: "rgba(15, 23, 42, 0.06)", color: "var(--mantine-color-text)" } }}
-                    aria-label={`Edit ${operation.type.toLowerCase()} operation for ${formatMoney(operation.amount)} on ${formatDay(operation.operationDate)}`}
+                    aria-label={`Edit ${operation.type.toLowerCase()} operation for ${formatMoney(operation.amount, operation.currency)} on ${formatDay(operation.operationDate)}`}
                     onClick={() => onEdit(operation.id)}
                   >
                     <IconPencil size={16} stroke={2} />
@@ -100,7 +107,7 @@ export const GoalOperationsTable = ({
                     size="compact-sm"
                     px={8}
                     styles={{ root: { minHeight: 28 } }}
-                    aria-label={`Delete ${operation.type.toLowerCase()} operation for ${formatMoney(operation.amount)} on ${formatDay(operation.operationDate)}`}
+                    aria-label={`Delete ${operation.type.toLowerCase()} operation for ${formatMoney(operation.amount, operation.currency)} on ${formatDay(operation.operationDate)}`}
                     loading={deletingOperationId === operation.id}
                     onClick={() => onDelete(operation.id)}
                   >

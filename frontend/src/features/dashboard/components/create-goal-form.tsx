@@ -1,5 +1,6 @@
 import { Button, Card, Grid, Group, Modal, NumberInput, Stack, Text, TextInput, Title } from "@mantine/core";
 import { GoalColorPicker } from "@/features/dashboard/components/goal-color-picker";
+import { CurrencySelect } from "@/shared/components/CurrencySelect";
 import { MONEY_INPUT_PROPS, numberOrZero } from "@/shared/utils/number";
 import styles from "@/shared/styles/page-animations.module.css";
 
@@ -8,6 +9,7 @@ type CreateGoalFormFieldsProps = {
   goalTarget: number | "";
   goalInitialAmount: number | "";
   goalColor: string;
+  goalCurrency: string;
   isCreatingGoal: boolean;
   isAddDisabled: boolean;
   limitMessage: string | null;
@@ -15,6 +17,7 @@ type CreateGoalFormFieldsProps = {
   setGoalTarget: (value: number | "") => void;
   setGoalInitialAmount: (value: number | "") => void;
   setGoalColor: (value: string) => void;
+  setGoalCurrency: (value: string) => void;
   onCreateGoal: () => Promise<void>;
 };
 
@@ -23,6 +26,7 @@ export const CreateGoalFormFields = ({
   goalTarget,
   goalInitialAmount,
   goalColor,
+  goalCurrency,
   isCreatingGoal,
   isAddDisabled,
   limitMessage,
@@ -30,6 +34,7 @@ export const CreateGoalFormFields = ({
   setGoalTarget,
   setGoalInitialAmount,
   setGoalColor,
+  setGoalCurrency,
   onCreateGoal,
 }: CreateGoalFormFieldsProps) => (
   <form
@@ -56,9 +61,8 @@ export const CreateGoalFormFields = ({
           <NumberInput
             label="Target amount"
             placeholder="25000"
-            required
-            aria-required
             {...MONEY_INPUT_PROPS}
+            min={0}
             value={goalTarget}
             onChange={(value) => setGoalTarget(numberOrZero(value))}
           />
@@ -74,9 +78,12 @@ export const CreateGoalFormFields = ({
           />
         </Grid.Col>
         <Grid.Col span={{ base: 12, md: 2 }}>
+          <CurrencySelect value={goalCurrency} onChange={setGoalCurrency} />
+        </Grid.Col>
+        <Grid.Col span={{ base: 12, md: 1 }}>
           <GoalColorPicker label="Color" value={goalColor} onChange={setGoalColor} />
         </Grid.Col>
-        <Grid.Col span={{ base: 12, md: 2 }}>
+        <Grid.Col span={{ base: 12, md: 1 }}>
           <Button
             fullWidth
             type="submit"

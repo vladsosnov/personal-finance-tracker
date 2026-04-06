@@ -149,8 +149,8 @@ export const useDataManagement = () => {
 
       const result = await importGoalsMutation({
         variables: {
-          goals: preparedGoals.map(({ title, targetAmount, initialAmount, color, operations }) => ({
-            title, targetAmount, initialAmount, color, operations,
+          goals: preparedGoals.map(({ title, targetAmount, initialAmount, currency, color, operations }) => ({
+            title, targetAmount, initialAmount, currency, color, operations,
           })),
         },
       });

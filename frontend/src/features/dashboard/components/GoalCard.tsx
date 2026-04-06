@@ -63,7 +63,7 @@ export const GoalCard = ({
         role="button"
         tabIndex={0}
         aria-pressed={isSelected}
-        aria-label={`${goal.title}, ${formatMoney(goal.currentAmount)} of ${formatMoney(goal.targetAmount)}${goal.isCompleted ? ", completed" : `, ${goalProgress.toFixed(1)}% progress`}`}
+        aria-label={`${goal.title}, ${formatMoney(goal.currentAmount, goal.currency)} of ${formatMoney(goal.targetAmount, goal.currency)}${goal.isCompleted ? ", completed" : `, ${goalProgress.toFixed(1)}% progress`}`}
         className={!isDraggable ? anim.hoverLift : undefined}
         style={{
           cursor: isDraggable ? (isDragged ? "grabbing" : "grab") : "pointer",
@@ -136,11 +136,11 @@ export const GoalCard = ({
           </Group>
           <Group justify="space-between" wrap="nowrap">
             <Text size="sm" c="dimmed">
-              {formatMoney(goal.currentAmount)} / {formatMoney(goal.targetAmount)}
+              {formatMoney(goal.currentAmount, goal.currency)} / {formatMoney(goal.targetAmount, goal.currency)}
             </Text>
             {!goal.isCompleted && remaining > 0 && (
               <Text size="xs" c="dimmed" style={{ color: goal.color, opacity: 0.8, whiteSpace: "nowrap" }}>
-                {formatMoney(remaining)} left
+                {formatMoney(remaining, goal.currency)} left
               </Text>
             )}
           </Group>

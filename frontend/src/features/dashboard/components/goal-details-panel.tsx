@@ -40,6 +40,7 @@ export type GoalDetailsPanelProps = {
   selectedGoal: GoalDetails | null;
   isLoadingGoalDetails: boolean;
   goalDetailsErrorMessage?: string | null;
+  goalCurrency: string;
   operationActions: GoalOperationActions;
   onRetryGoalDetails?: () => void;
   onCreateGoal?: () => void;
@@ -51,6 +52,7 @@ export const GoalDetailsPanel = ({
   selectedGoal,
   isLoadingGoalDetails,
   goalDetailsErrorMessage,
+  goalCurrency,
   operationActions,
   onRetryGoalDetails,
   onCreateGoal,
@@ -68,7 +70,7 @@ export const GoalDetailsPanel = ({
     operationActions;
 
   const handleOpenAddOperation = () => {
-    form.reset();
+    form.reset(goalCurrency);
     setIsOperationModalOpen(true);
   };
 
@@ -145,6 +147,7 @@ export const GoalDetailsPanel = ({
             <GoalChart
               operations={selectedGoal.operations}
               color={selectedGoal.color}
+              currency={selectedGoal.currency}
               targetAmount={selectedGoal.targetAmount}
               initialAmount={selectedGoal.initialAmount}
               currentAmount={selectedGoal.currentAmount}
@@ -164,6 +167,7 @@ export const GoalDetailsPanel = ({
 
             <GoalOperationsTable
               operations={selectedGoal.operations}
+              goalCurrency={goalCurrency}
               deletingOperationId={deletingOperationId}
               onEdit={handleStartEditOperation}
               onDelete={(id) => setPendingDeleteOperation(selectedGoal.operations.find((o) => o.id === id) ?? null)}
@@ -176,10 +180,12 @@ export const GoalDetailsPanel = ({
               isSubmitDisabled={isSubmitDisabled}
               operationType={form.operationType}
               operationAmount={form.operationAmount}
+              operationCurrency={form.operationCurrency}
               operationNote={form.operationNote}
               operationDate={form.operationDate}
               onChangeType={form.setOperationType}
               onChangeAmount={form.setOperationAmount}
+              onChangeCurrency={form.setOperationCurrency}
               onChangeNote={form.setOperationNote}
               onChangeDate={form.setOperationDate}
               onSubmit={handleSubmitOperation}
@@ -222,6 +228,7 @@ export const GoalDetailsPanel = ({
                 <GoalChart
                   operations={selectedGoal.operations}
                   color={selectedGoal.color}
+                  currency={selectedGoal.currency}
                   targetAmount={selectedGoal.targetAmount}
                   initialAmount={selectedGoal.initialAmount}
                   currentAmount={selectedGoal.currentAmount}

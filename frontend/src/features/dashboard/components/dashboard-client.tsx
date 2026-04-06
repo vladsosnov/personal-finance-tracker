@@ -21,6 +21,7 @@ import { useDashboardActions } from "@/features/dashboard/hooks/useDashboardActi
 import { EmailVerificationBanner } from "@/features/auth/components/email-verification-banner";
 import { GET_ME } from "@/shared/gql/queries";
 import { getPlanByName } from "@/shared/constants/plans";
+import { GET_EXCHANGE_RATES } from "@/features/profile/gql/currency";
 import { StateMessage } from "@/shared/components/state-message";
 import { tokenStorage } from "@/shared/lib/token-storage";
 import anim from "@/shared/styles/page-animations.module.css";
@@ -38,7 +39,9 @@ export const DashboardClient = () => {
 
   const isMobile = useMediaQuery("(max-width: 768px)");
 
-  const { data: meData } = useQuery<{ me: { id: string; email: string; subscription: string; emailVerified: boolean } | null }>(GET_ME);
+  const { data: meData } = useQuery<{ me: { id: string; email: string; subscription: string; primaryCurrency: string; emailVerified: boolean } | null }>(GET_ME);
+
+  const userCurrency = meData?.me?.primaryCurrency ?? "USD";
 
   const goalsApi = useGoals();
   const { goals, activeGoals, completedGoals, isLoadingGoals, goalsError, isCreatingGoal, isEditingGoal, isCompletingGoal } = goalsApi;
@@ -46,9 +49,9 @@ export const DashboardClient = () => {
   const detailsApi = useGoalDetails(selectedGoalId);
   const { selectedGoal, isLoadingGoalDetails, goalDetailsError, isUpdatingProgress } = detailsApi;
 
-  const operationForm = useOperationForm();
-  const createGoalForm = useGoalForm();
-  const editGoalForm = useGoalForm();
+  const operationForm = useOperationForm(userCurrency);
+  const createGoalForm = useGoalForm(userCurrency);
+  const editGoalForm = useGoalForm(userCurrency);
   const drag = useGoalDrag(goalsApi.reorderGoals);
 
   const actions = useDashboardActions({
@@ -67,8 +70,28 @@ export const DashboardClient = () => {
   const shouldShowGoalsSkeleton = isLoadingGoals && !goals.length;
   const shouldShowGoalDetailsSkeleton = Boolean(selectedGoalId) && isLoadingGoalDetails && !selectedGoal;
 
-  const totalTarget = useMemo(() => activeGoals.reduce((sum, g) => sum + g.targetAmount, 0), [activeGoals]);
-  const totalCurrent = useMemo(() => activeGoals.reduce((sum, g) => sum + g.currentAmount, 0), [activeGoals]);
+  // Fetch exchange rates for dashboard totals when goals use multiple currencies
+  const needsRates = useMemo(() => activeGoals.some((g) => g.currency !== userCurrency), [activeGoals, userCurrency]);
+  const { data: ratesData } = useQuery<{ exchangeRates: { base: string; rates: string } }>(
+    GET_EXCHANGE_RATES,
+    { variables: { base: userCurrency }, skip: !needsRates }
+  );
+  const rates = useMemo<Record<string, number>>(() => {
+    if (!ratesData?.exchangeRates?.rates) return {};
+    try { return JSON.parse(ratesData.exchangeRates.rates); } catch { return {}; }
+  }, [ratesData]);
+
+  const convertToUserCurrency = (amount: number, fromCurrency: string) => {
+    if (fromCurrency === userCurrency) return amount;
+    // rates are from userCurrency base, so we need the inverse:
+    // if rates[EUR] = 0.92 (1 USD = 0.92 EUR), to convert EUR→USD we divide by rate
+    const rate = rates[fromCurrency];
+    if (!rate) return amount;
+    return amount / rate;
+  };
+
+  const totalTarget = useMemo(() => activeGoals.reduce((sum, g) => sum + convertToUserCurrency(g.targetAmount, g.currency), 0), [activeGoals, rates, userCurrency]);
+  const totalCurrent = useMemo(() => activeGoals.reduce((sum, g) => sum + convertToUserCurrency(g.currentAmount, g.currency), 0), [activeGoals, rates, userCurrency]);
 
   const plan = getPlanByName(meData?.me?.subscription ?? "Free");
   const goalLimitMessage = plan.maxGoals !== null && goals.length >= plan.maxGoals
@@ -117,6 +140,7 @@ export const DashboardClient = () => {
     goalTarget: createGoalForm.targetAmount,
     goalInitialAmount: createGoalForm.initialAmount,
     goalColor: createGoalForm.color,
+    goalCurrency: createGoalForm.currency,
     isCreatingGoal,
     isAddDisabled: !createGoalForm.isValid,
     limitMessage: goalLimitMessage,
@@ -124,12 +148,14 @@ export const DashboardClient = () => {
     setGoalTarget: createGoalForm.setTargetAmount,
     setGoalInitialAmount: createGoalForm.setInitialAmount,
     setGoalColor: createGoalForm.setColor,
+    setGoalCurrency: createGoalForm.setCurrency,
     onCreateGoal: async () => {
       await actions.handleCreateGoal({
         title: createGoalForm.title,
         targetAmount: createGoalForm.targetAmount,
         initialAmount: createGoalForm.initialAmount,
         color: createGoalForm.color,
+        currency: createGoalForm.currency,
       });
       createGoalForm.reset();
       setIsCreateModalOpen(false);
@@ -142,6 +168,7 @@ export const DashboardClient = () => {
     isLoadingGoalDetails: shouldShowGoalDetailsSkeleton,
     goalDetailsErrorMessage: selectedGoal ? null : goalDetailsError?.message ?? null,
     onCreateGoal: isMobile ? () => setIsCreateModalOpen(true) : undefined,
+    goalCurrency: selectedGoal?.currency ?? userCurrency,
     operationActions: {
       form: operationForm,
       deletingOperationId: actions.deletingOperationId,
@@ -188,7 +215,7 @@ export const DashboardClient = () => {
           <EmailVerificationBanner emailVerified={false} />
         )} */}
 
-        <DashboardOverviewStats totalTarget={totalTarget} totalCurrent={totalCurrent} />
+        <DashboardOverviewStats totalTarget={totalTarget} totalCurrent={totalCurrent} currency={userCurrency} />
 
         {isMobile ? (
           <Button leftSection={<IconPlus size={16} />} onClick={() => setIsCreateModalOpen(true)} disabled={Boolean(goalLimitMessage)} className={anim.stagger4} fullWidth>

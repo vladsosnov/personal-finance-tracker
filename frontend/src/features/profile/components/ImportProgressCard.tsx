@@ -1,5 +1,6 @@
-import { Button, Card, Checkbox, FileInput, Group, Progress, Stack, Table, Text, Title } from "@mantine/core";
+import { Badge, Button, Card, Checkbox, FileInput, Group, Progress, Stack, Table, Text, Title } from "@mantine/core";
 import type { ImportProgressState, PreparedImportGoal, SkippedImportGoal } from "@/features/profile/types";
+import { formatMoney } from "@/shared/utils/number";
 
 type ImportProgressCardProps = {
   file: File | null;
@@ -100,9 +101,12 @@ export const ImportProgressCard = ({
             <Table.Tbody>
               {preparedGoals.map((goal, i) => (
                 <Table.Tr key={`${goal.title}-${i}`}>
-                  <Table.Td>{goal.title}</Table.Td>
-                  <Table.Td>{goal.targetAmount}</Table.Td>
-                  <Table.Td>{goal.initialAmount}</Table.Td>
+                  <Table.Td>
+                    {goal.title}
+                    {goal.currency && <Badge size="xs" variant="light" ml={6}>{goal.currency}</Badge>}
+                  </Table.Td>
+                  <Table.Td>{formatMoney(goal.targetAmount, goal.currency)}</Table.Td>
+                  <Table.Td>{formatMoney(goal.initialAmount, goal.currency)}</Table.Td>
                   <Table.Td>{goal.operationCount}</Table.Td>
                   <Table.Td>
                     {goal.canRemoveFromImport ? (

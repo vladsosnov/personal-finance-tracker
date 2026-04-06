@@ -52,6 +52,7 @@ export const useGoals = () => {
     targetAmount: number;
     initialAmount: number;
     color: string;
+    currency: string;
   }) => {
     try {
       await createGoalMutation({
@@ -60,6 +61,7 @@ export const useGoals = () => {
           targetAmount: input.targetAmount,
           initialAmount: input.initialAmount,
           color: input.color,
+          currency: input.currency,
         },
       });
       await refetchGoals();
@@ -71,7 +73,7 @@ export const useGoals = () => {
 
   const editGoal = async (
     goalId: string,
-    input: { title: string; targetAmount: number; initialAmount: number; color: string }
+    input: { title: string; targetAmount: number; initialAmount: number; color: string; currency: string }
   ): Promise<Goal | null> => {
     try {
       const result = await editGoalMutation({
@@ -81,6 +83,7 @@ export const useGoals = () => {
           targetAmount: input.targetAmount,
           initialAmount: input.initialAmount,
           color: input.color,
+          currency: input.currency,
         },
       });
       await refetchGoals();

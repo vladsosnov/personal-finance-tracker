@@ -78,7 +78,7 @@ describe('useGoalForm', () => {
     expect(result.current.isValid).toBe(false);
   });
 
-  it('invalidates form with zero target amount', () => {
+  it('validates form with zero target amount', () => {
     const { result } = renderHook(() => useGoalForm());
 
     act(() => {
@@ -86,7 +86,7 @@ describe('useGoalForm', () => {
       result.current.setTargetAmount(0);
     });
 
-    expect(result.current.isValid).toBe(false);
+    expect(result.current.isValid).toBe(true);
   });
 
   it('resets form to defaults', () => {

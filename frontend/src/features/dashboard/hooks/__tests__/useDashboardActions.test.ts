@@ -31,11 +31,13 @@ const makeEditGoalForm = (overrides = {}) => ({
   targetAmount: 5000,
   initialAmount: 500,
   color: '#ff0000',
+  currency: 'USD',
   isValid: true,
   setTitle: jest.fn(),
   setTargetAmount: jest.fn(),
   setInitialAmount: jest.fn(),
   setColor: jest.fn(),
+  setCurrency: jest.fn(),
   reset: jest.fn(),
   loadFromGoal: jest.fn(),
   ...overrides,
@@ -44,11 +46,13 @@ const makeEditGoalForm = (overrides = {}) => ({
 const makeOperationForm = (overrides = {}) => ({
   operationType: 'INCREASE' as const,
   operationAmount: 500 as number | "",
+  operationCurrency: 'USD',
   operationNote: 'test note',
   operationDate: '2024-01-01',
   editingOperationId: null,
   setOperationType: jest.fn(),
   setOperationAmount: jest.fn(),
+  setOperationCurrency: jest.fn(),
   setOperationNote: jest.fn(),
   setOperationDate: jest.fn(),
   reset: jest.fn(),
@@ -115,27 +119,27 @@ describe('useDashboardActions', () => {
       const goalsApi = makeGoalsApi();
       const { result } = renderHook(() => useDashboardActions(makeDefaultDeps({ goalsApi })));
       await act(async () => {
-        await result.current.handleCreateGoal({ title: 'New Goal', targetAmount: 1000, initialAmount: 100, color: '#ff0000' });
+        await result.current.handleCreateGoal({ title: 'New Goal', targetAmount: 1000, initialAmount: 100, color: '#ff0000', currency: 'USD' });
       });
-      expect(goalsApi.createGoal).toHaveBeenCalledWith({ title: 'New Goal', targetAmount: 1000, initialAmount: 100, color: '#ff0000' });
+      expect(goalsApi.createGoal).toHaveBeenCalledWith({ title: 'New Goal', targetAmount: 1000, initialAmount: 100, color: '#ff0000', currency: 'USD' });
     });
 
     it('does not call createGoal with empty title', async () => {
       const goalsApi = makeGoalsApi();
       const { result } = renderHook(() => useDashboardActions(makeDefaultDeps({ goalsApi })));
       await act(async () => {
-        await result.current.handleCreateGoal({ title: '  ', targetAmount: 1000, initialAmount: 0, color: '#ff0000' });
+        await result.current.handleCreateGoal({ title: '  ', targetAmount: 1000, initialAmount: 0, color: '#ff0000', currency: 'USD' });
       });
       expect(goalsApi.createGoal).not.toHaveBeenCalled();
     });
 
-    it('does not call createGoal with zero target', async () => {
+    it('calls createGoal with zero target', async () => {
       const goalsApi = makeGoalsApi();
       const { result } = renderHook(() => useDashboardActions(makeDefaultDeps({ goalsApi })));
       await act(async () => {
-        await result.current.handleCreateGoal({ title: 'Goal', targetAmount: 0, initialAmount: 0, color: '#ff0000' });
+        await result.current.handleCreateGoal({ title: 'Goal', targetAmount: 0, initialAmount: 0, color: '#ff0000', currency: 'USD' });
       });
-      expect(goalsApi.createGoal).not.toHaveBeenCalled();
+      expect(goalsApi.createGoal).toHaveBeenCalledWith({ title: 'Goal', targetAmount: 0, initialAmount: 0, color: '#ff0000', currency: 'USD' });
     });
   });
 

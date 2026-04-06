@@ -9,6 +9,7 @@ import styles from "@/shared/styles/page-animations.module.css";
 type DashboardOverviewStatsProps = {
   totalTarget: number;
   totalCurrent: number;
+  currency: string;
 };
 
 const useDashboardCounter = (target: number, duration = 900) => {
@@ -35,7 +36,7 @@ const useDashboardCounter = (target: number, duration = 900) => {
   return value;
 };
 
-export const DashboardOverviewStats = ({ totalTarget, totalCurrent }: DashboardOverviewStatsProps) => {
+export const DashboardOverviewStats = ({ totalTarget, totalCurrent, currency }: DashboardOverviewStatsProps) => {
   const animatedTarget = useDashboardCounter(totalTarget);
   const animatedCurrent = useDashboardCounter(totalCurrent);
   const progress = getProgressPercentage(totalCurrent, totalTarget);
@@ -48,13 +49,13 @@ export const DashboardOverviewStats = ({ totalTarget, totalCurrent }: DashboardO
     <Card key="target" withBorder radius="md" p="lg">
       <Text c="dimmed" size="sm" id="stat-target-label">Total target</Text>
       <Title order={3} aria-labelledby="stat-target-label" aria-live="polite">
-        {formatMoney(animatedTarget)}
+        {formatMoney(animatedTarget, currency)}
       </Title>
     </Card>,
     <Card key="current" withBorder radius="md" p="lg">
       <Text c="dimmed" size="sm" id="stat-current-label">Total current</Text>
       <Title order={3} aria-labelledby="stat-current-label" aria-live="polite">
-        {formatMoney(animatedCurrent)}
+        {formatMoney(animatedCurrent, currency)}
       </Title>
     </Card>,
     <Card key="progress" withBorder radius="md" p="lg">

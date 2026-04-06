@@ -9,6 +9,8 @@ describe('GoalOperationsTable', () => {
       id: '1',
       type: 'INCREASE' as const,
       amount: 1000,
+      currency: 'USD',
+      convertedAmount: 1000,
       note: 'Salary',
       operationDate: '2024-01-15',
       createdAt: '2024-01-15T00:00:00.000Z',
@@ -17,6 +19,8 @@ describe('GoalOperationsTable', () => {
       id: '2',
       type: 'DECREASE' as const,
       amount: 500,
+      currency: 'USD',
+      convertedAmount: 500,
       note: '',
       operationDate: '2024-01-10',
       createdAt: '2024-01-10T00:00:00.000Z',
@@ -25,6 +29,7 @@ describe('GoalOperationsTable', () => {
 
   const defaultProps = {
     operations,
+    goalCurrency: 'USD',
     deletingOperationId: null,
     onEdit: jest.fn(),
     onDelete: jest.fn(),
@@ -45,8 +50,8 @@ describe('GoalOperationsTable', () => {
   it('displays operation details correctly', () => {
     render(<GoalOperationsTable {...defaultProps} />);
 
-    expect(screen.getByText('1 000.00')).toBeInTheDocument();
-    expect(screen.getByText('500.00')).toBeInTheDocument();
+    expect(screen.getByText('$ 1 000.00')).toBeInTheDocument();
+    expect(screen.getByText('$ 500.00')).toBeInTheDocument();
     expect(screen.getByText('Salary')).toBeInTheDocument();
   });
 
@@ -104,7 +109,7 @@ describe('GoalOperationsTable', () => {
     render(<GoalOperationsTable {...defaultProps} />);
 
     expect(
-      screen.getByLabelText(/Edit increase operation for 1 000\.00/)
+      screen.getByLabelText(/Edit increase operation for \$ 1 000\.00/)
     ).toBeInTheDocument();
   });
 
@@ -112,7 +117,7 @@ describe('GoalOperationsTable', () => {
     render(<GoalOperationsTable {...defaultProps} />);
 
     expect(
-      screen.getByLabelText(/Delete increase operation for 1 000\.00/)
+      screen.getByLabelText(/Delete increase operation for \$ 1 000\.00/)
     ).toBeInTheDocument();
   });
 
@@ -121,6 +126,8 @@ describe('GoalOperationsTable', () => {
       id: `${i + 1}`,
       type: i % 2 === 0 ? ('INCREASE' as const) : ('DECREASE' as const),
       amount: (i + 1) * 100,
+      currency: 'USD',
+      convertedAmount: (i + 1) * 100,
       note: `Note ${i + 1}`,
       operationDate: '2024-01-01',
       createdAt: '2024-01-01T00:00:00.000Z',

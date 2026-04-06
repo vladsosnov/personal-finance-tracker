@@ -5,6 +5,7 @@ export const buildGoalFromDetails = (goal: GoalDetails): Goal => ({
   title: goal.title,
   targetAmount: goal.targetAmount,
   initialAmount: goal.initialAmount,
+  currency: goal.currency,
   color: goal.color,
   sortOrder: goal.sortOrder,
   isCompleted: goal.isCompleted,

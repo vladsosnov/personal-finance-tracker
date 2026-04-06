@@ -44,14 +44,15 @@ export const useDashboardActions = ({
     setPendingCompletionGoal(buildGoalFromDetails(goal as GoalDetails));
   };
 
-  const handleCreateGoal = async (input: { title: string; targetAmount: number | ""; initialAmount: number | ""; color: string }) => {
-    if (!input.title.trim() || !input.targetAmount || Number(input.targetAmount) <= 0) return;
+  const handleCreateGoal = async (input: { title: string; targetAmount: number | ""; initialAmount: number | ""; color: string; currency: string }) => {
+    if (!input.title.trim() || (input.targetAmount !== 0 && !input.targetAmount)) return;
     trackEvent("add_goal_click");
     await goalsApi.createGoal({
       title: input.title,
       targetAmount: Number(input.targetAmount),
       initialAmount: Number(input.initialAmount || 0),
       color: input.color,
+      currency: input.currency,
     });
   };
 
@@ -61,6 +62,7 @@ export const useDashboardActions = ({
     const sharedInput = {
       type: operationForm.operationType,
       amount: Number(operationForm.operationAmount),
+      currency: operationForm.operationCurrency,
       note: operationForm.operationNote.trim() || undefined,
       operationDate: operationForm.operationDate,
     };
@@ -95,6 +97,7 @@ export const useDashboardActions = ({
       targetAmount: Number(editGoalForm.targetAmount),
       initialAmount: Number(editGoalForm.initialAmount || 0),
       color: editGoalForm.color,
+      currency: editGoalForm.currency,
     });
     setEditingGoalId(null);
     if (selectedGoalId === editingGoalId) await detailsApi.refetchGoalDetails();

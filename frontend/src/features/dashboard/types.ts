@@ -5,6 +5,7 @@ export type Goal = {
   title: string;
   targetAmount: number;
   initialAmount: number;
+  currency: string;
   color: string;
   sortOrder: number;
   isCompleted: boolean;
@@ -18,6 +19,8 @@ export type GoalOperation = {
   id: string;
   type: OperationType;
   amount: number;
+  currency: string;
+  convertedAmount: number;
   note?: string;
   operationDate: string;
   createdAt: string;

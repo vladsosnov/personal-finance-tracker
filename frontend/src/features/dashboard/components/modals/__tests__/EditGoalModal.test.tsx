@@ -160,7 +160,6 @@ describe('EditGoalModal', () => {
     );
 
     expect(screen.getByLabelText(/title/i)).toHaveAttribute('aria-required', 'true');
-    expect(screen.getByLabelText(/target amount/i)).toHaveAttribute('aria-required', 'true');
   });
 
   it('prevents modal close when loading', () => {

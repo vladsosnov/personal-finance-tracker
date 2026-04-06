@@ -6,11 +6,22 @@ export type ImportHistoryEntry = {
   value?: number;
 };
 
+export type ImportOperationEntry = {
+  type?: string;
+  amount?: number;
+  currency?: string;
+  note?: string;
+  operationDate?: string;
+  createdAt?: string;
+};
+
 export type ImportGoalEntry = {
   title?: string;
   targetValue?: number;
   initialValue?: number;
+  currency?: string;
   history?: ImportHistoryEntry[];
+  operations?: ImportOperationEntry[];
   display?: {
     bar?: {
       colors?: {
@@ -23,6 +34,7 @@ export type ImportGoalEntry = {
 export type PreparedImportOperation = {
   type: OperationType;
   amount: number;
+  currency?: string;
   note?: string;
   operationDate: string;
 };
@@ -32,6 +44,7 @@ export type PreparedImportGoal = {
   title: string;
   targetAmount: number;
   initialAmount: number;
+  currency?: string;
   color: string;
   operationCount: number;
   operations: PreparedImportOperation[];

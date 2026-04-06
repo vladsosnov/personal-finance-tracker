@@ -50,39 +50,66 @@ export const prepareImportGoals = (source: string, includedZeroTargetGoalIndexes
       return;
     }
 
-    const history = Array.isArray(goal.history) ? goal.history : [];
-    const normalizedHistory = [];
-
-    for (let i = 0; i < history.length; i++) {
-      const entry = history[i];
-      const value = Number(entry.value);
-      const operationDate = toOperationDate(entry.date);
-      const timestamp = entry.date ? new Date(entry.date).getTime() : Number.NaN;
-
-      if (!Number.isFinite(value) || !operationDate || Number.isNaN(timestamp)) {
-        skippedGoals.push({ sourceIndex: goalIndex, title, reason: `History item ${i + 1} is invalid`, canInclude: false });
-        return;
-      }
-
-      normalizedHistory.push({ value, note: entry.note?.trim() || undefined, operationDate, timestamp });
-    }
-
-    normalizedHistory.sort((a, b) => a.timestamp - b.timestamp);
-
-    let previousValue = initialAmount;
+    const goalCurrency = goal.currency?.trim() || undefined;
     const operations: PreparedImportOperation[] = [];
 
-    for (const entry of normalizedHistory) {
-      const delta = Number((entry.value - previousValue).toFixed(2));
-      if (delta !== 0) {
+    // Prefer explicit operations array (from our own export) over history-based derivation
+    const explicitOps = Array.isArray(goal.operations) ? goal.operations : [];
+    if (explicitOps.length > 0) {
+      for (let i = 0; i < explicitOps.length; i++) {
+        const op = explicitOps[i];
+        const opType = op.type === "DECREASE" ? "DECREASE" : "INCREASE";
+        const amount = Number(op.amount);
+        const operationDate = toOperationDate(op.operationDate);
+
+        if (!Number.isFinite(amount) || amount <= 0 || !operationDate) {
+          skippedGoals.push({ sourceIndex: goalIndex, title, reason: `Operation ${i + 1} is invalid`, canInclude: false });
+          return;
+        }
+
         operations.push({
-          type: delta > 0 ? "INCREASE" : "DECREASE",
-          amount: Math.abs(delta),
-          note: entry.note,
-          operationDate: entry.operationDate,
+          type: opType,
+          amount,
+          currency: op.currency?.trim() || goalCurrency,
+          note: op.note?.trim() || undefined,
+          operationDate,
         });
       }
-      previousValue = entry.value;
+    } else {
+      // Fall back to history-based derivation
+      const history = Array.isArray(goal.history) ? goal.history : [];
+      const normalizedHistory = [];
+
+      for (let i = 0; i < history.length; i++) {
+        const entry = history[i];
+        const value = Number(entry.value);
+        const operationDate = toOperationDate(entry.date);
+        const timestamp = entry.date ? new Date(entry.date).getTime() : Number.NaN;
+
+        if (!Number.isFinite(value) || !operationDate || Number.isNaN(timestamp)) {
+          skippedGoals.push({ sourceIndex: goalIndex, title, reason: `History item ${i + 1} is invalid`, canInclude: false });
+          return;
+        }
+
+        normalizedHistory.push({ value, note: entry.note?.trim() || undefined, operationDate, timestamp });
+      }
+
+      normalizedHistory.sort((a, b) => a.timestamp - b.timestamp);
+
+      let previousValue = initialAmount;
+      for (const entry of normalizedHistory) {
+        const delta = Number((entry.value - previousValue).toFixed(2));
+        if (delta !== 0) {
+          operations.push({
+            type: delta > 0 ? "INCREASE" : "DECREASE",
+            amount: Math.abs(delta),
+            currency: goalCurrency,
+            note: entry.note,
+            operationDate: entry.operationDate,
+          });
+        }
+        previousValue = entry.value;
+      }
     }
 
     goals.push({
@@ -90,6 +117,7 @@ export const prepareImportGoals = (source: string, includedZeroTargetGoalIndexes
       title,
       targetAmount,
       initialAmount,
+      currency: goalCurrency,
       color: normalizeColor(goal.display?.bar?.colors?.primary),
       operationCount: operations.length,
       operations,
