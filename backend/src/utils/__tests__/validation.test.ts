@@ -129,6 +129,7 @@ describe("validation utilities", () => {
         email: "user@test.com",
         subscription: "Pro",
         role: "user",
+        primaryCurrency: "USD",
         emailVerified: true,
       };
 
@@ -137,6 +138,7 @@ describe("validation utilities", () => {
         email: "user@test.com",
         subscription: "Pro",
         role: "user",
+        primaryCurrency: "USD",
         emailVerified: true,
       });
     });
@@ -147,6 +149,7 @@ describe("validation utilities", () => {
         email: "admin@test.com",
         subscription: "Free",
         role: "admin",
+        primaryCurrency: "USD",
         emailVerified: true,
       };
 

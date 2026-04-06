@@ -1,3 +1,5 @@
+import { isValidCurrency } from "../shared/currencies";
+
 const MAX_GOAL_TITLE_LENGTH = 80;
 const MAX_NOTE_LENGTH = 500;
 const FREE_MAX_GOALS = 3;
@@ -35,13 +37,20 @@ export const assertValidNote = (note?: string) => {
   }
 };
 
-export const toSafeUser = (user: { id: string; email: string; subscription: string; role: string; emailVerified: boolean }) => ({
+export const toSafeUser = (user: { id: string; email: string; subscription: string; role: string; primaryCurrency: string; emailVerified: boolean }) => ({
   id: user.id,
   email: user.email,
   subscription: user.role === "admin" ? "Lifetime" : user.subscription,
   role: user.role,
+  primaryCurrency: user.primaryCurrency,
   emailVerified: user.emailVerified,
 });
+
+export const assertValidCurrency = (code: string) => {
+  if (!isValidCurrency(code)) {
+    throw new Error(`Unsupported currency: ${code}`);
+  }
+};
 
 export const ensureAuthed = (context: { userId: string | null }): string => {
   if (!context.userId) {

@@ -8,6 +8,7 @@ const toGoal = (doc: {
   title: string;
   targetAmount: number;
   initialAmount?: number;
+  currency?: string;
   color?: string;
   sortOrder?: number;
   isCompleted?: boolean;
@@ -19,6 +20,7 @@ const toGoal = (doc: {
   title: doc.title,
   targetAmount: doc.targetAmount,
   initialAmount: doc.initialAmount ?? 0,
+  currency: doc.currency ?? "USD",
   color: doc.color ?? "#0F766E",
   sortOrder: doc.sortOrder ?? 0,
   isCompleted: doc.isCompleted ?? false,
@@ -31,11 +33,12 @@ export const createGoal = async (
   title: string,
   targetAmount: number,
   initialAmount = 0,
-  color = "#0F766E"
+  color = "#0F766E",
+  currency = "USD"
 ): Promise<Goal> => {
   const lastGoal = await GoalModel.findOne({ userId }).sort({ sortOrder: -1, createdAt: -1 }).lean();
   const nextSortOrder = (lastGoal?.sortOrder ?? -1) + 1;
-  const goal = await GoalModel.create({ userId, title, targetAmount, initialAmount, color, sortOrder: nextSortOrder });
+  const goal = await GoalModel.create({ userId, title, targetAmount, initialAmount, color, currency, sortOrder: nextSortOrder });
   return toGoal(
     goal.toObject() as unknown as {
       _id: mongoose.Types.ObjectId;
@@ -59,6 +62,7 @@ export const bulkCreateGoals = async (
     targetAmount: number;
     initialAmount: number;
     color: string;
+    currency: string;
   }>
 ): Promise<Goal[]> => {
   if (!goals.length) {
@@ -74,6 +78,7 @@ export const bulkCreateGoals = async (
       title: goal.title,
       targetAmount: goal.targetAmount,
       initialAmount: goal.initialAmount,
+      currency: goal.currency,
       color: goal.color,
       sortOrder: nextSortOrder + index,
       isCompleted: false,
@@ -249,6 +254,7 @@ export const updateGoal = async (
     targetAmount: number;
     initialAmount: number;
     color: string;
+    currency: string;
   }
 ): Promise<Goal | undefined> => {
   const goal = await GoalModel.findOneAndUpdate(
@@ -258,6 +264,7 @@ export const updateGoal = async (
         title: updates.title,
         targetAmount: updates.targetAmount,
         initialAmount: updates.initialAmount,
+        currency: updates.currency,
         color: updates.color,
       },
     },

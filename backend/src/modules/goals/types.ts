@@ -6,6 +6,7 @@ export type Goal = {
   title: string;
   targetAmount: number;
   initialAmount: number;
+  currency: string;
   color: string;
   sortOrder: number;
   isCompleted: boolean;
@@ -19,9 +20,14 @@ export type GoalOperation = {
   goalId: string;
   type: OperationType;
   amount: number;
+  currency: string;
   note?: string;
   operationDate: string;
   createdAt: string;
+};
+
+export type GoalOperationView = GoalOperation & {
+  convertedAmount: number;
 };
 
 export type GoalView = {
@@ -29,6 +35,7 @@ export type GoalView = {
   title: string;
   targetAmount: number;
   initialAmount: number;
+  currency: string;
   color: string;
   sortOrder: number;
   isCompleted: boolean;
@@ -36,5 +43,5 @@ export type GoalView = {
   currentAmount: number;
   progress: number;
   createdAt: string;
-  operations: GoalOperation[];
+  operations: GoalOperationView[];
 };

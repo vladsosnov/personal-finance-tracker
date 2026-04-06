@@ -5,6 +5,7 @@ export type GoalOperationDocument = {
   goalId: mongoose.Types.ObjectId;
   type: "INCREASE" | "DECREASE";
   amount: number;
+  currency: string;
   note?: string;
   operationDate: string;
 };
@@ -15,6 +16,7 @@ const goalOperationSchema = new Schema<GoalOperationDocument>(
     goalId: { type: Schema.Types.ObjectId, required: true, ref: "Goal" },
     type: { type: String, required: true, enum: ["INCREASE", "DECREASE"] },
     amount: { type: Number, required: true },
+    currency: { type: String, required: true, default: "USD" },
     note: { type: String },
     operationDate: { type: String, required: true },
   },

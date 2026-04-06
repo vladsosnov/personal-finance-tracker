@@ -5,6 +5,7 @@ export type User = {
   email: string;
   subscription: string;
   role: UserRole;
+  primaryCurrency: string;
   passwordHash: string;
   passwordSalt: string;
   googleId?: string;

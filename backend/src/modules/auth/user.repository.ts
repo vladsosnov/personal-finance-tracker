@@ -7,6 +7,7 @@ type UserDoc = {
   email: string;
   subscription?: string;
   role?: UserRole;
+  primaryCurrency?: string;
   passwordHash: string;
   passwordSalt: string;
   googleId?: string;
@@ -23,6 +24,7 @@ const toUser = (doc: UserDoc): User => ({
   email: doc.email,
   subscription: doc.subscription ?? "Free",
   role: doc.role ?? "user",
+  primaryCurrency: doc.primaryCurrency ?? "USD",
   passwordHash: doc.passwordHash,
   passwordSalt: doc.passwordSalt,
   googleId: doc.googleId,
@@ -140,4 +142,13 @@ export const createGoogleUser = async (email: string, googleId: string): Promise
 
 export const linkGoogleId = async (userId: string, googleId: string): Promise<void> => {
   await UserModel.updateOne({ _id: userId }, { $set: { googleId, emailVerified: true } });
+};
+
+export const updatePrimaryCurrency = async (userId: string, currency: string): Promise<User | null> => {
+  const user = await UserModel.findByIdAndUpdate(
+    userId,
+    { $set: { primaryCurrency: currency } },
+    { new: true }
+  ).lean();
+  return user ? toUser(user as unknown as UserDoc) : null;
 };

@@ -5,6 +5,7 @@ export type GoalDocument = {
   title: string;
   targetAmount: number;
   initialAmount: number;
+  currency: string;
   color: string;
   sortOrder: number;
   isCompleted: boolean;
@@ -17,6 +18,7 @@ const goalSchema = new Schema<GoalDocument>(
     title: { type: String, required: true },
     targetAmount: { type: Number, required: true },
     initialAmount: { type: Number, required: true, default: 0 },
+    currency: { type: String, required: true, default: "USD" },
     color: { type: String, required: true, default: "#0F766E" },
     sortOrder: { type: Number, required: true, default: 0 },
     isCompleted: { type: Boolean, required: true, default: false },

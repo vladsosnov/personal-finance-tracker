@@ -8,6 +8,7 @@ const toGoalOperation = (doc: {
   goalId: mongoose.Types.ObjectId;
   type: OperationType;
   amount: number;
+  currency?: string;
   note?: string;
   operationDate?: string;
   createdAt: Date;
@@ -17,6 +18,7 @@ const toGoalOperation = (doc: {
   goalId: doc.goalId.toString(),
   type: doc.type,
   amount: doc.amount,
+  currency: doc.currency ?? "USD",
   note: doc.note,
   operationDate: doc.operationDate ?? doc.createdAt.toISOString().slice(0, 10),
   createdAt: doc.createdAt.toISOString(),
@@ -28,13 +30,15 @@ export const createGoalOperation = async (
   type: OperationType,
   amount: number,
   note?: string,
-  operationDate?: string
+  operationDate?: string,
+  currency?: string
 ): Promise<GoalOperation> => {
   const operation = await GoalOperationModel.create({
     userId,
     goalId,
     type,
     amount,
+    currency: currency ?? "USD",
     note,
     operationDate: operationDate ?? new Date().toISOString().slice(0, 10),
   });
@@ -59,6 +63,7 @@ export const bulkCreateGoalOperations = async (
     goalId: string;
     type: OperationType;
     amount: number;
+    currency?: string;
     note?: string;
     operationDate: string;
   }>
@@ -73,6 +78,7 @@ export const bulkCreateGoalOperations = async (
       goalId: operation.goalId,
       type: operation.type,
       amount: operation.amount,
+      currency: operation.currency ?? "USD",
       note: operation.note,
       operationDate: operation.operationDate,
     }))
@@ -119,20 +125,22 @@ export const updateGoalOperation = async (
   updates: {
     type: OperationType;
     amount: number;
+    currency?: string;
     note?: string;
     operationDate?: string;
   }
 ): Promise<GoalOperation | undefined> => {
+  const setFields: Record<string, unknown> = {
+    type: updates.type,
+    amount: updates.amount,
+    note: updates.note,
+    operationDate: updates.operationDate ?? new Date().toISOString().slice(0, 10),
+  };
+  if (updates.currency) setFields.currency = updates.currency;
+
   const operation = await GoalOperationModel.findOneAndUpdate(
     { _id: operationId, userId },
-    {
-      $set: {
-        type: updates.type,
-        amount: updates.amount,
-        note: updates.note,
-        operationDate: updates.operationDate ?? new Date().toISOString().slice(0, 10),
-      },
-    },
+    { $set: setFields },
     { new: true }
   ).lean();
 

@@ -5,6 +5,7 @@ export type UserDocument = {
   email: string;
   subscription: string;
   role: UserRole;
+  primaryCurrency: string;
   passwordHash: string;
   passwordSalt: string;
   googleId?: string;
@@ -21,6 +22,7 @@ const userSchema = new Schema<UserDocument>(
     email: { type: String, required: true, unique: true, index: true },
     subscription: { type: String, required: true, default: "Free" },
     role: { type: String, enum: ["user", "admin"], required: true, default: "user" },
+    primaryCurrency: { type: String, required: true, default: "USD" },
     passwordHash: { type: String, required: true, default: "" },
     passwordSalt: { type: String, required: true, default: "" },
     googleId: { type: String, index: true, sparse: true },

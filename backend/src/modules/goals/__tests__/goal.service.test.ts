@@ -5,6 +5,11 @@ jest.mock("../operation.repository", () => ({
   listAllOperationsByUser: jest.fn(),
 }));
 
+jest.mock("../../exchange-rates/exchange-rate.service", () => ({
+  getRates: jest.fn().mockResolvedValue({}),
+  convert: jest.fn((amount: number) => amount),
+}));
+
 import { buildGoalView, buildGoalViews } from "../goal.service";
 import { listOperationsByGoal, listAllOperationsByUser } from "../operation.repository";
 
@@ -17,6 +22,7 @@ const makeGoal = (overrides: Partial<Goal> = {}): Goal => ({
   title: "Emergency Fund",
   targetAmount: 10000,
   initialAmount: 1000,
+  currency: "USD",
   color: "#228be6",
   sortOrder: 0,
   isCompleted: false,
@@ -30,6 +36,7 @@ const makeOperation = (overrides: Partial<GoalOperation> = {}): GoalOperation =>
   goalId: "goal-1",
   type: "INCREASE",
   amount: 500,
+  currency: "USD",
   operationDate: "2024-02-01",
   createdAt: "2024-02-01T00:00:00.000Z",
   ...overrides,

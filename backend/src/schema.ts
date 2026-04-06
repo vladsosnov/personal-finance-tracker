@@ -14,9 +14,13 @@ import {
   assertFiniteNonNegative,
   assertValidGoalTitle,
   assertValidNote,
+  assertValidCurrency,
   getEffectiveSubscription,
   getMaxGoals,
 } from "./utils/validation";
+import { updatePrimaryCurrency } from "./modules/auth/user.repository";
+import { SUPPORTED_CURRENCIES } from "./shared/currencies";
+import { getExchangeRatesResponse } from "./modules/exchange-rates/exchange-rate.service";
 
 type Context = {
   userId: string | null;
@@ -30,12 +34,14 @@ type GoalArgs = {
   targetAmount: number;
   initialAmount?: number;
   color?: string;
+  currency?: string;
 };
 
 type GoalOperationArgs = {
   goalId: string;
   type: OperationType;
   amount: number;
+  currency?: string;
   note?: string;
   operationDate?: string;
 };
@@ -44,6 +50,7 @@ type EditGoalOperationArgs = {
   operationId: string;
   type: OperationType;
   amount: number;
+  currency?: string;
   note?: string;
   operationDate?: string;
 };
@@ -79,11 +86,13 @@ type EditGoalArgs = {
   targetAmount: number;
   initialAmount?: number;
   color: string;
+  currency?: string;
 };
 
 type ImportGoalOperationInput = {
   type: OperationType;
   amount: number;
+  currency?: string;
   note?: string;
   operationDate: string;
 };
@@ -92,6 +101,7 @@ type ImportGoalInput = {
   title: string;
   targetAmount: number;
   initialAmount?: number;
+  currency?: string;
   color: string;
   operations: ImportGoalOperationInput[];
 };
@@ -114,12 +124,14 @@ export const schema = buildSchema(`
     email: String!
     subscription: String!
     role: String!
+    primaryCurrency: String!
     emailVerified: Boolean!
   }
 
   input ImportGoalOperationInput {
     type: OperationType!
     amount: Float!
+    currency: String
     note: String
     operationDate: String!
   }
@@ -128,6 +140,7 @@ export const schema = buildSchema(`
     title: String!
     targetAmount: Float!
     initialAmount: Float
+    currency: String
     color: String!
     operations: [ImportGoalOperationInput!]!
   }
@@ -146,6 +159,8 @@ export const schema = buildSchema(`
     id: ID!
     type: OperationType!
     amount: Float!
+    currency: String!
+    convertedAmount: Float!
     note: String
     operationDate: String!
     createdAt: String!
@@ -156,6 +171,7 @@ export const schema = buildSchema(`
     title: String!
     targetAmount: Float!
     initialAmount: Float!
+    currency: String!
     color: String!
     sortOrder: Int!
     isCompleted: Boolean!
@@ -164,6 +180,18 @@ export const schema = buildSchema(`
     progress: Float!
     createdAt: String!
     operations: [GoalOperation!]!
+  }
+
+  type ExchangeRates {
+    base: String!
+    rates: String!
+    fetchedAt: String!
+  }
+
+  type CurrencyInfo {
+    code: String!
+    symbol: String!
+    name: String!
   }
 
   enum ProposalCategory {
@@ -216,20 +244,23 @@ export const schema = buildSchema(`
     exportAllData: String!
     proposals: [Proposal!]!
     analyticsStats: AnalyticsStats!
+    exchangeRates(base: String!): ExchangeRates!
+    supportedCurrencies: [CurrencyInfo!]!
   }
 
   type Mutation {
-    createGoal(title: String!, targetAmount: Float!, initialAmount: Float, color: String): Goal!
-    editGoal(goalId: ID!, title: String!, targetAmount: Float!, initialAmount: Float, color: String!): Goal!
+    createGoal(title: String!, targetAmount: Float!, initialAmount: Float, color: String, currency: String): Goal!
+    editGoal(goalId: ID!, title: String!, targetAmount: Float!, initialAmount: Float, color: String!, currency: String): Goal!
     updateGoalColor(goalId: ID!, color: String!): Goal!
     deleteGoal(goalId: ID!): Goal!
     reorderGoals(goalIds: [ID!]!): [Goal!]!
     importGoals(goals: [ImportGoalInput!]!): ImportGoalsPayload!
     resetAllData: ResetAllDataPayload!
     completeGoal(goalId: ID!): Goal!
-    updateGoalProgress(goalId: ID!, type: OperationType!, amount: Float!, note: String, operationDate: String): Goal!
-    editGoalOperation(operationId: ID!, type: OperationType!, amount: Float!, note: String, operationDate: String): Goal!
+    updateGoalProgress(goalId: ID!, type: OperationType!, amount: Float!, currency: String, note: String, operationDate: String): Goal!
+    editGoalOperation(operationId: ID!, type: OperationType!, amount: Float!, currency: String, note: String, operationDate: String): Goal!
     deleteGoalOperation(operationId: ID!): Goal!
+    setPrimaryCurrency(currency: String!): User!
     createProposal(category: ProposalCategory!, title: String!, description: String!, contactEmail: String): Proposal!
     voteProposal(proposalId: ID!): Proposal
     updateProposalStatus(proposalId: ID!, status: ProposalStatus!): Proposal
@@ -316,6 +347,7 @@ export const rootValue = {
         title: goal.title,
         targetValue: goal.targetAmount,
         initialValue: goal.initialAmount,
+        currency: goal.currency,
         sortOrder: goal.sortOrder,
         isCompleted: goal.isCompleted,
         completedAt: goal.completedAt ?? null,
@@ -323,6 +355,7 @@ export const rootValue = {
         operations: sortedOperations.map((op) => ({
           type: op.type,
           amount: op.amount,
+          currency: op.currency,
           note: op.note ?? null,
           operationDate: op.operationDate,
           createdAt: op.createdAt,
@@ -339,29 +372,7 @@ export const rootValue = {
 
     return JSON.stringify(exportPayload, null, 2);
   },
-  createGoal: async ({ title, targetAmount, initialAmount = 0, color = "#0F766E" }: GoalArgs, context: Context) => {
-    const userId = ensureAuthed(context);
-    assertValidGoalTitle(title);
-    assertFiniteNonNegative(targetAmount, "Target amount");
-    const newLocal = "Initial amount";
-    assertFiniteNonNegative(initialAmount, newLocal);
-    if (!/^#[0-9A-Fa-f]{6}$/.test(color)) {
-      throw new Error("Goal color must be a valid hex color");
-    }
-
-    const user = await findUserById(userId);
-    const maxGoals = getMaxGoals(getEffectiveSubscription(user));
-    if (maxGoals !== null) {
-      const currentCount = await countGoalsByUser(userId);
-      if (currentCount >= maxGoals) {
-        throw new Error(`Free plan is limited to ${maxGoals} goals. Upgrade to create more.`);
-      }
-    }
-
-    const goal = await createGoal(userId, title.trim(), targetAmount, initialAmount, color);
-    return buildGoalViewWithCompletionState(userId, goal);
-  },
-  editGoal: async ({ goalId, title, targetAmount, initialAmount = 0, color }: EditGoalArgs, context: Context) => {
+  createGoal: async ({ title, targetAmount, initialAmount = 0, color = "#0F766E", currency }: GoalArgs, context: Context) => {
     const userId = ensureAuthed(context);
     assertValidGoalTitle(title);
     assertFiniteNonNegative(targetAmount, "Target amount");
@@ -370,11 +381,43 @@ export const rootValue = {
       throw new Error("Goal color must be a valid hex color");
     }
 
+    const user = await findUserById(userId);
+    const goalCurrency = currency ?? user?.primaryCurrency ?? "USD";
+    assertValidCurrency(goalCurrency);
+
+    const maxGoals = getMaxGoals(getEffectiveSubscription(user));
+    if (maxGoals !== null) {
+      const currentCount = await countGoalsByUser(userId);
+      if (currentCount >= maxGoals) {
+        throw new Error(`Free plan is limited to ${maxGoals} goals. Upgrade to create more.`);
+      }
+    }
+
+    const goal = await createGoal(userId, title.trim(), targetAmount, initialAmount, color, goalCurrency);
+    return buildGoalViewWithCompletionState(userId, goal);
+  },
+  editGoal: async ({ goalId, title, targetAmount, initialAmount = 0, color, currency }: EditGoalArgs, context: Context) => {
+    const userId = ensureAuthed(context);
+    assertValidGoalTitle(title);
+    assertFiniteNonNegative(targetAmount, "Target amount");
+    assertFiniteNonNegative(initialAmount, "Initial amount");
+    if (!/^#[0-9A-Fa-f]{6}$/.test(color)) {
+      throw new Error("Goal color must be a valid hex color");
+    }
+
+    const existingGoal = await getGoalById(userId, goalId);
+    if (!existingGoal) {
+      throw new Error("Goal not found");
+    }
+    const goalCurrency = currency ?? existingGoal.currency;
+    assertValidCurrency(goalCurrency);
+
     const goal = await updateGoal(userId, goalId, {
       title: title.trim(),
       targetAmount,
       initialAmount,
       color,
+      currency: goalCurrency,
     });
     if (!goal) {
       throw new Error("Goal not found");
@@ -471,6 +514,7 @@ export const rootValue = {
         title: goal.title.trim(),
         targetAmount: goal.targetAmount,
         initialAmount: goal.initialAmount ?? 0,
+        currency: goal.currency ?? "USD",
         color: goal.color,
       }))
     );
@@ -481,6 +525,7 @@ export const rootValue = {
         goalId: createdGoals[index].id,
         type: operation.type,
         amount: operation.amount,
+        currency: operation.currency ?? goal.currency ?? "USD",
         note: operation.note?.trim() || undefined,
         operationDate: operation.operationDate,
       }))
@@ -522,7 +567,7 @@ export const rootValue = {
 
     return buildGoalViewWithCompletionState(userId, completedGoal);
   },
-  updateGoalProgress: async ({ goalId, type, amount, note, operationDate }: GoalOperationArgs, context: Context) => {
+  updateGoalProgress: async ({ goalId, type, amount, currency, note, operationDate }: GoalOperationArgs, context: Context) => {
     const userId = ensureAuthed(context);
     if (!Number.isFinite(amount) || amount <= 0) {
       throw new Error("Amount should be greater than 0");
@@ -537,10 +582,13 @@ export const rootValue = {
       throw new Error("Goal not found");
     }
 
-    await createGoalOperation(userId, goalId, type, amount, note?.trim(), operationDate);
+    const opCurrency = currency ?? goal.currency;
+    assertValidCurrency(opCurrency);
+
+    await createGoalOperation(userId, goalId, type, amount, note?.trim(), operationDate, opCurrency);
     return buildGoalViewWithCompletionState(userId, goal);
   },
-  editGoalOperation: async ({ operationId, type, amount, note, operationDate }: EditGoalOperationArgs, context: Context) => {
+  editGoalOperation: async ({ operationId, type, amount, currency, note, operationDate }: EditGoalOperationArgs, context: Context) => {
     const userId = ensureAuthed(context);
     if (!Number.isFinite(amount) || amount <= 0) {
       throw new Error("Amount should be greater than 0");
@@ -555,9 +603,13 @@ export const rootValue = {
       throw new Error("Operation not found");
     }
 
+    const opCurrency = currency ?? operation.currency;
+    assertValidCurrency(opCurrency);
+
     const updatedOperation = await updateGoalOperation(userId, operationId, {
       type,
       amount,
+      currency: opCurrency,
       note: note?.trim(),
       operationDate,
     });
@@ -591,6 +643,22 @@ export const rootValue = {
     }
 
     return buildGoalViewWithCompletionState(userId, goal);
+  },
+  exchangeRates: async ({ base }: { base: string }) => {
+    assertValidCurrency(base);
+    return getExchangeRatesResponse(base);
+  },
+  supportedCurrencies: () => SUPPORTED_CURRENCIES,
+  setPrimaryCurrency: async ({ currency }: { currency: string }, context: Context) => {
+    const userId = ensureAuthed(context);
+    assertValidCurrency(currency);
+
+    const user = await updatePrimaryCurrency(userId, currency);
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    return toSafeUser(user);
   },
   analyticsStats: async (_args: unknown, context: Context) => {
     await ensureAdmin(context);

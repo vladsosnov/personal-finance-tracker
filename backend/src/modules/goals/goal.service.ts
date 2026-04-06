@@ -1,9 +1,30 @@
 import { listAllOperationsByUser, listOperationsByGoal } from "./operation.repository";
-import type { Goal, GoalOperation, GoalView } from "./types";
+import { convert, getRates } from "../exchange-rates/exchange-rate.service";
+import type { Goal, GoalOperation, GoalOperationView, GoalView } from "./types";
 
-const buildGoalViewFromOperations = (goal: Goal, operations: GoalOperation[]): GoalView => {
-  const operationsTotal = operations.reduce((sum, op) => (op.type === "INCREASE" ? sum + op.amount : sum - op.amount), 0);
-  const currentAmount = goal.initialAmount + operationsTotal;
+const convertOperations = (
+  operations: GoalOperation[],
+  goalCurrency: string,
+  rates: Record<string, number>
+): GoalOperationView[] =>
+  operations.map((op) => ({
+    ...op,
+    convertedAmount:
+      op.currency === goalCurrency
+        ? op.amount
+        : convert(op.amount, op.currency, goalCurrency, rates),
+  }));
+
+const buildGoalViewFromOperations = (
+  goal: Goal,
+  operations: GoalOperationView[]
+): GoalView => {
+  const operationsTotal = operations.reduce(
+    (sum, op) =>
+      op.type === "INCREASE" ? sum + op.convertedAmount : sum - op.convertedAmount,
+    0
+  );
+  const currentAmount = Number((goal.initialAmount + operationsTotal).toFixed(2));
   const progress = goal.targetAmount > 0 ? Math.min((currentAmount / goal.targetAmount) * 100, 100) : 0;
 
   return {
@@ -11,6 +32,7 @@ const buildGoalViewFromOperations = (goal: Goal, operations: GoalOperation[]): G
     title: goal.title,
     targetAmount: goal.targetAmount,
     initialAmount: goal.initialAmount,
+    currency: goal.currency,
     color: goal.color,
     sortOrder: goal.sortOrder,
     isCompleted: goal.isCompleted,
@@ -22,9 +44,28 @@ const buildGoalViewFromOperations = (goal: Goal, operations: GoalOperation[]): G
   };
 };
 
+const collectCurrencies = (goals: Goal[], operations: GoalOperation[]): Set<string> => {
+  const currencies = new Set<string>();
+  for (const g of goals) currencies.add(g.currency);
+  for (const op of operations) currencies.add(op.currency);
+  return currencies;
+};
+
+const getRatesForCurrencies = async (
+  goalCurrency: string,
+  currencies: Set<string>
+): Promise<Record<string, number>> => {
+  const needsConversion = [...currencies].some((c) => c !== goalCurrency);
+  if (!needsConversion) return {};
+  return getRates(goalCurrency);
+};
+
 export const buildGoalView = async (userId: string, goal: Goal): Promise<GoalView> => {
   const operations = await listOperationsByGoal(userId, goal.id);
-  return buildGoalViewFromOperations(goal, operations);
+  const currencies = collectCurrencies([goal], operations);
+  const rates = await getRatesForCurrencies(goal.currency, currencies);
+  const convertedOps = convertOperations(operations, goal.currency, rates);
+  return buildGoalViewFromOperations(goal, convertedOps);
 };
 
 export const buildGoalViews = async (userId: string, goals: Goal[]): Promise<GoalView[]> => {
@@ -35,5 +76,20 @@ export const buildGoalViews = async (userId: string, goals: Goal[]): Promise<Goa
     list.push(op);
     operationsByGoal.set(op.goalId, list);
   }
-  return goals.map((goal) => buildGoalViewFromOperations(goal, operationsByGoal.get(goal.id) ?? []));
+
+  // Pre-fetch rates for all unique goal currencies
+  const allCurrencies = collectCurrencies(goals, allOperations);
+  const ratesByBase = new Map<string, Record<string, number>>();
+  for (const goal of goals) {
+    if (!ratesByBase.has(goal.currency)) {
+      ratesByBase.set(goal.currency, await getRatesForCurrencies(goal.currency, allCurrencies));
+    }
+  }
+
+  return goals.map((goal) => {
+    const ops = operationsByGoal.get(goal.id) ?? [];
+    const rates = ratesByBase.get(goal.currency) ?? {};
+    const convertedOps = convertOperations(ops, goal.currency, rates);
+    return buildGoalViewFromOperations(goal, convertedOps);
+  });
 };
