@@ -46,7 +46,7 @@ export const CreateGoalFormFields = ({
   >
     <Stack gap="sm">
       <Grid align="flex-end">
-        <Grid.Col span={{ base: 12, md: 4 }}>
+        <Grid.Col span={{ base: 12, md: 3 }}>
           <TextInput
             label="Title"
             placeholder="Buy a house"
@@ -80,12 +80,11 @@ export const CreateGoalFormFields = ({
         <Grid.Col span={{ base: 12, md: 2 }}>
           <CurrencySelect value={goalCurrency} onChange={setGoalCurrency} />
         </Grid.Col>
-        <Grid.Col span={{ base: 12, md: 1 }}>
+        <Grid.Col span={{ base: 6, md: "auto" }}>
           <GoalColorPicker label="Color" value={goalColor} onChange={setGoalColor} />
         </Grid.Col>
-        <Grid.Col span={{ base: 12, md: 1 }}>
+        <Grid.Col span={{ base: 6, md: "auto" }}>
           <Button
-            fullWidth
             type="submit"
             loading={isCreatingGoal}
             disabled={isAddDisabled || Boolean(limitMessage)}
@@ -104,7 +103,7 @@ export const CreateGoalForm = (props: CreateGoalFormProps) => (
   <Card withBorder radius="md" p="lg" className={styles.stagger4}>
     <Stack gap="sm">
       <Group justify="space-between" align="center">
-        <Title order={4}>Create goal</Title>
+        <Title order={5}>Create goal</Title>
         {props.limitMessage && <Text size="sm" c="orange">{props.limitMessage}</Text>}
       </Group>
       <CreateGoalFormFields {...props} />

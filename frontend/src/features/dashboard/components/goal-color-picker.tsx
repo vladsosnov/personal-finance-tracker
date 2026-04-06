@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { ColorSwatch, Group, Select, Stack, Text } from "@mantine/core";
+import { ColorSwatch, Group, Select, Text } from "@mantine/core";
 import { GOAL_COLOR_OPTIONS } from "@/shared/constants/goal-colors";
 import { useCustomColors } from "@/features/profile/hooks/useCustomColors";
 
@@ -31,32 +31,24 @@ export const GoalColorPicker = ({ label, value, onChange, disabled = false }: Go
     [...GOAL_COLOR_OPTIONS, ...customColors].find((o) => o.value === value)?.value ?? GOAL_COLOR_OPTIONS[0].value;
 
   return (
-    <Stack gap={6}>
-      <Text size="sm" fw={500}>
-        {label}
-      </Text>
-      <Group gap="sm" wrap="nowrap">
-        <ColorSwatch color={selectedColorValue} aria-hidden="true" />
-        <Select
-          value={value}
-          data={allOptions}
-          allowDeselect={false}
-          aria-label={label}
-          renderOption={({ option }) => (
-            <Group gap="sm" wrap="nowrap">
-              <ColorSwatch color={option.value} size={18} aria-hidden="true" />
-              <Text size="sm">{option.label}</Text>
-            </Group>
-          )}
-          onChange={(nextValue) => {
-            if (nextValue) {
-              onChange(nextValue);
-            }
-          }}
-          disabled={disabled}
-          flex={1}
-        />
-      </Group>
-    </Stack>
+    <Select
+      label={label}
+      value={value}
+      data={allOptions}
+      allowDeselect={false}
+      leftSection={<ColorSwatch color={selectedColorValue} size={16} />}
+      renderOption={({ option }) => (
+        <Group gap="sm" wrap="nowrap">
+          <ColorSwatch color={option.value} size={18} aria-hidden="true" />
+          <Text size="sm">{option.label}</Text>
+        </Group>
+      )}
+      onChange={(nextValue) => {
+        if (nextValue) {
+          onChange(nextValue);
+        }
+      }}
+      disabled={disabled}
+    />
   );
 };
