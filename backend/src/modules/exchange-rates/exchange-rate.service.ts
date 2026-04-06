@@ -15,23 +15,26 @@ const fetchRatesFromApi = async (baseCurrency: string): Promise<Record<string, n
   return data.rates;
 };
 
-export const getRates = async (baseCurrency: string): Promise<Record<string, number>> => {
+type RatesResult = { rates: Record<string, number>; fetchedAt: string };
+
+export const getRates = async (baseCurrency: string): Promise<RatesResult> => {
   const cached = await getCachedRates(baseCurrency);
 
   if (cached) {
     const age = Date.now() - new Date(cached.fetchedAt).getTime();
     if (age < CACHE_MAX_AGE_MS) {
-      return cached.rates;
+      return { rates: cached.rates, fetchedAt: cached.fetchedAt };
     }
   }
 
   try {
     const rates = await fetchRatesFromApi(baseCurrency);
     await setCachedRates(baseCurrency, rates);
-    return rates;
+    const updated = await getCachedRates(baseCurrency);
+    return { rates, fetchedAt: updated?.fetchedAt ?? new Date().toISOString() };
   } catch (error) {
     // Fall back to stale cache if available
-    if (cached) return cached.rates;
+    if (cached) return { rates: cached.rates, fetchedAt: cached.fetchedAt };
     throw error;
   }
 };
@@ -64,12 +67,11 @@ export const convert = (
 export const getExchangeRatesResponse = async (
   baseCurrency: string
 ): Promise<{ base: string; rates: string; fetchedAt: string }> => {
-  const rates = await getRates(baseCurrency);
-  const cached = await getCachedRates(baseCurrency);
+  const { rates, fetchedAt } = await getRates(baseCurrency);
 
   return {
     base: baseCurrency,
     rates: JSON.stringify(rates),
-    fetchedAt: cached?.fetchedAt ?? new Date().toISOString(),
+    fetchedAt,
   };
 };

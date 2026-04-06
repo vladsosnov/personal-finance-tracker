@@ -33,11 +33,11 @@ describe('GoalColorPicker', () => {
     expect(screen.getByText('Color')).toBeInTheDocument();
   });
 
-  it('renders a color swatch', () => {
+  it('renders a color swatch in the select left section', () => {
     const { container } = render(<GoalColorPicker {...defaultProps} />);
 
-    const swatches = container.querySelectorAll('[aria-hidden="true"]');
-    expect(swatches.length).toBeGreaterThan(0);
+    const swatch = container.querySelector('.mantine-ColorSwatch-root');
+    expect(swatch).toBeInTheDocument();
   });
 
   it('renders a select input with aria-label', () => {
@@ -65,8 +65,8 @@ describe('GoalColorPicker', () => {
   it('falls back to first preset color when value is unknown', () => {
     const { container } = render(<GoalColorPicker {...defaultProps} value="#ZZZZZZ" />);
 
-    const swatches = container.querySelectorAll('[aria-hidden="true"]');
-    expect(swatches.length).toBeGreaterThan(0);
+    const swatch = container.querySelector('.mantine-ColorSwatch-root');
+    expect(swatch).toBeInTheDocument();
   });
 
   it('renders as disabled when disabled prop is true', () => {

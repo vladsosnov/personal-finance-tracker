@@ -57,7 +57,8 @@ const getRatesForCurrencies = async (
 ): Promise<Record<string, number>> => {
   const needsConversion = [...currencies].some((c) => c !== goalCurrency);
   if (!needsConversion) return {};
-  return getRates(goalCurrency);
+  const { rates } = await getRates(goalCurrency);
+  return rates;
 };
 
 export const buildGoalView = async (userId: string, goal: Goal): Promise<GoalView> => {

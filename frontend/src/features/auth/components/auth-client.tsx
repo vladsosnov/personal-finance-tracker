@@ -6,6 +6,7 @@ import { useApolloClient } from "@apollo/client/react";
 import { AuthView } from "@/features/auth/components/auth-view";
 import { API_BASE_URL } from "@/shared/constants/auth";
 import { APP_ROUTES } from "@/shared/constants/routes";
+import { GET_ME } from "@/shared/gql/queries";
 import type { AuthMode } from "@/shared/types/shared";
 import { trackEvent } from "@/shared/lib/analytics";
 import { isValidEmail } from "@/shared/lib/validation";
@@ -71,7 +72,7 @@ export const AuthClient = () => {
         tokenStorage.set(payload.accessToken, payload.refreshToken);
       }
 
-      await apolloClient.resetStore();
+      await apolloClient.refetchQueries({ include: [GET_ME] });
       router.replace(APP_ROUTES.dashboard);
     } catch (authError) {
       setError(authError instanceof Error ? authError.message : "Authentication failed");

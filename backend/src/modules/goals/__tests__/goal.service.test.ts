@@ -6,7 +6,7 @@ jest.mock("../operation.repository", () => ({
 }));
 
 jest.mock("../../exchange-rates/exchange-rate.service", () => ({
-  getRates: jest.fn().mockResolvedValue({}),
+  getRates: jest.fn().mockResolvedValue({ rates: {}, fetchedAt: new Date().toISOString() }),
   convert: jest.fn((amount: number) => amount),
 }));
 

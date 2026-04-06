@@ -7,7 +7,7 @@ import { tokenStorage } from '@/shared/lib/token-storage';
 const mockPush = jest.fn();
 const mockReplace = jest.fn();
 const mockRefresh = jest.fn();
-const mockResetStore = jest.fn();
+const mockRefetchQueries = jest.fn();
 
 jest.mock('next/navigation', () => ({
   useRouter: () => ({
@@ -23,7 +23,7 @@ jest.mock('next/navigation', () => ({
 jest.mock('@apollo/client/react', () => ({
   ...jest.requireActual('@apollo/client/react'),
   useApolloClient: () => ({
-    resetStore: mockResetStore,
+    refetchQueries: mockRefetchQueries,
   }),
 }));
 
@@ -49,7 +49,7 @@ describe('AuthClient', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     (global.fetch as jest.Mock).mockClear();
-    mockResetStore.mockResolvedValue(undefined);
+    mockRefetchQueries.mockResolvedValue(undefined);
   });
 
   it('renders login form by default', () => {
@@ -174,7 +174,7 @@ describe('AuthClient', () => {
     });
   });
 
-  it('resets Apollo store on successful login', async () => {
+  it('refetches GET_ME on successful login', async () => {
     const user = userEvent.setup();
     (global.fetch as jest.Mock).mockResolvedValueOnce({
       ok: true,
@@ -192,7 +192,7 @@ describe('AuthClient', () => {
     await user.click(submitButton);
 
     await waitFor(() => {
-      expect(mockResetStore).toHaveBeenCalled();
+      expect(mockRefetchQueries).toHaveBeenCalled();
     });
   });
 

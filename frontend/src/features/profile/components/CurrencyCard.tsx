@@ -2,7 +2,8 @@
 
 import { useMemo } from "react";
 import { useMutation, useQuery } from "@apollo/client/react";
-import { Card, Group, Stack, Table, Text, Title } from "@mantine/core";
+import { Alert, Button, Card, Group, Stack, Table, Text, Title } from "@mantine/core";
+import { IconInfoCircle, IconRefresh } from "@tabler/icons-react";
 import { CurrencySelect } from "@/shared/components/CurrencySelect";
 import { GET_ME } from "@/shared/gql/queries";
 import { GET_EXCHANGE_RATES, SET_PRIMARY_CURRENCY } from "@/features/profile/gql/currency";
@@ -14,10 +15,9 @@ export const CurrencyCard = () => {
   const { data: meData } = useQuery<{ me: { primaryCurrency: string } | null }>(GET_ME);
   const primaryCurrency = meData?.me?.primaryCurrency ?? "USD";
 
-  const { data: ratesData } = useQuery<{ exchangeRates: { base: string; rates: string; fetchedAt: string } }>(
-    GET_EXCHANGE_RATES,
-    { variables: { base: primaryCurrency } }
-  );
+  const { data: ratesData, loading: isLoadingRates, refetch: refetchRates } = useQuery<{
+    exchangeRates: { base: string; rates: string; fetchedAt: string };
+  }>(GET_EXCHANGE_RATES, { variables: { base: primaryCurrency } });
 
   const [setPrimaryCurrency, { loading: isSaving }] = useMutation(SET_PRIMARY_CURRENCY);
 
@@ -38,6 +38,15 @@ export const CurrencyCard = () => {
     }
   };
 
+  const handleRefreshRates = async () => {
+    try {
+      await refetchRates();
+      showToast("Exchange rates refreshed", "teal");
+    } catch {
+      showToast("Failed to refresh rates", "red");
+    }
+  };
+
   const topCurrencies = SUPPORTED_CURRENCIES.filter((c) => c.code !== primaryCurrency && rates[c.code] != null).slice(0, 10);
 
   return (
@@ -55,9 +64,26 @@ export const CurrencyCard = () => {
           onChange={handleCurrencyChange}
           disabled={isSaving}
         />
+        <Alert variant="light" color="blue" icon={<IconInfoCircle size={18} />}>
+          <Text size="sm">
+            Exchange rates are sourced from the European Central Bank (ECB) and cached for 24 hours.
+            Rates are updated automatically once per day on first request.
+          </Text>
+        </Alert>
         {topCurrencies.length > 0 && (
           <Stack gap="xs">
-            <Text size="sm" fw={500}>Exchange rates</Text>
+            <Group justify="space-between" align="center">
+              <Text size="sm" fw={500}>Exchange rates</Text>
+              <Button
+                variant="subtle"
+                size="compact-sm"
+                leftSection={<IconRefresh size={14} />}
+                onClick={handleRefreshRates}
+                loading={isLoadingRates}
+              >
+                Refresh
+              </Button>
+            </Group>
             <Table striped highlightOnHover aria-label="Exchange rates">
               <Table.Thead>
                 <Table.Tr>
@@ -76,7 +102,7 @@ export const CurrencyCard = () => {
             </Table>
             {ratesData?.exchangeRates?.fetchedAt && (
               <Text size="xs" c="dimmed">
-                Rates updated {formatDay(ratesData.exchangeRates.fetchedAt.slice(0, 10))} via ECB
+                Rates updated {formatDay(ratesData.exchangeRates.fetchedAt.slice(0, 10))} via ECB. Next update available after 24 hours.
               </Text>
             )}
           </Stack>
