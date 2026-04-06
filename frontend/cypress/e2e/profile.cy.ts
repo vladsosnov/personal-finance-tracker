@@ -7,7 +7,7 @@ function stubProfileGraphQL() {
       req.reply({
         body: {
           data: {
-            me: { id: "user-1", email: "test@example.com", subscription: "Pro", role: "user", emailVerified: true },
+            me: { id: "user-1", email: "test@example.com", subscription: "Pro", role: "user", primaryCurrency: "USD", emailVerified: true },
           },
         },
       });
@@ -21,6 +21,7 @@ function stubProfileGraphQL() {
                 title: "Emergency Fund",
                 targetAmount: 10000,
                 initialAmount: 0,
+                currency: "USD",
                 color: "#228be6",
                 sortOrder: 0,
                 isCompleted: false,
@@ -37,6 +38,10 @@ function stubProfileGraphQL() {
       req.reply({ body: { data: { resetAllData: { deletedGoalsCount: 1, deletedOperationsCount: 3 } } } });
     } else if (query.includes("query ExportAllData")) {
       req.reply({ body: { data: { exportAllData: "[]" } } });
+    } else if (query.includes("query ExchangeRates")) {
+      req.reply({ body: { data: { exchangeRates: { base: "USD", rates: JSON.stringify({ EUR: 0.92, PLN: 3.72, GBP: 0.79 }), fetchedAt: new Date().toISOString() } } } });
+    } else if (query.includes("mutation SetPrimaryCurrency")) {
+      req.reply({ body: { data: { setPrimaryCurrency: { id: "user-1", email: "test@example.com", subscription: "Pro", role: "user", primaryCurrency: req.body.variables?.currency ?? "USD", emailVerified: true } } } });
     } else {
       req.reply({ body: { data: {} } });
     }
@@ -165,6 +170,70 @@ describe("Profile Page", () => {
 
       cy.get("[aria-label='Remove Emergency fund from import']").click();
       cy.get("[aria-label='Goals ready to import']").should("not.exist");
+    });
+
+    it("shows currency badge and formatted amounts for imported goals with currency", () => {
+      const fileContent = JSON.stringify([
+        {
+          title: "Car Fund",
+          targetValue: 50000,
+          initialValue: 0,
+          currency: "PLN",
+          operations: [
+            { type: "INCREASE", amount: 800, currency: "PLN", operationDate: "2024-08-15" },
+            { type: "INCREASE", amount: 900, currency: "USD", operationDate: "2025-07-29" },
+          ],
+        },
+      ]);
+
+      cy.get("input[type='file']").selectFile(
+        { contents: Cypress.Buffer.from(fileContent), fileName: "progress.txt", mimeType: "text/plain" },
+        { force: true }
+      );
+
+      cy.get("[aria-label='Goals ready to import']").should("be.visible");
+      cy.contains("Car Fund").should("be.visible");
+      cy.contains("PLN").should("be.visible");
+      cy.contains("zł 50 000.00").should("be.visible");
+    });
+
+    it("imports goals without currency field defaulting to no badge", () => {
+      const fileContent = JSON.stringify([
+        {
+          title: "Simple Goal",
+          targetValue: 5000,
+          initialValue: 0,
+          history: [
+            { date: "2026-01-15T00:00:00Z", value: 1000 },
+          ],
+        },
+      ]);
+
+      cy.get("input[type='file']").selectFile(
+        { contents: Cypress.Buffer.from(fileContent), fileName: "progress.txt", mimeType: "text/plain" },
+        { force: true }
+      );
+
+      cy.get("[aria-label='Goals ready to import']").should("be.visible");
+      cy.contains("Simple Goal").should("be.visible");
+      // Should show plain number without currency symbol (no currency in source)
+      cy.contains("5 000.00").should("be.visible");
+    });
+  });
+
+  describe("Currency Settings", () => {
+    beforeEach(() => {
+      stubProfileGraphQL();
+      cy.visit("/profile");
+    });
+
+    it("shows the currency settings card", () => {
+      cy.contains("Currency").should("be.visible");
+      cy.contains("Primary currency").should("be.visible");
+    });
+
+    it("displays the current primary currency", () => {
+      cy.contains("USD ($)").should("exist");
     });
   });
 

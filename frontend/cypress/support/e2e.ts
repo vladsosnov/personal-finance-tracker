@@ -33,12 +33,13 @@ Cypress.Commands.add("interceptAuth", (endpoint: string, statusCode: number, bod
 });
 
 // Login by stubbing the auth response and seeding cookies-based session via GraphQL me query
-Cypress.Commands.add("loginByStub", (user?: { id?: string; email?: string; subscription?: string; role?: string }) => {
+Cypress.Commands.add("loginByStub", (user?: { id?: string; email?: string; subscription?: string; role?: string; primaryCurrency?: string }) => {
   const me = {
     id: user?.id ?? "user-1",
     email: user?.email ?? "test@example.com",
     subscription: user?.subscription ?? "Free",
     role: user?.role ?? "user",
+    primaryCurrency: user?.primaryCurrency ?? "USD",
     emailVerified: true,
   };
 
@@ -54,7 +55,7 @@ declare global {
     interface Chainable {
       interceptGraphQL(operationName: string, response: object, alias?: string): Chainable;
       interceptAuth(endpoint: string, statusCode: number, body: object): Chainable;
-      loginByStub(user?: { id?: string; email?: string; subscription?: string; role?: string }): Chainable;
+      loginByStub(user?: { id?: string; email?: string; subscription?: string; role?: string; primaryCurrency?: string }): Chainable;
     }
   }
 }
