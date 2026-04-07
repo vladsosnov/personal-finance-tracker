@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, type MouseEvent } from "react";
-import { Card, SimpleGrid, Stack, Text, Title } from "@mantine/core";
+import { Badge, Card, Group, SimpleGrid, Stack, Text, Title } from "@mantine/core";
 import { IconCoin, IconLanguage, IconCalendarStats, IconRepeat, IconBell, IconMessageCircle } from "@tabler/icons-react";
 import { AnimateOnScroll } from "@/features/landing/components/AnimateOnScroll";
 import styles from "@/features/landing/styles/landing.module.css";
@@ -11,6 +11,7 @@ const FUTURE_FEATURES = [
     icon: IconCoin,
     title: "Multi-currency goals",
     description: "Track goals in different currencies with clearer per-goal currency handling and stronger reporting.",
+    completed: true,
   },
   {
     icon: IconLanguage,
@@ -60,9 +61,14 @@ const FutureFeatureCard = ({ feature, index }: { feature: typeof FUTURE_FEATURES
       >
         <div className={styles.featureCardContent}>
           <Stack gap="xs">
-            <div className={styles.featureIcon}>
-              <Icon size={24} stroke={1.5} color="#C36A4A" />
-            </div>
+            <Group justify="space-between" align="flex-start">
+              <div className={styles.featureIcon}>
+                <Icon size={24} stroke={1.5} color={"completed" in feature && feature.completed ? "var(--mantine-color-teal-6)" : "#C36A4A"} />
+              </div>
+              {"completed" in feature && feature.completed && (
+                <Badge variant="light" color="teal" size="sm">Completed</Badge>
+              )}
+            </Group>
             <Title order={4}>{feature.title}</Title>
             <Text c="dimmed">{feature.description}</Text>
           </Stack>

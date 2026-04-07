@@ -101,7 +101,7 @@ export const Header = () => {
             aria-current={pathname.startsWith(APP_ROUTES.profile) ? "page" : undefined}
             onClick={closeMenu}
             rightSection={showSubBadge ? (
-              <Badge size="xs" variant="light" color={subscription === "Lifetime" ? "teal" : "blue"} px={5}>
+              <Badge size="xs" variant="light" color={subscription === "Lifetime" ? "teal" : "blue"} px={5} style={{ cursor: "pointer" }}>
                 {subscription}
               </Badge>
             ) : undefined}
