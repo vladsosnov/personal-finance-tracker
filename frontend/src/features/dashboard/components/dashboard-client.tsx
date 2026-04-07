@@ -44,10 +44,10 @@ export const DashboardClient = () => {
   const userCurrency = meData?.me?.primaryCurrency ?? "USD";
 
   const goalsApi = useGoals();
-  const { goals, activeGoals, completedGoals, isLoadingGoals, goalsError, isCreatingGoal, isEditingGoal, isCompletingGoal } = goalsApi;
+  const { goals, activeGoals, completedGoals, isLoadingGoals, goalsError } = goalsApi;
 
   const detailsApi = useGoalDetails(selectedGoalId);
-  const { selectedGoal, isLoadingGoalDetails, goalDetailsError, isUpdatingProgress } = detailsApi;
+  const { selectedGoal, isLoadingGoalDetails, goalDetailsError } = detailsApi;
 
   const operationForm = useOperationForm(userCurrency);
   const createGoalForm = useGoalForm(userCurrency);
@@ -141,7 +141,7 @@ export const DashboardClient = () => {
     goalInitialAmount: createGoalForm.initialAmount,
     goalColor: createGoalForm.color,
     goalCurrency: createGoalForm.currency,
-    isCreatingGoal,
+    isCreatingGoal: false,
     isAddDisabled: !createGoalForm.isValid,
     limitMessage: goalLimitMessage,
     setGoalTitle: createGoalForm.setTitle,
@@ -172,7 +172,7 @@ export const DashboardClient = () => {
     operationActions: {
       form: operationForm,
       deletingOperationId: actions.deletingOperationId,
-      isUpdatingProgress,
+      isUpdatingProgress: false,
       isSubmitDisabled: isOperationSubmitDisabled,
       onStartEdit: (operationId: string) => {
         const op = selectedGoal?.operations.find((o) => o.id === operationId);
@@ -254,15 +254,15 @@ export const DashboardClient = () => {
 
         <EditGoalModal
           opened={Boolean(actions.editingGoalId)}
-          isLoading={isEditingGoal}
+          isLoading={false}
           form={editGoalForm}
           onConfirm={actions.handleConfirmEditGoal}
-          onClose={() => { if (!isEditingGoal) actions.setEditingGoalId(null); }}
+          onClose={() => actions.setEditingGoalId(null)}
         />
 
         <CompleteGoalModal
           goal={actions.pendingCompletionGoal}
-          isLoading={isCompletingGoal}
+          isLoading={false}
           onConfirm={actions.handleConfirmComplete}
           onClose={() => actions.setPendingCompletionGoal(null)}
         />

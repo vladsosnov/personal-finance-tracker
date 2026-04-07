@@ -49,14 +49,18 @@ export const useDashboardActions = ({
   const handleCreateGoal = async (input: { title: string; targetAmount: number | ""; initialAmount: number | ""; color: string; currency: string }) => {
     if (!input.title.trim() || (input.targetAmount !== 0 && !input.targetAmount)) return;
     trackEvent("add_goal_click");
-    await goalsApi.createGoal({
-      title: input.title,
-      targetAmount: Number(input.targetAmount),
-      initialAmount: Number(input.initialAmount || 0),
-      color: input.color,
-      currency: input.currency,
-    });
-    showToast("Goal created", "teal");
+    try {
+      await goalsApi.createGoal({
+        title: input.title,
+        targetAmount: Number(input.targetAmount),
+        initialAmount: Number(input.initialAmount || 0),
+        color: input.color,
+        currency: input.currency,
+      });
+      showToast("Goal created", "teal");
+    } catch {
+      // error toast already shown by useGoals
+    }
   };
 
   const handleUpdateProgress = async () => {
@@ -70,22 +74,27 @@ export const useDashboardActions = ({
       operationDate: operationForm.operationDate,
     };
 
-    let updatedGoal: GoalDetails | null = null;
-
-    if (operationForm.editingOperationId) {
-      updatedGoal = await detailsApi.editOperation({ operationId: operationForm.editingOperationId, ...sharedInput });
-    } else {
-      if (!selectedGoalId) return;
-      trackEvent("operation_added");
-      updatedGoal = await detailsApi.addOperation({ goalId: selectedGoalId, ...sharedInput });
-    }
-
     const isEdit = Boolean(operationForm.editingOperationId);
-    operationForm.reset();
-    showToast(isEdit ? "Operation updated" : "Operation added", "teal");
-    Promise.all([goalsApi.refetchGoals(), detailsApi.refetchGoalDetails()]).then(() => {
-      maybePromptCompletion(updatedGoal);
-    });
+
+    try {
+      let updatedGoal: GoalDetails | null = null;
+
+      if (operationForm.editingOperationId) {
+        updatedGoal = await detailsApi.editOperation({ operationId: operationForm.editingOperationId, ...sharedInput });
+      } else {
+        if (!selectedGoalId) return;
+        trackEvent("operation_added");
+        updatedGoal = await detailsApi.addOperation({ goalId: selectedGoalId, ...sharedInput });
+      }
+
+      operationForm.reset();
+      showToast(isEdit ? "Operation updated" : "Operation added", "teal");
+      goalsApi.refetchGoals().then(() => {
+        maybePromptCompletion(updatedGoal);
+      });
+    } catch {
+      // error toast already shown by useGoalDetails
+    }
   };
 
   const handleStartEditGoal = (goalId: string) => {
@@ -97,16 +106,20 @@ export const useDashboardActions = ({
 
   const handleConfirmEditGoal = async () => {
     if (!editingGoalId || !editGoalForm.isValid) return;
-    const updatedGoal = await goalsApi.editGoal(editingGoalId, {
-      title: editGoalForm.title,
-      targetAmount: Number(editGoalForm.targetAmount),
-      initialAmount: Number(editGoalForm.initialAmount || 0),
-      color: editGoalForm.color,
-      currency: editGoalForm.currency,
-    });
-    setEditingGoalId(null);
-    if (selectedGoalId === editingGoalId) await detailsApi.refetchGoalDetails();
-    maybePromptCompletion(updatedGoal);
+    try {
+      const updatedGoal = await goalsApi.editGoal(editingGoalId, {
+        title: editGoalForm.title,
+        targetAmount: Number(editGoalForm.targetAmount),
+        initialAmount: Number(editGoalForm.initialAmount || 0),
+        color: editGoalForm.color,
+        currency: editGoalForm.currency,
+      });
+      setEditingGoalId(null);
+      if (selectedGoalId === editingGoalId) detailsApi.refetchGoalDetails();
+      maybePromptCompletion(updatedGoal);
+    } catch {
+      // error toast already shown by useGoals
+    }
   };
 
   const handleStartDeleteGoal = (goalId: string) => {
@@ -135,14 +148,15 @@ export const useDashboardActions = ({
 
   const handleConfirmComplete = async () => {
     if (!pendingCompletionGoal) return;
+    const goalId = pendingCompletionGoal.id;
     try {
-      await goalsApi.completeGoal(pendingCompletionGoal.id);
+      await goalsApi.completeGoal(goalId);
       setPendingCompletionGoal(null);
       fireConfetti();
       showToast("Goal completed!", "teal");
-      if (selectedGoalId === pendingCompletionGoal.id) await detailsApi.refetchGoalDetails();
+      if (selectedGoalId === goalId) detailsApi.refetchGoalDetails();
     } catch {
-      // toast shown in hook
+      setPendingCompletionGoal(null);
     }
   };
 

@@ -41,10 +41,10 @@ export const useGoals = () => {
   const activeGoals = useMemo(() => goals.filter((g) => !g.isCompleted), [goals]);
   const completedGoals = useMemo(() => goals.filter((g) => g.isCompleted), [goals]);
 
-  const [createGoalMutation, { loading: isCreatingGoal }] = useMutation(CREATE_GOAL);
-  const [completeGoalMutation, { loading: isCompletingGoal }] = useMutation(COMPLETE_GOAL);
+  const [createGoalMutation] = useMutation(CREATE_GOAL);
+  const [completeGoalMutation] = useMutation(COMPLETE_GOAL);
   const [deleteGoalMutation] = useMutation(DELETE_GOAL);
-  const [editGoalMutation, { loading: isEditingGoal }] = useMutation(EDIT_GOAL);
+  const [editGoalMutation] = useMutation(EDIT_GOAL);
   const [reorderGoalsMutation] = useMutation(REORDER_GOALS);
 
   const createGoal = async (input: {
@@ -64,7 +64,7 @@ export const useGoals = () => {
           currency: input.currency,
         },
       });
-      await refetchGoals();
+      refetchGoals();
     } catch (error) {
       showToast(error instanceof Error ? error.message : "Failed to create goal", "red");
       throw error;
@@ -86,7 +86,7 @@ export const useGoals = () => {
           currency: input.currency,
         },
       });
-      await refetchGoals();
+      refetchGoals();
       return (result.data as { editGoal?: Goal } | undefined)?.editGoal ?? null;
     } catch (error) {
       showToast(error instanceof Error ? error.message : "Failed to update goal", "red");
@@ -97,7 +97,7 @@ export const useGoals = () => {
   const deleteGoal = async (goalId: string) => {
     try {
       await deleteGoalMutation({ variables: { goalId } });
-      await refetchGoals();
+      refetchGoals();
     } catch (error) {
       showToast(error instanceof Error ? error.message : "Failed to remove goal", "red");
       throw error;
@@ -107,7 +107,7 @@ export const useGoals = () => {
   const completeGoal = async (goalId: string) => {
     try {
       await completeGoalMutation({ variables: { goalId } });
-      await refetchGoals();
+      refetchGoals();
     } catch (error) {
       showToast(error instanceof Error ? error.message : "Failed to complete goal", "red");
       throw error;
@@ -148,9 +148,6 @@ export const useGoals = () => {
     isLoadingGoals,
     goalsError,
     refetchGoals,
-    isCreatingGoal,
-    isEditingGoal,
-    isCompletingGoal,
     createGoal,
     editGoal,
     deleteGoal,
@@ -158,4 +155,3 @@ export const useGoals = () => {
     reorderGoals,
   };
 };
-

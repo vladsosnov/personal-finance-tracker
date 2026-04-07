@@ -29,9 +29,9 @@ export const useGoalDetails = (selectedGoalId: string | null) => {
         ? previousGoalDetailsData.goal
         : null;
 
-  const [updateGoalProgressMutation, { loading: isUpdatingProgress }] =
+  const [updateGoalProgressMutation] =
     useMutation(UPDATE_GOAL_PROGRESS);
-  const [editGoalOperationMutation, { loading: isEditingOperation }] =
+  const [editGoalOperationMutation] =
     useMutation(EDIT_GOAL_OPERATION);
   const [deleteGoalOperationMutation] = useMutation(DELETE_GOAL_OPERATION);
 
@@ -45,7 +45,7 @@ export const useGoalDetails = (selectedGoalId: string | null) => {
   }): Promise<GoalDetails | null> => {
     try {
       const result = await updateGoalProgressMutation({ variables: input });
-      await refetchGoalDetails();
+      refetchGoalDetails();
       return (
         (result.data as { updateGoalProgress?: GoalDetails } | undefined)
           ?.updateGoalProgress ?? null
@@ -66,7 +66,7 @@ export const useGoalDetails = (selectedGoalId: string | null) => {
   }): Promise<GoalDetails | null> => {
     try {
       const result = await editGoalOperationMutation({ variables: input });
-      await refetchGoalDetails();
+      refetchGoalDetails();
       return (
         (result.data as { editGoalOperation?: GoalDetails } | undefined)
           ?.editGoalOperation ?? null
@@ -132,7 +132,6 @@ export const useGoalDetails = (selectedGoalId: string | null) => {
     isLoadingGoalDetails,
     goalDetailsError,
     refetchGoalDetails,
-    isUpdatingProgress: isUpdatingProgress || isEditingOperation,
     addOperation,
     editOperation,
     deleteOperation,
