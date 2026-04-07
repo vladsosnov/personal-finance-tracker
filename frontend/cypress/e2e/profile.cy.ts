@@ -108,6 +108,11 @@ describe("Profile Page", () => {
 
       cy.get("[role='dialog']").should("not.exist");
     });
+
+    it("triggers export and sends the GraphQL query", () => {
+      cy.contains("button", /export all data/i).click();
+      cy.wait("@graphql");
+    });
   });
 
   describe("Delete Account", () => {
