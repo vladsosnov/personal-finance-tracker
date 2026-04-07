@@ -2,7 +2,7 @@
 
 import { useCallback, type MouseEvent } from "react";
 import { Card, SimpleGrid, Stack, Text, Title } from "@mantine/core";
-import { IconHistory, IconChartLine, IconFileImport, IconPalette } from "@tabler/icons-react";
+import { IconHistory, IconChartLine, IconFileImport, IconPalette, IconCoin } from "@tabler/icons-react";
 import { AnimateOnScroll } from "@/features/landing/components/AnimateOnScroll";
 import styles from "@/features/landing/styles/landing.module.css";
 
@@ -21,6 +21,11 @@ const FEATURES = [
     icon: IconFileImport,
     title: "Import existing savings history",
     description: "Bring progress from a .txt export, preview what will be imported, and keep control over skipped items.",
+  },
+  {
+    icon: IconCoin,
+    title: "Multi-currency goals",
+    description: "Track goals in different currencies with per-goal currency handling, automatic exchange rate conversion, and cross-currency operations.",
   },
   {
     icon: IconPalette,
