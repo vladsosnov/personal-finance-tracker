@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { buildGoalFromDetails } from "@/features/dashboard/utils/goalUtils";
 import { trackEvent } from "@/shared/lib/analytics";
+import { fireConfetti } from "@/shared/lib/confetti";
+import { showToast } from "@/shared/lib/toast-store";
 import type { Goal, GoalDetails } from "@/features/dashboard/types";
 import type { useGoals } from "@/features/dashboard/hooks/useGoals";
 import type { useGoalDetails } from "@/features/dashboard/hooks/useGoalDetails";
@@ -54,6 +56,7 @@ export const useDashboardActions = ({
       color: input.color,
       currency: input.currency,
     });
+    showToast("Goal created", "teal");
   };
 
   const handleUpdateProgress = async () => {
@@ -77,7 +80,9 @@ export const useDashboardActions = ({
       updatedGoal = await detailsApi.addOperation({ goalId: selectedGoalId, ...sharedInput });
     }
 
+    const isEdit = Boolean(operationForm.editingOperationId);
     operationForm.reset();
+    showToast(isEdit ? "Operation updated" : "Operation added", "teal");
     Promise.all([goalsApi.refetchGoals(), detailsApi.refetchGoalDetails()]).then(() => {
       maybePromptCompletion(updatedGoal);
     });
@@ -133,6 +138,8 @@ export const useDashboardActions = ({
     try {
       await goalsApi.completeGoal(pendingCompletionGoal.id);
       setPendingCompletionGoal(null);
+      fireConfetti();
+      showToast("Goal completed!", "teal");
       if (selectedGoalId === pendingCompletionGoal.id) await detailsApi.refetchGoalDetails();
     } catch {
       // toast shown in hook

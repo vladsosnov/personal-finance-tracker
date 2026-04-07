@@ -4,8 +4,11 @@ describe("Landing Page", () => {
     cy.visit("/");
   });
 
-  it("renders the hero section", () => {
+  it("renders the hero section with social proof", () => {
     cy.contains("Financial Goals Tracker").should("be.visible");
+    cy.contains("Free forever").should("be.visible");
+    cy.contains("20+ currencies").should("be.visible");
+    cy.contains("Works on any device").should("be.visible");
   });
 
   it("renders navigation links", () => {
@@ -32,6 +35,21 @@ describe("Landing Page", () => {
 
   it("renders plans section", () => {
     cy.contains("Free").should("exist");
+  });
+
+  it("renders FAQ section with accordion items", () => {
+    cy.contains("Common questions").scrollIntoView();
+    cy.contains("Common questions").should("be.visible");
+    cy.contains("Is it really free?").should("be.visible");
+    cy.contains("Where is my data stored?").should("be.visible");
+    cy.contains("Can I track goals in different currencies?").should("be.visible");
+    cy.contains("Does it work on mobile?").should("be.visible");
+  });
+
+  it("expands a FAQ accordion item", () => {
+    cy.contains("Is it really free?").scrollIntoView();
+    cy.contains("Is it really free?").click();
+    cy.contains("free stays free").should("be.visible");
   });
 
   it("renders CTA section with sign-up link", () => {

@@ -1,4 +1,5 @@
-import { Badge, Stack, Text, Title } from "@mantine/core";
+import { Badge, Group, Stack, Text, Title } from "@mantine/core";
+import { IconCoin, IconDeviceMobile, IconLock } from "@tabler/icons-react";
 import { SignInCta } from "@/features/auth/components/sign-in-cta";
 import styles from "@/features/landing/styles/landing.module.css";
 
@@ -32,7 +33,23 @@ export const HeroSection = () => (
         </div>
 
         <div className={styles.heroStagger4}>
-          <SignInCta />
+          <Stack gap="md" align="center">
+            <SignInCta />
+            <Group gap="lg" justify="center" wrap="wrap">
+              <Group gap={6}>
+                <IconLock size={14} color="var(--mantine-color-dimmed)" />
+                <Text size="sm" c="dimmed">Free forever</Text>
+              </Group>
+              <Group gap={6}>
+                <IconCoin size={14} color="var(--mantine-color-dimmed)" />
+                <Text size="sm" c="dimmed">20+ currencies</Text>
+              </Group>
+              <Group gap={6}>
+                <IconDeviceMobile size={14} color="var(--mantine-color-dimmed)" />
+                <Text size="sm" c="dimmed">Works on any device</Text>
+              </Group>
+            </Group>
+          </Stack>
         </div>
       </Stack>
     </div>

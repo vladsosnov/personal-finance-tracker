@@ -1,7 +1,9 @@
-import { IconMaximize } from "@tabler/icons-react";
+import { useMemo } from "react";
+import { IconMaximize, IconTrendingUp } from "@tabler/icons-react";
 import { Badge, Button, Checkbox, Group, Stack, Text, Title, Tooltip } from "@mantine/core";
 import { ChartRangePicker, type ChartRange } from "@/features/dashboard/components/ChartRangePicker";
 import type { GoalDetails } from "@/features/dashboard/types";
+import { getProjectedDate } from "@/features/dashboard/utils/goalUtils";
 import { formatDay } from "@/shared/utils/date";
 
 type GoalDetailHeaderProps = {
@@ -24,11 +26,17 @@ export const GoalDetailHeader = ({
   onChangeRange,
   onToggleTrend,
   onExpandChart,
-}: GoalDetailHeaderProps) => (
+}: GoalDetailHeaderProps) => {
+  const projectedDate = useMemo(
+    () => getProjectedDate(goal.operations, goal.targetAmount, goal.currentAmount, goal.isCompleted),
+    [goal.operations, goal.targetAmount, goal.currentAmount, goal.isCompleted],
+  );
+
+  return (
   <Group justify="space-between" align="flex-start">
     <Stack gap={4}>
       <Title order={4}>{goal.title}</Title>
-      {goal.isCompleted && (
+      {goal.isCompleted ? (
         <Group gap="xs">
           <Badge color="teal" variant="light">
             Completed
@@ -39,7 +47,12 @@ export const GoalDetailHeader = ({
             </Text>
           )}
         </Group>
-      )}
+      ) : projectedDate ? (
+        <Group gap={4}>
+          <IconTrendingUp size={14} color="var(--mantine-color-dimmed)" />
+          <Text size="sm" c="dimmed">On track for ~{projectedDate}</Text>
+        </Group>
+      ) : null}
     </Stack>
     <Group gap="xs" wrap="nowrap" align="center">
       {chartRange === "all" && (
@@ -68,4 +81,5 @@ export const GoalDetailHeader = ({
       </Tooltip>
     </Group>
   </Group>
-);
+  );
+};

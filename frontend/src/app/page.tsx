@@ -3,6 +3,7 @@
 import { Stack } from "@mantine/core";
 import { PageContainer } from "@/shared/components/page-container";
 import { CtaSection } from "@/features/landing/components/CtaSection";
+import { FaqSection } from "@/features/landing/components/FaqSection";
 import { FeaturesSection } from "@/features/landing/components/FeaturesSection";
 import { FutureFeaturesSection } from "@/features/landing/components/FutureFeaturesSection";
 import { HeroSection } from "@/features/landing/components/HeroSection";
@@ -17,6 +18,7 @@ const LandingPage = () => (
       <FeaturesSection />
       <FutureFeaturesSection />
       <PlansSection />
+      <FaqSection />
       <CtaSection />
     </Stack>
   </PageContainer>
