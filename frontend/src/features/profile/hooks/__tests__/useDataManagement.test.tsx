@@ -23,22 +23,31 @@ global.URL.revokeObjectURL = jest.fn();
 
 const mockMeData = {
   me: {
+    __typename: 'User' as const,
     id: '1',
     email: 'test@example.com',
     subscription: 'Free',
+    role: 'user',
+    primaryCurrency: 'USD',
     emailVerified: true,
   },
 };
 
 const mockGoals = [
   {
+    __typename: 'Goal' as const,
     id: '1',
     title: 'Goal 1',
     targetAmount: 1000,
     initialAmount: 0,
+    currency: 'USD',
     color: '#228be6',
     sortOrder: 0,
     isCompleted: false,
+    completedAt: null,
+    currentAmount: 0,
+    progress: 0,
+    createdAt: '2025-01-01T00:00:00Z',
   },
 ];
 
