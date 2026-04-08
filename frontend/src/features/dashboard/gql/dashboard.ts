@@ -1,5 +1,35 @@
 import { gql } from "@apollo/client";
 
+const GOAL_FIELDS = gql`
+  fragment GoalFields on Goal {
+    id
+    title
+    targetAmount
+    initialAmount
+    currency
+    color
+    sortOrder
+    isCompleted
+    completedAt
+    currentAmount
+    progress
+    createdAt
+  }
+`;
+
+const GOAL_OPERATION_FIELDS = gql`
+  fragment GoalOperationFields on GoalOperation {
+    id
+    type
+    amount
+    currency
+    convertedAmount
+    note
+    operationDate
+    createdAt
+  }
+`;
+
 export const EXPORT_ALL_DATA = gql`
   query ExportAllData {
     exportAllData
@@ -7,48 +37,22 @@ export const EXPORT_ALL_DATA = gql`
 `;
 
 export const GET_GOALS = gql`
+  ${GOAL_FIELDS}
   query Goals {
     goals {
-      id
-      title
-      targetAmount
-      initialAmount
-      currency
-      color
-      sortOrder
-      isCompleted
-      completedAt
-      currentAmount
-      progress
-      createdAt
+      ...GoalFields
     }
   }
 `;
 
 export const GET_GOAL_DETAILS = gql`
+  ${GOAL_FIELDS}
+  ${GOAL_OPERATION_FIELDS}
   query Goal($id: ID!) {
     goal(id: $id) {
-      id
-      title
-      targetAmount
-      initialAmount
-      currency
-      color
-      sortOrder
-      isCompleted
-      completedAt
-      currentAmount
-      progress
-      createdAt
+      ...GoalFields
       operations {
-        id
-        type
-        amount
-        currency
-        convertedAmount
-        note
-        operationDate
-        createdAt
+        ...GoalOperationFields
       }
     }
   }
@@ -63,20 +67,10 @@ export const CREATE_GOAL = gql`
 `;
 
 export const EDIT_GOAL = gql`
+  ${GOAL_FIELDS}
   mutation EditGoal($goalId: ID!, $title: String!, $targetAmount: Float!, $initialAmount: Float, $color: String!, $currency: String) {
     editGoal(goalId: $goalId, title: $title, targetAmount: $targetAmount, initialAmount: $initialAmount, color: $color, currency: $currency) {
-      id
-      title
-      targetAmount
-      initialAmount
-      currency
-      color
-      sortOrder
-      isCompleted
-      completedAt
-      currentAmount
-      progress
-      createdAt
+      ...GoalFields
     }
   }
 `;
@@ -107,25 +101,17 @@ export const REORDER_GOALS = gql`
 `;
 
 export const UPDATE_GOAL_PROGRESS = gql`
+  ${GOAL_FIELDS}
   mutation UpdateGoalProgress($goalId: ID!, $type: OperationType!, $amount: Float!, $currency: String, $note: String, $operationDate: String) {
     updateGoalProgress(goalId: $goalId, type: $type, amount: $amount, currency: $currency, note: $note, operationDate: $operationDate) {
-      id
-      title
-      targetAmount
-      initialAmount
-      currency
-      color
-      sortOrder
-      isCompleted
-      completedAt
-      currentAmount
-      progress
-      createdAt
+      ...GoalFields
     }
   }
 `;
 
 export const EDIT_GOAL_OPERATION = gql`
+  ${GOAL_FIELDS}
+  ${GOAL_OPERATION_FIELDS}
   mutation EditGoalOperation($operationId: ID!, $type: OperationType!, $amount: Float!, $currency: String, $note: String, $operationDate: String) {
     editGoalOperation(
       operationId: $operationId
@@ -135,85 +121,35 @@ export const EDIT_GOAL_OPERATION = gql`
       note: $note
       operationDate: $operationDate
     ) {
-      id
-      title
-      targetAmount
-      initialAmount
-      currency
-      color
-      sortOrder
-      isCompleted
-      completedAt
-      currentAmount
-      progress
-      createdAt
+      ...GoalFields
       operations {
-        id
-        type
-        amount
-        currency
-        convertedAmount
-        note
-        operationDate
-        createdAt
+        ...GoalOperationFields
       }
     }
   }
 `;
 
 export const DELETE_GOAL_OPERATION = gql`
+  ${GOAL_FIELDS}
+  ${GOAL_OPERATION_FIELDS}
   mutation DeleteGoalOperation($operationId: ID!) {
     deleteGoalOperation(operationId: $operationId) {
-      id
-      title
-      targetAmount
-      initialAmount
-      currency
-      color
-      sortOrder
-      isCompleted
-      completedAt
-      currentAmount
-      progress
-      createdAt
+      ...GoalFields
       operations {
-        id
-        type
-        amount
-        currency
-        convertedAmount
-        note
-        operationDate
-        createdAt
+        ...GoalOperationFields
       }
     }
   }
 `;
 
 export const COMPLETE_GOAL = gql`
+  ${GOAL_FIELDS}
+  ${GOAL_OPERATION_FIELDS}
   mutation CompleteGoal($goalId: ID!) {
     completeGoal(goalId: $goalId) {
-      id
-      title
-      targetAmount
-      initialAmount
-      currency
-      color
-      sortOrder
-      isCompleted
-      completedAt
-      currentAmount
-      progress
-      createdAt
+      ...GoalFields
       operations {
-        id
-        type
-        amount
-        currency
-        convertedAmount
-        note
-        operationDate
-        createdAt
+        ...GoalOperationFields
       }
     }
   }

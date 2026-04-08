@@ -42,52 +42,38 @@ export const Header = () => {
     }
   };
 
+  const publicLinks: ReadonlyArray<{ href: string; label: string; exact?: boolean }> = [
+    { href: APP_ROUTES.home, label: "Home", exact: true },
+    { href: APP_ROUTES.dashboard, label: "Goals" },
+    { href: APP_ROUTES.expenses, label: "Expenses" },
+    { href: APP_ROUTES.feedback, label: "Feedback" },
+  ];
+
+  const isActive = (href: string, exact?: boolean) =>
+    exact ? pathname === href : pathname.startsWith(href);
+
   const navLinks = (
     <>
-      <Button
-        component={Link}
-        href={APP_ROUTES.home}
-        variant={pathname === APP_ROUTES.home ? "light" : "subtle"}
-        aria-current={pathname === APP_ROUTES.home ? "page" : undefined}
-        onClick={closeMenu}
-      >
-        Home
-      </Button>
-      <Button
-        component={Link}
-        href={APP_ROUTES.dashboard}
-        variant={pathname.startsWith(APP_ROUTES.dashboard) ? "light" : "subtle"}
-        aria-current={pathname.startsWith(APP_ROUTES.dashboard) ? "page" : undefined}
-        onClick={closeMenu}
-      >
-        Goals
-      </Button>
-      <Button
-        component={Link}
-        href={APP_ROUTES.expenses}
-        variant={pathname.startsWith(APP_ROUTES.expenses) ? "light" : "subtle"}
-        aria-current={pathname.startsWith(APP_ROUTES.expenses) ? "page" : undefined}
-        onClick={closeMenu}
-      >
-        Expenses
-      </Button>
-      <Button
-        component={Link}
-        href={APP_ROUTES.feedback}
-        variant={pathname.startsWith(APP_ROUTES.feedback) ? "light" : "subtle"}
-        aria-current={pathname.startsWith(APP_ROUTES.feedback) ? "page" : undefined}
-        onClick={closeMenu}
-      >
-        Feedback
-      </Button>
+      {publicLinks.map(({ href, label, exact }) => (
+        <Button
+          key={href}
+          component={Link}
+          href={href}
+          variant={isActive(href, exact) ? "light" : "subtle"}
+          aria-current={isActive(href, exact) ? "page" : undefined}
+          onClick={closeMenu}
+        >
+          {label}
+        </Button>
+      ))}
       {isAuthed && (
         <>
           {isAdmin && (
             <Button
               component={Link}
               href={APP_ROUTES.adminLogs}
-              variant={pathname.startsWith(APP_ROUTES.adminLogs) ? "light" : "subtle"}
-              aria-current={pathname.startsWith(APP_ROUTES.adminLogs) ? "page" : undefined}
+              variant={isActive(APP_ROUTES.adminLogs) ? "light" : "subtle"}
+              aria-current={isActive(APP_ROUTES.adminLogs) ? "page" : undefined}
               color="red"
               onClick={closeMenu}
             >
@@ -97,8 +83,8 @@ export const Header = () => {
           <Button
             component={Link}
             href={APP_ROUTES.profile}
-            variant={pathname.startsWith(APP_ROUTES.profile) ? "light" : "subtle"}
-            aria-current={pathname.startsWith(APP_ROUTES.profile) ? "page" : undefined}
+            variant={isActive(APP_ROUTES.profile) ? "light" : "subtle"}
+            aria-current={isActive(APP_ROUTES.profile) ? "page" : undefined}
             onClick={closeMenu}
             rightSection={showSubBadge ? (
               <Badge size="xs" variant="light" color={subscription === "Lifetime" ? "teal" : "blue"} px={5} style={{ cursor: "pointer" }}>
