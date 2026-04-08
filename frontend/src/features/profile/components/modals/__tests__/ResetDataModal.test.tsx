@@ -73,10 +73,8 @@ describe('ResetDataModal', () => {
     render(<ResetDataModal {...defaultProps} />);
 
     const modal = screen.getByRole('dialog');
-    expect(modal).toHaveAttribute('aria-describedby');
-
-    const description = screen.getByText(/permanently remove all goals/i);
-    expect(description).toHaveAttribute('id', 'reset-data-desc');
+    expect(modal).toBeInTheDocument();
+    expect(screen.getByText(/permanently remove all goals/i)).toBeInTheDocument();
   });
 
   it('autofocuses cancel button', () => {

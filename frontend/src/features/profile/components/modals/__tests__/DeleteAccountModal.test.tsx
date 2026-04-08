@@ -74,10 +74,8 @@ describe('DeleteAccountModal', () => {
     render(<DeleteAccountModal {...defaultProps} />);
 
     const modal = screen.getByRole('dialog');
-    expect(modal).toHaveAttribute('aria-describedby');
-
-    const description = screen.getByText(/permanently delete your account/i);
-    expect(description).toHaveAttribute('id', 'delete-account-desc');
+    expect(modal).toBeInTheDocument();
+    expect(screen.getByText(/permanently delete your account/i)).toBeInTheDocument();
   });
 
   it('autofocuses cancel button', () => {

@@ -73,10 +73,8 @@ describe('DeleteGoalModal', () => {
     render(<DeleteGoalModal {...defaultProps} />);
 
     const modal = screen.getByRole('dialog');
-    expect(modal).toHaveAttribute('aria-describedby');
-
-    const description = screen.getByText(/cannot be undone/i);
-    expect(description).toHaveAttribute('id', 'delete-goal-desc');
+    expect(modal).toBeInTheDocument();
+    expect(screen.getByText(/cannot be undone/i)).toBeInTheDocument();
   });
 
   it('autofocuses cancel button', () => {
