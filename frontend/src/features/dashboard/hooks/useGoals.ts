@@ -7,6 +7,7 @@ import {
   EDIT_GOAL,
   GET_GOALS,
   REORDER_GOALS,
+  type GoalsQueryData,
 } from "@/features/dashboard/gql/dashboard";
 import type { Goal } from "@/features/dashboard/types";
 import { showToast } from "@/shared/lib/toast-store";
@@ -20,7 +21,7 @@ export const useGoals = () => {
     loading: isLoadingGoals,
     error: goalsError,
     refetch: refetchGoals,
-  } = useQuery<{ goals: Goal[] }>(GET_GOALS);
+  } = useQuery<GoalsQueryData>(GET_GOALS);
 
   const serverGoals = useMemo(
     () => goalsData?.goals ?? previousGoalsData?.goals ?? [],

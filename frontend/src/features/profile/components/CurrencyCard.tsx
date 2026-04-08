@@ -5,14 +5,14 @@ import { useMutation, useQuery } from "@apollo/client/react";
 import { Alert, Button, Card, Group, Stack, Table, Text, Title } from "@mantine/core";
 import { IconInfoCircle, IconRefresh } from "@tabler/icons-react";
 import { CurrencySelect } from "@/shared/components/CurrencySelect";
-import { GET_ME } from "@/shared/gql/queries";
+import { GET_ME, type MeQueryData } from "@/shared/gql/queries";
 import { GET_EXCHANGE_RATES, SET_PRIMARY_CURRENCY } from "@/features/profile/gql/currency";
 import { getCurrencySymbol, SUPPORTED_CURRENCIES } from "@/shared/constants/currencies";
 import { showToast } from "@/shared/lib/toast-store";
 import { formatDay } from "@/shared/utils/date";
 
 export const CurrencyCard = () => {
-  const { data: meData } = useQuery<{ me: { primaryCurrency: string } | null }>(GET_ME);
+  const { data: meData } = useQuery<MeQueryData>(GET_ME);
   const primaryCurrency = meData?.me?.primaryCurrency ?? "USD";
 
   const { data: ratesData, loading: isLoadingRates, refetch: refetchRates } = useQuery<{

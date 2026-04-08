@@ -3,11 +3,11 @@
 import Link from "next/link";
 import { useQuery } from "@apollo/client/react";
 import { Button, Group } from "@mantine/core";
-import { GET_ME } from "@/shared/gql/queries";
+import { GET_ME, type MeQueryData } from "@/shared/gql/queries";
 import { APP_ROUTES } from "@/shared/constants/routes";
 
 export const SignInCta = () => {
-  const { data, loading } = useQuery<{ me: { id: string } | null }>(GET_ME);
+  const { data, loading } = useQuery<MeQueryData>(GET_ME);
   const isAuthed = Boolean(data?.me);
 
   if (loading) {

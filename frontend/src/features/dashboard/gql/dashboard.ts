@@ -1,4 +1,7 @@
 import { gql } from "@apollo/client";
+import type { Goal } from "@/features/dashboard/types";
+
+export type GoalsQueryData = { goals: Goal[] };
 
 const GOAL_FIELDS = gql`
   fragment GoalFields on Goal {

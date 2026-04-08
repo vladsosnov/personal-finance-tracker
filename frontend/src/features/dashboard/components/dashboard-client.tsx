@@ -19,7 +19,7 @@ import { useGoalForm } from "@/features/dashboard/hooks/useGoalForm";
 import { useOperationForm } from "@/features/dashboard/hooks/useOperationForm";
 import { useDashboardActions } from "@/features/dashboard/hooks/useDashboardActions";
 import { EmailVerificationBanner } from "@/features/auth/components/email-verification-banner";
-import { GET_ME } from "@/shared/gql/queries";
+import { GET_ME, type MeQueryData } from "@/shared/gql/queries";
 import { getPlanByName } from "@/shared/constants/plans";
 import { GET_EXCHANGE_RATES } from "@/features/profile/gql/currency";
 import { StateMessage } from "@/shared/components/state-message";
@@ -39,7 +39,7 @@ export const DashboardClient = () => {
 
   const isMobile = useMediaQuery("(max-width: 768px)");
 
-  const { data: meData } = useQuery<{ me: { id: string; email: string; subscription: string; primaryCurrency: string; emailVerified: boolean } | null }>(GET_ME);
+  const { data: meData } = useQuery<MeQueryData>(GET_ME);
 
   const userCurrency = meData?.me?.primaryCurrency ?? "USD";
 

@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useQuery } from "@apollo/client/react";
-import { GET_ME } from "@/shared/gql/queries";
+import { GET_ME, type MeQueryData } from "@/shared/gql/queries";
 
 const PROTECTED_PATHS = ["/goals", "/profile", "/admin"];
 const AUTH_ONLY_PATHS = ["/auth"];
@@ -12,7 +12,7 @@ const AUTH_BYPASS_PATHS = ["/auth/verify-email", "/auth/forgot-password", "/auth
 export const AuthGuard = ({ children }: { children: React.ReactNode }) => {
   const pathname = usePathname();
   const router = useRouter();
-  const { data, loading } = useQuery<{ me: { id: string } | null }>(GET_ME, {
+  const { data, loading } = useQuery<MeQueryData>(GET_ME, {
     fetchPolicy: "cache-and-network",
   });
 

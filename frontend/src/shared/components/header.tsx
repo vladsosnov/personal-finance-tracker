@@ -6,7 +6,7 @@ import { useApolloClient, useQuery } from "@apollo/client/react";
 import { IconDownload } from "@tabler/icons-react";
 import { Badge, Box, Burger, Button, Container, Drawer, Group, Stack, Text } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
-import { GET_ME } from "@/shared/gql/queries";
+import { GET_ME, type MeQueryData } from "@/shared/gql/queries";
 import { API_BASE_URL } from "@/shared/constants/auth";
 import { APP_ROUTES } from "@/shared/constants/routes";
 import { usePwaInstall } from "@/shared/hooks/usePwaInstall";
@@ -19,7 +19,7 @@ export const Header = () => {
   const pathname = usePathname();
   const [menuOpened, { toggle: toggleMenu, close: closeMenu }] = useDisclosure(false);
   const { canInstall, install } = usePwaInstall();
-  const { data: meData } = useQuery<{ me: { id: string; role: string; subscription: string } | null }>(GET_ME, {
+  const { data: meData } = useQuery<MeQueryData>(GET_ME, {
     fetchPolicy: "cache-and-network",
   });
   const isAuthed = Boolean(meData?.me);

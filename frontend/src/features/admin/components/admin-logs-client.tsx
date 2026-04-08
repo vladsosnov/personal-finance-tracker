@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { PageContainer } from "@/shared/components/page-container";
 import { StateMessage } from "@/shared/components/state-message";
-import { GET_ME } from "@/shared/gql/queries";
+import { GET_ME, type MeQueryData } from "@/shared/gql/queries";
 import { APP_ROUTES } from "@/shared/constants/routes";
 import { GET_ANALYTICS_STATS } from "@/features/admin/gql/admin";
 
@@ -162,9 +162,7 @@ const RecentEventsTable = ({ events }: { events: RecentEvent[] }) => {
 
 export const AdminLogsClient = () => {
   const router = useRouter();
-  const { data: meData, loading: meLoading } = useQuery<{
-    me: { id: string; role: string } | null;
-  }>(GET_ME);
+  const { data: meData, loading: meLoading } = useQuery<MeQueryData>(GET_ME);
 
   const isAdmin = meData?.me?.role === "admin";
 

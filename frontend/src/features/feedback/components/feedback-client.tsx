@@ -10,7 +10,7 @@ import { CreateProposalModal } from "@/features/feedback/components/CreatePropos
 import { ProposalsTable } from "@/features/feedback/components/ProposalsTable";
 import { useProposals } from "@/features/feedback/hooks/useProposals";
 import { CATEGORY_LABELS, STATUS_LABELS, type ProposalCategory, type ProposalStatus } from "@/features/feedback/types";
-import { GET_ME } from "@/shared/gql/queries";
+import { GET_ME, type MeQueryData } from "@/shared/gql/queries";
 import anim from "@/shared/styles/page-animations.module.css";
 
 type SortOption = "newest" | "most_voted";
@@ -29,7 +29,7 @@ const STATUS_FILTER_OPTIONS = [
 
 export const FeedbackClient = () => {
   const { proposals, isLoading, error, isCreating, createProposal, voteForProposal, updateProposalStatus, deleteProposal, refetch } = useProposals();
-  const { data: meData } = useQuery<{ me: { id: string; email: string; role: string } | null }>(GET_ME);
+  const { data: meData } = useQuery<MeQueryData>(GET_ME);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [filterCategory, setFilterCategory] = useState<FilterCategory>("all");
   const [filterStatus, setFilterStatus] = useState<FilterStatus>("all");
