@@ -32,4 +32,28 @@ describe("countQueryDepth", () => {
   it("handles flat query", () => {
     expect(countQueryDepth("query me")).toBe(0);
   });
+
+  it("ignores braces inside string literals", () => {
+    expect(countQueryDepth('{ field(arg: "{{{{") }')).toBe(1);
+  });
+
+  it("ignores closing braces inside strings", () => {
+    expect(countQueryDepth('{ field(arg: "}}}}") }')).toBe(1);
+  });
+
+  it("handles escaped quotes inside strings", () => {
+    expect(countQueryDepth('{ field(arg: "val\\"ue") }')).toBe(1);
+  });
+
+  it("handles mixed braces in and out of strings", () => {
+    expect(countQueryDepth('{ a { b(x: "{ }") } }')).toBe(2);
+  });
+
+  it("handles empty string argument", () => {
+    expect(countQueryDepth('{ field(arg: "") }')).toBe(1);
+  });
+
+  it("handles backslash not before quote", () => {
+    expect(countQueryDepth('{ field(arg: "a\\b") }')).toBe(1);
+  });
 });
