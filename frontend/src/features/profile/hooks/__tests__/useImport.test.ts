@@ -145,6 +145,10 @@ describe('useImport', () => {
 
       await loadFile(result);
 
+      await waitFor(() => {
+        expect(result.current.preparedGoals.length).toBe(2);
+      });
+
       expect(result.current.isImportOverLimit).toBe(true);
       expect(result.current.importLimitMessage).toMatch(/free plan is limited/i);
     });
