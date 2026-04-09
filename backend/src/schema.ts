@@ -18,6 +18,7 @@ import {
   getEffectiveSubscription,
   getMaxGoals,
 } from "./utils/validation";
+import { assertValidObjectId } from "./utils/object-id";
 import { updatePrimaryCurrency } from "./modules/auth/user.repository";
 import { SUPPORTED_CURRENCIES } from "./shared/currencies";
 import { getExchangeRatesResponse } from "./modules/exchange-rates/exchange-rate.service";
@@ -305,6 +306,7 @@ export const rootValue = {
   },
   goal: async ({ id }: GoalLookupArgs, context: Context) => {
     const userId = ensureAuthed(context);
+    assertValidObjectId(id, "goal ID");
     const goal = await getGoalById(userId, id);
     return goal ? await buildGoalViewWithCompletionState(userId, goal) : null;
   },
@@ -398,6 +400,7 @@ export const rootValue = {
   },
   editGoal: async ({ goalId, title, targetAmount, initialAmount = 0, color, currency }: EditGoalArgs, context: Context) => {
     const userId = ensureAuthed(context);
+    assertValidObjectId(goalId, "goal ID");
     assertValidGoalTitle(title);
     assertFiniteNonNegative(targetAmount, "Target amount");
     assertFiniteNonNegative(initialAmount, "Initial amount");
@@ -427,6 +430,7 @@ export const rootValue = {
   },
   updateGoalColor: async ({ goalId, color }: UpdateGoalColorArgs, context: Context) => {
     const userId = ensureAuthed(context);
+    assertValidObjectId(goalId, "goal ID");
     if (!/^#[0-9A-Fa-f]{6}$/.test(color)) {
       throw new Error("Goal color must be a valid hex color");
     }
@@ -440,6 +444,7 @@ export const rootValue = {
   },
   deleteGoal: async ({ goalId }: DeleteGoalArgs, context: Context) => {
     const userId = ensureAuthed(context);
+    assertValidObjectId(goalId, "goal ID");
     const goal = await getGoalById(userId, goalId);
     if (!goal) {
       throw new Error("Goal not found");
@@ -550,6 +555,7 @@ export const rootValue = {
   },
   completeGoal: async ({ goalId }: CompleteGoalArgs, context: Context) => {
     const userId = ensureAuthed(context);
+    assertValidObjectId(goalId, "goal ID");
     const goal = await getGoalById(userId, goalId);
     if (!goal) {
       throw new Error("Goal not found");
@@ -569,6 +575,7 @@ export const rootValue = {
   },
   updateGoalProgress: async ({ goalId, type, amount, currency, note, operationDate }: GoalOperationArgs, context: Context) => {
     const userId = ensureAuthed(context);
+    assertValidObjectId(goalId, "goal ID");
     if (!Number.isFinite(amount) || amount <= 0) {
       throw new Error("Amount should be greater than 0");
     }
@@ -590,6 +597,7 @@ export const rootValue = {
   },
   editGoalOperation: async ({ operationId, type, amount, currency, note, operationDate }: EditGoalOperationArgs, context: Context) => {
     const userId = ensureAuthed(context);
+    assertValidObjectId(operationId, "operation ID");
     if (!Number.isFinite(amount) || amount <= 0) {
       throw new Error("Amount should be greater than 0");
     }
@@ -626,6 +634,7 @@ export const rootValue = {
   },
   deleteGoalOperation: async ({ operationId }: DeleteGoalOperationArgs, context: Context) => {
     const userId = ensureAuthed(context);
+    assertValidObjectId(operationId, "operation ID");
 
     const operation = await getGoalOperationById(userId, operationId);
     if (!operation) {
@@ -731,6 +740,7 @@ export const rootValue = {
     };
   },
   voteProposal: async ({ proposalId }: { proposalId: string }, context: Context) => {
+    assertValidObjectId(proposalId, "proposal ID");
     const proposal = await voteProposal(proposalId, context.clientIp);
     if (!proposal) return null;
 
@@ -747,12 +757,14 @@ export const rootValue = {
   },
   deleteProposal: async ({ proposalId }: { proposalId: string }, context: Context) => {
     ensureAdmin(context);
+    assertValidObjectId(proposalId, "proposal ID");
     const deleted = await deleteProposal(proposalId);
     if (!deleted) throw new Error("Proposal not found");
     return true;
   },
   updateProposalStatus: async ({ proposalId, status }: { proposalId: string; status: string }, context: Context) => {
     ensureAdmin(context);
+    assertValidObjectId(proposalId, "proposal ID");
 
     const statusMap: Record<string, "open" | "in_review" | "done" | "rejected"> = {
       OPEN: "open",

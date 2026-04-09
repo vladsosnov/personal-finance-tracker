@@ -218,10 +218,15 @@ export const reorderGoals = async (userId: string, orderedGoalIds: string[]): Pr
     throw new Error("Goal order payload is invalid");
   }
 
-  await Promise.all(
-    orderedGoalIds.map((goalId, index) =>
-      GoalModel.updateOne({ _id: goalId, userId }, { $set: { sortOrder: index } })
-    )
+  if (!orderedGoalIds.length) return;
+
+  await GoalModel.bulkWrite(
+    orderedGoalIds.map((goalId, index) => ({
+      updateOne: {
+        filter: { _id: goalId, userId },
+        update: { $set: { sortOrder: index } },
+      },
+    }))
   );
 };
 

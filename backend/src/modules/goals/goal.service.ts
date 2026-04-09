@@ -78,14 +78,13 @@ export const buildGoalViews = async (userId: string, goals: Goal[]): Promise<Goa
     operationsByGoal.set(op.goalId, list);
   }
 
-  // Pre-fetch rates for all unique goal currencies
+  // Pre-fetch rates for all unique goal currencies in parallel
   const allCurrencies = collectCurrencies(goals, allOperations);
-  const ratesByBase = new Map<string, Record<string, number>>();
-  for (const goal of goals) {
-    if (!ratesByBase.has(goal.currency)) {
-      ratesByBase.set(goal.currency, await getRatesForCurrencies(goal.currency, allCurrencies));
-    }
-  }
+  const uniqueBaseCurrencies = [...new Set(goals.map((g) => g.currency))];
+  const rateEntries = await Promise.all(
+    uniqueBaseCurrencies.map(async (base) => [base, await getRatesForCurrencies(base, allCurrencies)] as const)
+  );
+  const ratesByBase = new Map(rateEntries);
 
   return goals.map((goal) => {
     const ops = operationsByGoal.get(goal.id) ?? [];

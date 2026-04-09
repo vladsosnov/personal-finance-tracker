@@ -1,7 +1,7 @@
 import dotenv from "dotenv";
 import mongoose from "mongoose";
 import { UserModel } from "../db/models/user.model";
-import { hashPassword } from "../auth";
+import { hashPassword } from "../modules/auth/auth";
 
 dotenv.config();
 

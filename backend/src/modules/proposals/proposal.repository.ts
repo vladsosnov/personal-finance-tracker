@@ -51,8 +51,15 @@ type DocShape = {
   createdAt: Date;
 };
 
-export const listProposals = async (): Promise<Proposal[]> => {
-  const docs = await ProposalModel.find().sort({ createdAt: -1 }).lean();
+const MAX_PROPOSALS = 200;
+
+export const listProposals = async (limit = 50, offset = 0): Promise<Proposal[]> => {
+  const capped = Math.min(Math.max(limit, 1), MAX_PROPOSALS);
+  const docs = await ProposalModel.find()
+    .sort({ createdAt: -1 })
+    .skip(Math.max(offset, 0))
+    .limit(capped)
+    .lean();
   return docs.map((doc) => toProposal(doc as unknown as DocShape));
 };
 
@@ -103,3 +110,4 @@ export const deleteProposal = async (proposalId: string): Promise<boolean> => {
   const result = await ProposalModel.deleteOne({ _id: proposalId });
   return result.deletedCount === 1;
 };
+

@@ -12,7 +12,7 @@ import {
   signAuthTokens,
   AUTH_ACCESS_COOKIE,
   AUTH_REFRESH_COOKIE,
-} from "../auth";
+} from "../modules/auth/auth";
 
 describe("auth", () => {
   describe("hashPassword / verifyPassword", () => {

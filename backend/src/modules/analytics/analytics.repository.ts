@@ -54,6 +54,11 @@ export const getUniqueUserLogins = async (): Promise<number> => {
 
 const MAX_RECENT_EVENTS = 200;
 
+export const deleteAnalyticsByUser = async (userId: string): Promise<number> => {
+  const result = await AnalyticsEventModel.deleteMany({ userId });
+  return result.deletedCount ?? 0;
+};
+
 export const getRecentEvents = async (limit = 50): Promise<Array<{
   id: string;
   event: string;
