@@ -47,7 +47,7 @@ export const GoalOperationsTable = ({
           <Table.Tr>
             <Table.Th style={{ width: 112 }}>Date</Table.Th>
             <Table.Th style={{ width: 112 }}>Type</Table.Th>
-            <Table.Th>Amount</Table.Th>
+            <Table.Th style={{ width: 120 }}>Amount</Table.Th>
             <Table.Th>Note</Table.Th>
             <Table.Th ta="right" style={{ width: 88 }}>Actions</Table.Th>
           </Table.Tr>
