@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { IconPencil, IconTrash } from "@tabler/icons-react";
-import { Badge, Button, Card, Group, Progress, Stack, Text, Tooltip } from "@mantine/core";
+import { ActionIcon, Badge, Card, Group, Progress, Stack, Text, Tooltip } from "@mantine/core";
+import { useMediaQuery } from "@mantine/hooks";
 import type { Goal } from "@/features/dashboard/types";
 import { hexToRgba } from "@/shared/utils/color";
 import { formatMoney, getProgressPercentage } from "@/shared/utils/number";
@@ -43,9 +44,11 @@ export const GoalCard = ({
   onTouchMove,
   onTouchEnd,
 }: GoalCardProps) => {
+  const isMobile = useMediaQuery("(max-width: 768px)");
   const goalProgress = getProgressPercentage(goal.currentAmount, goal.targetAmount);
   const remaining = goal.targetAmount - goal.currentAmount;
   const [animatedProgress, setAnimatedProgress] = useState(0);
+  const touchSize = isMobile ? 36 : 28;
 
   useEffect(() => {
     const id = requestAnimationFrame(() => setAnimatedProgress(goalProgress));
@@ -53,6 +56,21 @@ export const GoalCard = ({
   }, [goalProgress]);
 
   return (
+    <div style={{ position: "relative" }}>
+      {isDropTarget && !isDragged && (
+        <div
+          style={{
+            position: "absolute",
+            top: -4,
+            left: 8,
+            right: 8,
+            height: 3,
+            borderRadius: 2,
+            background: `linear-gradient(90deg, ${goal.color}, ${hexToRgba(goal.color, 0.3)})`,
+            zIndex: 5,
+          }}
+        />
+      )}
     <Tooltip label={goal.title} disabled={goal.title.length <= 28} openDelay={600} position="top-start">
       <Card
         withBorder
@@ -68,9 +86,17 @@ export const GoalCard = ({
         style={{
           cursor: isDraggable ? (isDragged ? "grabbing" : "grab") : "pointer",
           borderColor: isDropTarget || isSelected ? goal.color : undefined,
-          boxShadow: isSelected ? `0 0 0 1px ${hexToRgba(goal.color, 0.2)}` : undefined,
+          boxShadow: isDragged
+            ? `0 12px 32px rgba(0, 0, 0, 0.15), 0 0 0 1px ${hexToRgba(goal.color, 0.3)}`
+            : isSelected
+              ? `0 0 0 1px ${hexToRgba(goal.color, 0.2)}`
+              : undefined,
           backgroundColor: isSelected ? hexToRgba(goal.color, 0.05) : undefined,
-          opacity: isDragged ? 0.55 : 1,
+          opacity: isDragged ? 0.85 : 1,
+          transform: isDragged ? "scale(1.03)" : undefined,
+          transition: isDragged ? "none" : "transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease",
+          zIndex: isDragged ? 10 : undefined,
+          position: isDragged ? "relative" as const : undefined,
         }}
         onDragStart={onDragStart}
         onDragOver={onDragOver}
@@ -93,28 +119,25 @@ export const GoalCard = ({
               {goal.title}
             </Text>
             {isManageMode ? (
-              <Group gap={4} wrap="nowrap" style={{ minHeight: 28 }}>
-                <Button
+              <Group gap={4} wrap="nowrap">
+                <ActionIcon
                   variant="light"
-                  size="compact-sm"
-                  px={8}
-                  styles={{ root: { minHeight: 28, backgroundColor: "rgba(15, 23, 42, 0.06)", color: "var(--mantine-color-text)" } }}
+                  color="gray"
+                  size={touchSize}
                   aria-label={`Edit ${goal.title}`}
                   onClick={(e) => { e.stopPropagation(); onEdit(); }}
                 >
                   <IconPencil size={16} stroke={2} />
-                </Button>
-                <Button
-                  color="red"
+                </ActionIcon>
+                <ActionIcon
                   variant="light"
-                  size="compact-sm"
-                  px={8}
-                  styles={{ root: { minHeight: 28 } }}
+                  color="red"
+                  size={touchSize}
                   aria-label={`Remove ${goal.title}`}
                   onClick={(e) => { e.stopPropagation(); onDelete(); }}
                 >
                   <IconTrash size={16} stroke={2} />
-                </Button>
+                </ActionIcon>
               </Group>
             ) : (
               <Badge
@@ -157,5 +180,6 @@ export const GoalCard = ({
         </Stack>
       </Card>
     </Tooltip>
+    </div>
   );
 };

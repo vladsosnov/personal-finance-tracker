@@ -6,6 +6,7 @@ import { useQuery } from "@apollo/client/react";
 import { Button, Card, Grid, Stack } from "@mantine/core";
 import { useMediaQuery } from "@mantine/hooks";
 import { IconPlus } from "@tabler/icons-react";
+import { IconAlertTriangle, IconCircleCheck, IconTarget, IconTrophy } from "@tabler/icons-react";
 import { PageContainer } from "@/shared/components/page-container";
 import { CreateGoalForm, CreateGoalModal } from "@/features/dashboard/components/create-goal-form";
 import { DashboardOverviewStats } from "@/features/dashboard/components/dashboard-overview-stats";
@@ -130,10 +131,10 @@ export const DashboardClient = () => {
   const visibleGoals = isCompletedTab ? completedGoals : activeGoals;
 
   const goalsEmptyState = isCompletedTab
-    ? { title: "No completed goals", description: "Completed goals will appear here once you finish one." }
+    ? { title: "No completed goals", description: "Completed goals will appear here once you finish one.", icon: <IconTrophy size={24} />, iconColor: "yellow" }
     : completedGoals.length > 0
-      ? { title: "No active goals", description: "Completed goals are moved to the completed tab. Add a new goal to keep tracking." }
-      : { title: "No goals yet", description: "Create your first goal to start tracking progress." };
+      ? { title: "No active goals", description: "Completed goals are moved to the completed tab. Add a new goal to keep tracking.", icon: <IconCircleCheck size={24} />, iconColor: "teal" }
+      : { title: "No goals yet", description: "Create your first goal to start tracking progress.", icon: <IconTarget size={24} /> };
 
   const createGoalFormProps = {
     goalTitle: createGoalForm.title,
@@ -227,11 +228,11 @@ export const DashboardClient = () => {
 
         {!shouldShowGoalsSkeleton && goalsError && !goals.length ? (
           <Card withBorder radius="md" p="xl">
-            <StateMessage title="Couldn't load goals" description={goalsError.message} actionLabel="Try again" onAction={() => goalsApi.refetchGoals()} />
+            <StateMessage title="Couldn't load goals" description={goalsError.message} actionLabel="Try again" onAction={() => goalsApi.refetchGoals()} icon={<IconAlertTriangle size={24} />} iconColor="red" />
           </Card>
         ) : !shouldShowGoalsSkeleton && !goals.length ? (
           <Card withBorder radius="md" p="xl">
-            <StateMessage title="No goals yet" description="Create your first goal to start tracking progress." />
+            <StateMessage title="No goals yet" description="Create your first goal to start tracking progress." icon={<IconTarget size={24} />} />
           </Card>
         ) : isMobile ? (
           <div className={anim.slideLeft}>

@@ -127,7 +127,7 @@ export const GoalChart = ({
   const computedColorScheme = useComputedColorScheme("light", { getInitialValueInEffect: true });
   const isDark = computedColorScheme === "dark";
   const seriesData = useMemo<Array<[number, number]>>(() => {
-    let total = 0;
+    let total = initialAmount;
     const sortedOperations = [...operations]
       .sort((a, b) => {
         const dateComparison = a.operationDate.localeCompare(b.operationDate);
@@ -166,7 +166,7 @@ export const GoalChart = ({
     }
 
     return [allData[firstVisibleIndex - 1], ...allData.slice(firstVisibleIndex)];
-  }, [operations, range]);
+  }, [operations, range, initialAmount]);
 
   const trendResult = useMemo(
     () => buildTrendLine(seriesData, currentAmount, targetAmount, isCompleted),

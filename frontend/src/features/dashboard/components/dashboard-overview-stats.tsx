@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Card, Grid, Group, RingProgress, Skeleton, Text, Title } from "@mantine/core";
+import { Card, Grid, Group, RingProgress, Skeleton, Stack, Text, Title } from "@mantine/core";
 import { useMediaQuery } from "@mantine/hooks";
 import { formatMoney, getProgressPercentage } from "@/shared/utils/number";
 import styles from "@/shared/styles/page-animations.module.css";
@@ -43,96 +43,105 @@ export const DashboardOverviewStats = ({ totalTarget, totalCurrent, currency }: 
   const progress = getProgressPercentage(totalCurrent ?? 0, totalTarget ?? 0);
   const animatedProgress = useDashboardCounter(Math.round(progress * 10) / 10, 900);
   const isMobile = useMediaQuery("(max-width: 768px)");
-  const [activeSlide, setActiveSlide] = useState(0);
-  const touchStartX = useRef<number | null>(null);
-
-  const cards = [
-    <Card key="target" withBorder radius="md" p="lg">
-      <Text c="dimmed" size="sm" id="stat-target-label">Total target</Text>
-      {isLoading ? <Skeleton height={28} width="60%" mt={4} /> : (
-        <Title order={3} aria-labelledby="stat-target-label" aria-live="polite">
-          {formatMoney(animatedTarget, currency)}
-        </Title>
-      )}
-    </Card>,
-    <Card key="current" withBorder radius="md" p="lg">
-      <Text c="dimmed" size="sm" id="stat-current-label">Total current</Text>
-      {isLoading ? <Skeleton height={28} width="60%" mt={4} /> : (
-        <Title order={3} aria-labelledby="stat-current-label" aria-live="polite">
-          {formatMoney(animatedCurrent, currency)}
-        </Title>
-      )}
-    </Card>,
-    <Card key="progress" withBorder radius="md" p="lg">
-      <Group justify="space-between" align="center" wrap="nowrap">
-        <div>
-          <Text c="dimmed" size="sm" id="stat-progress-label">Overall progress</Text>
-          {isLoading ? <Skeleton height={28} width={80} mt={4} /> : (
-            <Title order={3} aria-labelledby="stat-progress-label" aria-live="polite">
-              {`${animatedProgress.toFixed(1)}%`}
-            </Title>
-          )}
-        </div>
-        {!isLoading && (
-          <RingProgress
-            size={50}
-            thickness={6}
-            roundCaps
-            aria-hidden="true"
-            sections={[{ value: Math.min(progress, 100), color: "#316263" }]}
-          />
-        )}
-      </Group>
-    </Card>,
-  ];
 
   if (isMobile) {
     return (
-      <div
-        role="region"
-        aria-label="Dashboard overview"
-        onTouchStart={(e) => { touchStartX.current = e.touches[0].clientX; }}
-        onTouchEnd={(e) => {
-          if (touchStartX.current === null) return;
-          const diff = touchStartX.current - e.changedTouches[0].clientX;
-          if (diff > 40) setActiveSlide((s) => (s + 1) % cards.length);
-          else if (diff < -40) setActiveSlide((s) => (s - 1 + cards.length) % cards.length);
-          touchStartX.current = null;
-        }}
-      >
+      <Stack gap="xs" role="region" aria-label="Dashboard overview">
         <div className={styles.stagger1}>
-          {cards[activeSlide]}
+          <Card withBorder radius="md" p="md">
+            <Group justify="space-between" align="center" wrap="nowrap">
+              <div>
+                <Text c="dimmed" size="xs" id="stat-target-label-m">Total target</Text>
+                {isLoading ? <Skeleton height={24} width="70%" mt={2} /> : (
+                  <Title order={4} aria-labelledby="stat-target-label-m" aria-live="polite">
+                    {formatMoney(animatedTarget, currency)}
+                  </Title>
+                )}
+              </div>
+              <div>
+                <Text c="dimmed" size="xs" id="stat-current-label-m">Current</Text>
+                {isLoading ? <Skeleton height={24} width={80} mt={2} /> : (
+                  <Title order={4} aria-labelledby="stat-current-label-m" aria-live="polite">
+                    {formatMoney(animatedCurrent, currency)}
+                  </Title>
+                )}
+              </div>
+              <Group gap={8} wrap="nowrap" align="center">
+                {!isLoading && (
+                  <RingProgress
+                    size={42}
+                    thickness={5}
+                    roundCaps
+                    aria-hidden="true"
+                    sections={[{ value: Math.min(progress, 100), color: "#316263" }]}
+                  />
+                )}
+                <div>
+                  <Text c="dimmed" size="xs" id="stat-progress-label-m">Progress</Text>
+                  {isLoading ? <Skeleton height={24} width={50} mt={2} /> : (
+                    <Title order={4} aria-labelledby="stat-progress-label-m" aria-live="polite">
+                      {`${animatedProgress.toFixed(1)}%`}
+                    </Title>
+                  )}
+                </div>
+              </Group>
+            </Group>
+          </Card>
         </div>
-        <Group justify="center" gap={6} mt={8}>
-          {cards.map((_, i) => (
-            <div
-              key={i}
-              onClick={() => setActiveSlide(i)}
-              style={{
-                width: i === activeSlide ? 16 : 6,
-                height: 6,
-                borderRadius: 3,
-                backgroundColor: i === activeSlide ? "#316263" : "var(--mantine-color-default-border)",
-                cursor: "pointer",
-                transition: "width 0.2s ease",
-              }}
-            />
-          ))}
-        </Group>
-      </div>
+      </Stack>
     );
   }
 
   return (
     <Grid role="region" aria-label="Dashboard overview">
       <Grid.Col span={{ base: 12, md: 4 }}>
-        <div className={styles.stagger1}>{cards[0]}</div>
+        <div className={styles.stagger1}>
+          <Card withBorder radius="md" p="lg">
+            <Text c="dimmed" size="sm" id="stat-target-label">Total target</Text>
+            {isLoading ? <Skeleton height={28} width="60%" mt={4} /> : (
+              <Title order={3} aria-labelledby="stat-target-label" aria-live="polite">
+                {formatMoney(animatedTarget, currency)}
+              </Title>
+            )}
+          </Card>
+        </div>
       </Grid.Col>
       <Grid.Col span={{ base: 12, md: 4 }}>
-        <div className={styles.stagger2}>{cards[1]}</div>
+        <div className={styles.stagger2}>
+          <Card withBorder radius="md" p="lg">
+            <Text c="dimmed" size="sm" id="stat-current-label">Total current</Text>
+            {isLoading ? <Skeleton height={28} width="60%" mt={4} /> : (
+              <Title order={3} aria-labelledby="stat-current-label" aria-live="polite">
+                {formatMoney(animatedCurrent, currency)}
+              </Title>
+            )}
+          </Card>
+        </div>
       </Grid.Col>
       <Grid.Col span={{ base: 12, md: 4 }}>
-        <div className={styles.stagger3}>{cards[2]}</div>
+        <div className={styles.stagger3}>
+          <Card withBorder radius="md" p="lg">
+            <Group justify="space-between" align="center" wrap="nowrap">
+              <div>
+                <Text c="dimmed" size="sm" id="stat-progress-label">Overall progress</Text>
+                {isLoading ? <Skeleton height={28} width={80} mt={4} /> : (
+                  <Title order={3} aria-labelledby="stat-progress-label" aria-live="polite">
+                    {`${animatedProgress.toFixed(1)}%`}
+                  </Title>
+                )}
+              </div>
+              {!isLoading && (
+                <RingProgress
+                  size={50}
+                  thickness={6}
+                  roundCaps
+                  aria-hidden="true"
+                  sections={[{ value: Math.min(progress, 100), color: "#316263" }]}
+                />
+              )}
+            </Group>
+          </Card>
+        </div>
       </Grid.Col>
     </Grid>
   );

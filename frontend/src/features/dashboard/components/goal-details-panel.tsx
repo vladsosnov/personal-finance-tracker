@@ -1,6 +1,7 @@
 import { useState } from "react";
 import dynamic from "next/dynamic";
 import { IconChartLine, IconPlus, IconTarget } from "@tabler/icons-react";
+import { useMediaQuery } from "@mantine/hooks";
 import { Button, Card, Checkbox, Group, Modal, ScrollArea, Skeleton, Stack, Text, ThemeIcon, Title, Tooltip } from "@mantine/core";
 import { ChartRangePicker, type ChartRange } from "@/features/dashboard/components/ChartRangePicker";
 import { GoalDetailHeader } from "@/features/dashboard/components/GoalDetailHeader";
@@ -58,6 +59,7 @@ export const GoalDetailsPanel = ({
   onCreateGoal,
   scrollHeight,
 }: GoalDetailsPanelProps) => {
+  const isMobile = useMediaQuery("(max-width: 768px)");
   const [isOperationModalOpen, setIsOperationModalOpen] = useState(false);
   const [isChartModalOpen, setIsChartModalOpen] = useState(false);
   const [isRangePickerOpen, setIsRangePickerOpen] = useState(false);
@@ -204,7 +206,8 @@ export const GoalDetailsPanel = ({
               onClose={() => setIsChartModalOpen(false)}
               title={`${selectedGoal.title} — Progress chart`}
               centered
-              size="calc(100vw - 96px)"
+              fullScreen={isMobile}
+              size={isMobile ? undefined : "calc(100vw - 96px)"}
             >
               <Stack gap="md">
                 <Group justify="flex-end" align="center">

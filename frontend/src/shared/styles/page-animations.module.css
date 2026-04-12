@@ -120,6 +120,10 @@
   animation: cardEnter 0.55s cubic-bezier(0.16, 1, 0.3, 1) 0.40s both;
 }
 
+.stagger7 {
+  animation: cardEnter 0.55s cubic-bezier(0.16, 1, 0.3, 1) 0.47s both;
+}
+
 /* ── Slide variants ────────────────────────────────────────── */
 
 .slideLeft {
@@ -285,6 +289,7 @@ html[data-mantine-color-scheme="dark"] .hoverLift:hover {
   .stagger4,
   .stagger5,
   .stagger6,
+  .stagger7,
   .slideLeft,
   .slideRight,
   .scaleIn,

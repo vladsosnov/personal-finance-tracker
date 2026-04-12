@@ -1,5 +1,5 @@
-import { useCallback } from "react";
-import { IconDotsVertical, IconX } from "@tabler/icons-react";
+import { useCallback, type ReactNode } from "react";
+import { IconAlertTriangle, IconDotsVertical, IconX } from "@tabler/icons-react";
 import { Button, Card, Group, ScrollArea, Skeleton, Stack, Text } from "@mantine/core";
 import { useMediaQuery } from "@mantine/hooks";
 import type { Goal } from "@/features/dashboard/types";
@@ -19,6 +19,8 @@ export type GoalManageMode = {
 export type GoalEmptyState = {
   title?: string;
   description?: string;
+  icon?: ReactNode;
+  iconColor?: string;
 };
 
 type GoalsListProps = {
@@ -90,7 +92,7 @@ export const GoalsList = ({
               <GoalsLoadingSkeleton />
             ) : errorMessage ? (
               <Card withBorder radius="md" p="xl">
-                <StateMessage title="Couldn't load goals" description={errorMessage} actionLabel="Try again" onAction={onRetry} />
+                <StateMessage title="Couldn't load goals" description={errorMessage} actionLabel="Try again" onAction={onRetry} icon={<IconAlertTriangle size={24} />} iconColor="red" />
               </Card>
             ) : (
               goals.map((goal) => (
@@ -117,7 +119,7 @@ export const GoalsList = ({
             )}
             {!isLoadingGoals && !errorMessage && !goals.length && (
               <Card withBorder radius="md" p="xl">
-                <StateMessage title={emptyTitle} description={emptyDescription} />
+                <StateMessage title={emptyTitle} description={emptyDescription} icon={emptyState?.icon} iconColor={emptyState?.iconColor} />
               </Card>
             )}
           </Stack>
