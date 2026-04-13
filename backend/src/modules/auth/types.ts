@@ -12,6 +12,7 @@ export type User = {
   paddleCustomerId?: string;
   paddleSubscriptionId?: string;
   paddleTransactionId?: string;
+  latestPaddleBillingEventAt?: string;
   subscriptionRenewsAt?: string;
   subscriptionCanceledAt?: string;
   lifetimeUnlockedAt?: string;

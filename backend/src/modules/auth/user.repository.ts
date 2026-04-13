@@ -11,6 +11,7 @@ type UserDoc = {
   billingStatus?: BillingStatus;
   billingProvider?: "paddle";
   processedPaddleWebhookEventIds?: string[];
+  latestPaddleBillingEventAt?: Date | null;
   paddleCustomerId?: string;
   paddleSubscriptionId?: string;
   paddleTransactionId?: string;
@@ -38,6 +39,7 @@ export type UserBillingUpdate = {
   paddleCustomerId?: string;
   paddleSubscriptionId?: string;
   paddleTransactionId?: string;
+  latestPaddleBillingEventAt?: Date | null;
   subscriptionRenewsAt?: Date | null;
   subscriptionCanceledAt?: Date | null;
   lifetimeUnlockedAt?: Date | null;
@@ -59,6 +61,7 @@ const toUser = (doc: UserDoc): User => ({
   paddleCustomerId: doc.paddleCustomerId,
   paddleSubscriptionId: doc.paddleSubscriptionId,
   paddleTransactionId: doc.paddleTransactionId,
+  latestPaddleBillingEventAt: doc.latestPaddleBillingEventAt?.toISOString(),
   subscriptionRenewsAt: doc.subscriptionRenewsAt?.toISOString(),
   subscriptionCanceledAt: doc.subscriptionCanceledAt?.toISOString(),
   lifetimeUnlockedAt: doc.lifetimeUnlockedAt?.toISOString(),
@@ -87,6 +90,7 @@ const toBillingSet = (billing: UserBillingUpdate): Record<string, unknown> => {
   if (billing.paddleCustomerId !== undefined) update.paddleCustomerId = billing.paddleCustomerId;
   if (billing.paddleSubscriptionId !== undefined) update.paddleSubscriptionId = billing.paddleSubscriptionId;
   if (billing.paddleTransactionId !== undefined) update.paddleTransactionId = billing.paddleTransactionId;
+  if (billing.latestPaddleBillingEventAt !== undefined) update.latestPaddleBillingEventAt = billing.latestPaddleBillingEventAt;
   if (billing.subscriptionRenewsAt !== undefined) update.subscriptionRenewsAt = billing.subscriptionRenewsAt;
   if (billing.subscriptionCanceledAt !== undefined) update.subscriptionCanceledAt = billing.subscriptionCanceledAt;
   if (billing.lifetimeUnlockedAt !== undefined) update.lifetimeUnlockedAt = billing.lifetimeUnlockedAt;
@@ -153,15 +157,24 @@ export const hasProcessedBillingWebhookEvent = async (userId: string, eventId: s
 export const updateUserBillingForWebhookEvent = async (
   userId: string,
   eventId: string,
+  occurredAt: Date,
   billing: UserBillingUpdate
 ): Promise<User | null> => {
   const user = await UserModel.findOneAndUpdate(
     {
       _id: userId,
       processedPaddleWebhookEventIds: { $ne: eventId },
+      $or: [
+        { latestPaddleBillingEventAt: { $exists: false } },
+        { latestPaddleBillingEventAt: null },
+        { latestPaddleBillingEventAt: { $lte: occurredAt } },
+      ],
     },
     {
-      $set: toBillingSet(billing),
+      $set: {
+        ...toBillingSet(billing),
+        latestPaddleBillingEventAt: occurredAt,
+      },
       $addToSet: { processedPaddleWebhookEventIds: eventId },
     },
     { new: true }
