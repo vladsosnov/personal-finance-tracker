@@ -32,7 +32,7 @@ export const AuthView = ({
   onSubmit,
 }: AuthViewProps) => {
   return (
-    <Container size="sm" py={72} className={styles.authWrapper}>
+    <Container size="sm" py={{ base: 32, sm: 72 }} className={styles.authWrapper}>
       <div className={styles.orbContainer}>
         <div className={`${styles.orb} ${styles.orbBlue}`} />
         <div className={`${styles.orb} ${styles.orbViolet}`} />

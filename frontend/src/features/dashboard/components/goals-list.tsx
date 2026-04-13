@@ -1,6 +1,6 @@
 import { useCallback, type ReactNode } from "react";
-import { IconAlertTriangle, IconDotsVertical, IconX } from "@tabler/icons-react";
-import { Button, Card, Group, ScrollArea, Skeleton, Stack, Text } from "@mantine/core";
+import { IconAlertTriangle, IconDotsVertical, IconGripVertical, IconX } from "@tabler/icons-react";
+import { Button, Card, Group, ScrollArea, Skeleton, Stack, Text, Tooltip } from "@mantine/core";
 import { useMediaQuery } from "@mantine/hooks";
 import type { Goal } from "@/features/dashboard/types";
 import type { useGoalDrag } from "@/features/dashboard/hooks/useGoalDrag";
@@ -69,10 +69,13 @@ export const GoalsList = ({
         <Group justify="space-between" align="center">
           {isLoadingGoals ? (
             <Skeleton height={24} width={240} />
-          ) : goals.length > 0 && !isMobile ? (
-            <Text size="xs" c="dimmed" aria-hidden="true">
-              Drag and drop cards to change their order.
-            </Text>
+          ) : isDraggable && goals.length > 0 ? (
+            <Tooltip label="Drag cards to reorder" position="right" openDelay={400}>
+              <Group gap={4} style={{ cursor: "default" }}>
+                <IconGripVertical size={14} stroke={1.5} color="var(--mantine-color-dimmed)" />
+                <Text size="xs" c="dimmed">Reorder</Text>
+              </Group>
+            </Tooltip>
           ) : <span />}
           {manageMode.showToggle !== false && (manageMode.canManage ?? goals.length > 0) && (
             <Button

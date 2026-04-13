@@ -33,28 +33,35 @@ export const GoalDetailHeader = ({
   );
 
   return (
-  <Group justify="space-between" align="flex-start">
-    <Stack gap={4}>
-      <Title order={4}>{goal.title}</Title>
-      {goal.isCompleted ? (
-        <Group gap="xs">
-          <Badge color="teal" variant="light">
-            Completed
-          </Badge>
-          {goal.completedAt && (
-            <Text size="sm" c="dimmed">
-              {formatDay(goal.completedAt.slice(0, 10))}
-            </Text>
-          )}
-        </Group>
-      ) : projectedDate ? (
-        <Group gap={4}>
-          <IconTrendingUp size={14} color="var(--mantine-color-dimmed)" />
-          <Text size="sm" c="dimmed">On track for ~{projectedDate}</Text>
-        </Group>
-      ) : null}
-    </Stack>
-    <Group gap="xs" wrap="nowrap" align="center">
+  <Stack gap="xs">
+    <Group justify="space-between" align="flex-start" wrap="nowrap">
+      <Stack gap={4} style={{ flex: 1, minWidth: 0 }}>
+        <Title order={4} lineClamp={1}>{goal.title}</Title>
+        {goal.isCompleted ? (
+          <Group gap="xs">
+            <Badge color="teal" variant="light">
+              Completed
+            </Badge>
+            {goal.completedAt && (
+              <Text size="sm" c="dimmed">
+                {formatDay(goal.completedAt.slice(0, 10))}
+              </Text>
+            )}
+          </Group>
+        ) : projectedDate ? (
+          <Group gap={4}>
+            <IconTrendingUp size={14} color="var(--mantine-color-dimmed)" />
+            <Text size="sm" c="dimmed">On track for ~{projectedDate}</Text>
+          </Group>
+        ) : null}
+      </Stack>
+      <Tooltip label="Expand chart" position="left">
+        <Button variant="subtle" px={10} aria-label="Expand chart" onClick={onExpandChart}>
+          <IconMaximize size={16} stroke={2} />
+        </Button>
+      </Tooltip>
+    </Group>
+    <Group gap="xs" align="center">
       {chartRange === "all" && (
         <Checkbox
           checked={showTrend}
@@ -74,12 +81,7 @@ export const GoalDetailHeader = ({
           onToggleRangePicker();
         }}
       />
-      <Tooltip label="Expand chart" position="left">
-        <Button variant="subtle" px={10} aria-label="Expand chart" onClick={onExpandChart}>
-          <IconMaximize size={16} stroke={2} />
-        </Button>
-      </Tooltip>
     </Group>
-  </Group>
+  </Stack>
   );
 };

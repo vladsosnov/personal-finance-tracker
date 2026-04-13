@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useEffect, useState } from "react";
+import { useCallback, useMemo, useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import { useQuery } from "@apollo/client/react";
 import { Button, Card, Grid, Stack } from "@mantine/core";
@@ -84,15 +84,15 @@ export const DashboardClient = () => {
 
   const ratesReady = !needsRates || Object.keys(rates).length > 0;
 
-  const convertToUserCurrency = (amount: number, fromCurrency: string) => {
+  const convertToUserCurrency = useCallback((amount: number, fromCurrency: string) => {
     if (fromCurrency === userCurrency) return amount;
     const rate = rates[fromCurrency];
     if (!rate) return amount;
     return amount / rate;
-  };
+  }, [userCurrency, rates]);
 
-  const totalTarget = useMemo(() => ratesReady ? activeGoals.reduce((sum, g) => sum + convertToUserCurrency(g.targetAmount, g.currency), 0) : null, [activeGoals, rates, userCurrency, ratesReady]);
-  const totalCurrent = useMemo(() => ratesReady ? activeGoals.reduce((sum, g) => sum + convertToUserCurrency(g.currentAmount, g.currency), 0) : null, [activeGoals, rates, userCurrency, ratesReady]);
+  const totalTarget = useMemo(() => ratesReady ? activeGoals.reduce((sum, g) => sum + convertToUserCurrency(g.targetAmount, g.currency), 0) : null, [activeGoals, ratesReady, convertToUserCurrency]);
+  const totalCurrent = useMemo(() => ratesReady ? activeGoals.reduce((sum, g) => sum + convertToUserCurrency(g.currentAmount, g.currency), 0) : null, [activeGoals, ratesReady, convertToUserCurrency]);
 
   const plan = getPlanByName(meData?.me?.subscription ?? "Free");
   const goalLimitMessage = plan.maxGoals !== null && goals.length >= plan.maxGoals

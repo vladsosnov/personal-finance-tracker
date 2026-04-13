@@ -141,10 +141,10 @@ describe('GoalsList', () => {
     expect(screen.getByTestId('goal-card-2')).toHaveAttribute('data-selected', 'false');
   });
 
-  it('shows drag hint text on desktop with goals', () => {
+  it('shows reorder hint on desktop with goals', () => {
     render(<GoalsList {...defaultProps} />);
 
-    expect(screen.getByText(/drag and drop cards/i)).toBeInTheDocument();
+    expect(screen.getByText(/reorder/i)).toBeInTheDocument();
   });
 
   it('shows manage mode toggle button', () => {
