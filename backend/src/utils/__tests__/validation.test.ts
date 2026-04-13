@@ -52,6 +52,10 @@ describe("validation utilities", () => {
       expect(getEffectivePlan(undefined)).toBe("free");
     });
 
+    it("returns a regular user's plan", () => {
+      expect(getEffectivePlan({ role: "user", plan: "pro" })).toBe("pro");
+    });
+
     it("returns lifetime for admins", () => {
       expect(getEffectivePlan({ role: "admin", plan: "free" })).toBe("lifetime");
     });

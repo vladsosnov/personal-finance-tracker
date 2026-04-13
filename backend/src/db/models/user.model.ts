@@ -31,9 +31,14 @@ export type UserDocument = {
 const userSchema = new Schema<UserDocument>(
   {
     email: { type: String, required: true, unique: true, index: true },
-    plan: { type: String, required: true, default: "free" },
-    billingStatus: { type: String, required: true, default: "inactive" },
-    billingProvider: { type: String },
+    plan: { type: String, enum: ["free", "pro", "lifetime"], required: true, default: "free" },
+    billingStatus: {
+      type: String,
+      enum: ["inactive", "active", "canceled", "past_due"],
+      required: true,
+      default: "inactive",
+    },
+    billingProvider: { type: String, enum: ["paddle"] },
     paddleCustomerId: { type: String, index: true, sparse: true },
     paddleSubscriptionId: { type: String, index: true, sparse: true },
     paddleTransactionId: { type: String, index: true, sparse: true },
