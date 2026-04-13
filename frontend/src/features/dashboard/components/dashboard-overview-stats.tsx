@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Card, Grid, Group, RingProgress, Skeleton, Stack, Text, Title } from "@mantine/core";
+import { ActionIcon, Card, Grid, Group, RingProgress, Skeleton, Stack, Text, Title, Tooltip } from "@mantine/core";
 import { useMediaQuery } from "@mantine/hooks";
+import { IconInfoCircle } from "@tabler/icons-react";
 import { formatMoney, getProgressPercentage } from "@/shared/utils/number";
 import styles from "@/shared/styles/page-animations.module.css";
 
@@ -11,6 +12,33 @@ type DashboardOverviewStatsProps = {
   totalCurrent: number | null;
   currency: string;
 };
+
+const totalCurrentTooltip = "Zero-goal amounts are not included in Total current.";
+const totalCurrentInfoLabel = "Why zero-goal amounts are excluded from Total current";
+
+type TotalCurrentLabelProps = {
+  id: string;
+  size: "xs" | "sm";
+};
+
+const TotalCurrentLabel = ({ id, size }: TotalCurrentLabelProps) => (
+  <Group gap={4} wrap="nowrap" align="center">
+    <Text c="dimmed" size={size} id={id}>
+      Total current
+    </Text>
+    <Tooltip label={totalCurrentTooltip} withArrow withinPortal={false}>
+      <ActionIcon
+        variant="transparent"
+        color="gray"
+        size="xs"
+        aria-label={totalCurrentInfoLabel}
+        aria-description={totalCurrentTooltip}
+      >
+        <IconInfoCircle size={14} stroke={1.8} />
+      </ActionIcon>
+    </Tooltip>
+  </Group>
+);
 
 const useDashboardCounter = (target: number, duration = 900) => {
   const [value, setValue] = useState(0);
@@ -59,7 +87,7 @@ export const DashboardOverviewStats = ({ totalTarget, totalCurrent, currency }: 
                 )}
               </div>
               <div>
-                <Text c="dimmed" size="xs" id="stat-current-label-m">Current</Text>
+                <TotalCurrentLabel id="stat-current-label-m" size="xs" />
                 {isLoading ? <Skeleton height={24} width={80} mt={2} /> : (
                   <Title order={4} aria-labelledby="stat-current-label-m" aria-live="polite">
                     {formatMoney(animatedCurrent, currency)}
@@ -109,7 +137,7 @@ export const DashboardOverviewStats = ({ totalTarget, totalCurrent, currency }: 
       <Grid.Col span={{ base: 12, md: 4 }}>
         <div className={styles.stagger2}>
           <Card withBorder radius="md" p="lg">
-            <Text c="dimmed" size="sm" id="stat-current-label">Total current</Text>
+            <TotalCurrentLabel id="stat-current-label" size="sm" />
             {isLoading ? <Skeleton height={28} width="60%" mt={4} /> : (
               <Title order={3} aria-labelledby="stat-current-label" aria-live="polite">
                 {formatMoney(animatedCurrent, currency)}

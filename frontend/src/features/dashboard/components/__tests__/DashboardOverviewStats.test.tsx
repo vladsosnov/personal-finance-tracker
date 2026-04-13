@@ -58,6 +58,16 @@ describe('DashboardOverviewStats', () => {
     });
   });
 
+  it('exposes help copy for the total current info tooltip', () => {
+    render(<DashboardOverviewStats totalTarget={10000} totalCurrent={5000} currency="USD" />);
+
+    const infoButton = screen.getByRole('button', {
+      name: /why zero-goal amounts are excluded from total current/i,
+    });
+
+    expect(infoButton).toHaveAccessibleDescription('Zero-goal amounts are not included in Total current.');
+  });
+
   describe('mobile layout', () => {
     beforeEach(() => {
       mockUseMediaQuery.mockReturnValue(true);
@@ -75,7 +85,7 @@ describe('DashboardOverviewStats', () => {
 
       // All three stats should be visible simultaneously (no carousel)
       expect(screen.getByText('Total target')).toBeInTheDocument();
-      expect(screen.getByText('Current')).toBeInTheDocument();
+      expect(screen.getByText('Total current')).toBeInTheDocument();
       expect(screen.getByText('Progress')).toBeInTheDocument();
     });
 
