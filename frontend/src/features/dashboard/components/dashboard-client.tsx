@@ -91,8 +91,9 @@ export const DashboardClient = () => {
     return amount / rate;
   }, [userCurrency, rates]);
 
-  const totalTarget = useMemo(() => ratesReady ? activeGoals.reduce((sum, g) => sum + convertToUserCurrency(g.targetAmount, g.currency), 0) : null, [activeGoals, ratesReady, convertToUserCurrency]);
-  const totalCurrent = useMemo(() => ratesReady ? activeGoals.reduce((sum, g) => sum + convertToUserCurrency(g.currentAmount, g.currency), 0) : null, [activeGoals, ratesReady, convertToUserCurrency]);
+  const progressGoals = useMemo(() => activeGoals.filter((g) => g.targetAmount > 0), [activeGoals]);
+  const totalTarget = useMemo(() => ratesReady ? progressGoals.reduce((sum, g) => sum + convertToUserCurrency(g.targetAmount, g.currency), 0) : null, [progressGoals, ratesReady, convertToUserCurrency]);
+  const totalCurrent = useMemo(() => ratesReady ? progressGoals.reduce((sum, g) => sum + convertToUserCurrency(g.currentAmount, g.currency), 0) : null, [progressGoals, ratesReady, convertToUserCurrency]);
 
   const plan = getPlanByName(meData?.me?.subscription ?? "Free");
   const goalLimitMessage = plan.maxGoals !== null && goals.length >= plan.maxGoals

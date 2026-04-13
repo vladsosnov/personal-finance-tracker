@@ -10,6 +10,21 @@ import type { MockedResponse } from '@apollo/client/testing';
 import { mockGoal, mockCompletedGoal } from '@/__tests__/mock-data';
 import { tokenStorage } from '@/shared/lib/token-storage';
 
+const mockDashboardOverviewStats = jest.fn(() => null);
+
+jest.mock('../dashboard-overview-stats', () => ({
+  DashboardOverviewStats: (props: { totalTarget: number | null; totalCurrent: number | null; currency: string }) => {
+    mockDashboardOverviewStats(props);
+    return (
+      <section aria-label="Dashboard overview" data-testid="dashboard-overview-stats">
+        <div>Total target</div>
+        <div>Total current</div>
+        <div>Overall progress</div>
+      </section>
+    );
+  },
+}));
+
 jest.mock('@/shared/lib/token-storage', () => ({
   tokenStorage: {
     set: jest.fn(),
@@ -114,6 +129,28 @@ const invalidRatesMock: MockedResponse = {
   result: { data: { exchangeRates: { base: 'USD', rates: 'not-json' } } },
 };
 
+const zeroTargetGoal = {
+  ...mockGoal,
+  id: '4',
+  title: 'Open Balance',
+  targetAmount: 0,
+  currentAmount: 1000,
+  progress: 0,
+  __typename: 'Goal',
+};
+
+const goalsWithZeroTargetMock: MockedResponse = {
+  request: { query: GET_GOALS },
+  result: {
+    data: {
+      goals: [
+        { ...mockGoal, __typename: 'Goal' },
+        zeroTargetGoal,
+      ],
+    },
+  },
+};
+
 describe('DashboardClient', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -181,6 +218,22 @@ describe('DashboardClient', () => {
     expect(await screen.findByText('Euro Goal')).toBeInTheDocument();
     // Should still render stats (falls back to empty rates = no conversion)
     expect(screen.getByText('Total target')).toBeInTheDocument();
+  });
+
+  it('excludes zero-target goals from overview totals and progress', async () => {
+    render(<DashboardClient />, { mocks: [meMock, goalsWithZeroTargetMock, ratesMock] });
+
+    expect(await screen.findByText('Open Balance')).toBeInTheDocument();
+
+    await waitFor(() => {
+      expect(mockDashboardOverviewStats).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          totalTarget: 10000,
+          totalCurrent: 5000,
+          currency: 'USD',
+        })
+      );
+    });
   });
 
   describe('OAuth token handling', () => {
