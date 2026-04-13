@@ -30,6 +30,18 @@ type UserDoc = {
   subscription?: string;
 };
 
+export type UserBillingUpdate = {
+  plan: BillingPlan;
+  billingStatus: BillingStatus;
+  billingProvider?: "paddle";
+  paddleCustomerId?: string;
+  paddleSubscriptionId?: string;
+  paddleTransactionId?: string;
+  subscriptionRenewsAt?: Date | null;
+  subscriptionCanceledAt?: Date | null;
+  lifetimeUnlockedAt?: Date | null;
+};
+
 const normalizePlan = (doc: UserDoc): BillingPlan => {
   if (doc.plan) return doc.plan;
   const subscription = doc.subscription?.toLowerCase();
@@ -63,6 +75,24 @@ const toUser = (doc: UserDoc): User => ({
   passwordResetExpiry: doc.passwordResetExpiry?.toISOString(),
 });
 
+const toBillingSet = (billing: UserBillingUpdate): Record<string, unknown> => {
+  const update: Record<string, unknown> = {
+    plan: billing.plan,
+    billingStatus: billing.billingStatus,
+    subscription: getSubscriptionLabel(billing.plan),
+  };
+
+  if (billing.billingProvider !== undefined) update.billingProvider = billing.billingProvider;
+  if (billing.paddleCustomerId !== undefined) update.paddleCustomerId = billing.paddleCustomerId;
+  if (billing.paddleSubscriptionId !== undefined) update.paddleSubscriptionId = billing.paddleSubscriptionId;
+  if (billing.paddleTransactionId !== undefined) update.paddleTransactionId = billing.paddleTransactionId;
+  if (billing.subscriptionRenewsAt !== undefined) update.subscriptionRenewsAt = billing.subscriptionRenewsAt;
+  if (billing.subscriptionCanceledAt !== undefined) update.subscriptionCanceledAt = billing.subscriptionCanceledAt;
+  if (billing.lifetimeUnlockedAt !== undefined) update.lifetimeUnlockedAt = billing.lifetimeUnlockedAt;
+
+  return update;
+};
+
 export const findUserByEmail = async (email: string): Promise<User | undefined> => {
   const user = await UserModel.findOne({ email: email.toLowerCase() }).lean();
   return user ? toUser(user as unknown as UserDoc) : undefined;
@@ -83,6 +113,31 @@ export const createUser = async (email: string, passwordHash: string, passwordSa
 export const findUserById = async (id: string): Promise<User | undefined> => {
   const user = await UserModel.findById(id).lean();
   return user ? toUser(user as unknown as UserDoc) : undefined;
+};
+
+export const findUserByPaddleCustomerId = async (paddleCustomerId: string): Promise<User | undefined> => {
+  const user = await UserModel.findOne({ paddleCustomerId }).lean();
+  return user ? toUser(user as unknown as UserDoc) : undefined;
+};
+
+export const findUserByPaddleSubscriptionId = async (paddleSubscriptionId: string): Promise<User | undefined> => {
+  const user = await UserModel.findOne({ paddleSubscriptionId }).lean();
+  return user ? toUser(user as unknown as UserDoc) : undefined;
+};
+
+export const findUserByPaddleTransactionId = async (paddleTransactionId: string): Promise<User | undefined> => {
+  const user = await UserModel.findOne({ paddleTransactionId }).lean();
+  return user ? toUser(user as unknown as UserDoc) : undefined;
+};
+
+export const updateUserBilling = async (userId: string, billing: UserBillingUpdate): Promise<User | null> => {
+  const user = await UserModel.findByIdAndUpdate(
+    userId,
+    { $set: toBillingSet(billing) },
+    { new: true }
+  ).lean();
+
+  return user ? toUser(user as unknown as UserDoc) : null;
 };
 
 export const deleteUserById = async (id: string): Promise<boolean> => {

@@ -9,6 +9,7 @@ import { graphQlDocsHtml } from "./graphql-docs";
 import { findUserById } from "./modules/auth/user.repository";
 import { createAuthRouter } from "./modules/auth/auth.routes";
 import { isTrackedEvent, recordEvent } from "./modules/analytics/analytics.repository";
+import { createBillingRouter } from "./modules/billing/billing.routes";
 import { rootValue, schema } from "./schema";
 import { createCsrfProtection } from "./utils/csrf";
 import { parseCookies } from "./utils/parse-cookies";
@@ -36,6 +37,12 @@ app.use(
   cors({
     origin: frontendOrigin,
     credentials: true,
+  })
+);
+app.use(
+  "/billing",
+  createBillingRouter({
+    paddleWebhookSecret: process.env.PADDLE_WEBHOOK_SECRET ?? "",
   })
 );
 app.use(express.json({ limit: "100kb" }));
