@@ -6,7 +6,8 @@ import {
   findUserByPaddleCustomerId,
   findUserByPaddleSubscriptionId,
   findUserByPaddleTransactionId,
-  updateUserBilling,
+  hasProcessedBillingWebhookEvent,
+  updateUserBillingForWebhookEvent,
 } from "../auth/user.repository";
 import { createTransactionCheckout, type PaddleTransactionPayload } from "./paddle.client";
 
@@ -16,7 +17,7 @@ type SupportedBillingEventType =
   | "subscription.expired";
 
 export type PaddleWebhookEvent = {
-  eventId?: string;
+  eventId: string;
   eventType: SupportedBillingEventType;
   occurredAt: string;
   plan?: BillingPlan;
@@ -49,7 +50,7 @@ type SupportedWebhookPayload = {
 
 type ProcessBillingWebhookResult =
   | { status: "applied"; update: BillingUpdate; userId: string }
-  | { status: "ignored"; reason: "invalid_payload" | "unsupported_event" | "user_not_found" };
+  | { status: "ignored"; reason: "duplicate_event" | "invalid_payload" | "user_not_found" };
 
 const isRecord = (value: unknown): value is Record<string, unknown> => {
   return typeof value === "object" && value !== null;
@@ -147,11 +148,12 @@ export const parsePaddleWebhookEvent = (payload: unknown): PaddleWebhookEvent | 
   }
 
   const webhookPayload = payload as SupportedWebhookPayload;
+  const eventId = readString(webhookPayload.event_id);
   const eventType = readString(webhookPayload.event_type);
   const occurredAt = readString(webhookPayload.occurred_at);
   const data = isRecord(webhookPayload.data) ? webhookPayload.data : undefined;
 
-  if (!eventType || !occurredAt || !data) {
+  if (!eventId || !eventType || !occurredAt || !data) {
     return null;
   }
 
@@ -166,7 +168,7 @@ export const parsePaddleWebhookEvent = (payload: unknown): PaddleWebhookEvent | 
   const customData = isRecord(data.custom_data) ? data.custom_data : undefined;
 
   return {
-    eventId: readString(webhookPayload.event_id),
+    eventId,
     eventType,
     occurredAt,
     plan: readPlan(customData?.plan),
@@ -240,10 +242,16 @@ export const processBillingWebhook = async (payload: unknown): Promise<ProcessBi
     return { status: "ignored", reason: "user_not_found" };
   }
 
+  if (await hasProcessedBillingWebhookEvent(user.id, event.eventId)) {
+    return { status: "ignored", reason: "duplicate_event" };
+  }
+
   const update = applyBillingEvent(user, event);
-  const updatedUser = await updateUserBilling(user.id, update);
+  const updatedUser = await updateUserBillingForWebhookEvent(user.id, event.eventId, update);
   if (!updatedUser) {
-    return { status: "ignored", reason: "user_not_found" };
+    return await hasProcessedBillingWebhookEvent(user.id, event.eventId)
+      ? { status: "ignored", reason: "duplicate_event" }
+      : { status: "ignored", reason: "user_not_found" };
   }
 
   return { status: "applied", update, userId: updatedUser.id };

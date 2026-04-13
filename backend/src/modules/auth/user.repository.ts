@@ -10,6 +10,7 @@ type UserDoc = {
   plan?: BillingPlan;
   billingStatus?: BillingStatus;
   billingProvider?: "paddle";
+  processedPaddleWebhookEventIds?: string[];
   paddleCustomerId?: string;
   paddleSubscriptionId?: string;
   paddleTransactionId?: string;
@@ -134,6 +135,35 @@ export const updateUserBilling = async (userId: string, billing: UserBillingUpda
   const user = await UserModel.findByIdAndUpdate(
     userId,
     { $set: toBillingSet(billing) },
+    { new: true }
+  ).lean();
+
+  return user ? toUser(user as unknown as UserDoc) : null;
+};
+
+export const hasProcessedBillingWebhookEvent = async (userId: string, eventId: string): Promise<boolean> => {
+  const existing = await UserModel.exists({
+    _id: userId,
+    processedPaddleWebhookEventIds: eventId,
+  });
+
+  return existing !== null;
+};
+
+export const updateUserBillingForWebhookEvent = async (
+  userId: string,
+  eventId: string,
+  billing: UserBillingUpdate
+): Promise<User | null> => {
+  const user = await UserModel.findOneAndUpdate(
+    {
+      _id: userId,
+      processedPaddleWebhookEventIds: { $ne: eventId },
+    },
+    {
+      $set: toBillingSet(billing),
+      $addToSet: { processedPaddleWebhookEventIds: eventId },
+    },
     { new: true }
   ).lean();
 

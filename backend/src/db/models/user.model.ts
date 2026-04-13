@@ -10,6 +10,7 @@ export type UserDocument = {
   billingStatus: BillingStatus;
   billingProvider?: "paddle";
   subscription?: string;
+  processedPaddleWebhookEventIds?: string[];
   paddleCustomerId?: string;
   paddleSubscriptionId?: string;
   paddleTransactionId?: string;
@@ -41,6 +42,7 @@ const userSchema = new Schema<UserDocument>(
       default: "inactive",
     },
     billingProvider: { type: String, enum: ["paddle"] },
+    processedPaddleWebhookEventIds: { type: [String], default: [] },
     paddleCustomerId: { type: String, index: true, sparse: true },
     paddleSubscriptionId: { type: String, index: true, sparse: true },
     paddleTransactionId: { type: String, index: true, sparse: true },
