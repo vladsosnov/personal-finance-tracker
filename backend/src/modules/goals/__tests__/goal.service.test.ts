@@ -233,24 +233,27 @@ describe("goal.service", () => {
           buildGoalViews: jest.fn(),
         }));
 
-        const { rootValue } = require("../../../schema");
-
-        await expect(
-          rootValue.createGoal(
-            {
-              title: "Extra Goal",
-              targetAmount: 5000,
-              color: "#0F766E",
-            },
-            {
-              userId: "user-1",
-              userRole: "user",
-              tokenVersion: 0,
-              clientIp: "127.0.0.1",
+        const { graphql } = await import("graphql");
+        const { schema, rootValue } = require("../../../schema");
+        const response = await graphql({
+          schema,
+          source: `
+            mutation {
+              createGoal(title: "Extra Goal", targetAmount: 5000, color: "#0F766E") {
+                id
+              }
             }
-          )
-        ).rejects.toThrow("Upgrade to create more");
+          `,
+          rootValue,
+          contextValue: {
+            userId: "user-1",
+            userRole: "user",
+            tokenVersion: 0,
+            clientIp: "127.0.0.1",
+          },
+        });
 
+        expect(response.errors?.[0]?.message).toContain("Upgrade to create more");
         expect(countGoalsByUser).toHaveBeenCalledWith("user-1");
         expect(createGoal).not.toHaveBeenCalled();
       });

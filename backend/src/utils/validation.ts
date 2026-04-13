@@ -15,7 +15,6 @@ const normalizeBillingPlan = (plan: string | undefined): BillingPlan => {
 type PlanSource = {
   role: string;
   plan?: BillingPlan | string;
-  subscription?: string;
 };
 
 export const getEffectivePlan = (
@@ -23,7 +22,7 @@ export const getEffectivePlan = (
 ): BillingPlan => {
   if (!user) return "free";
   const normalizedPlan = normalizeBillingPlan(
-    typeof user.plan === "string" ? user.plan.toLowerCase() : user.subscription?.toLowerCase()
+    typeof user.plan === "string" ? user.plan.toLowerCase() : undefined
   );
 
   return user.role === "admin" ? "lifetime" : normalizedPlan;
@@ -71,7 +70,6 @@ export type SafeUserSource = {
   id: string;
   email: string;
   plan?: BillingPlan | string;
-  subscription?: string;
   role: string;
   primaryCurrency: string;
   emailVerified: boolean;

@@ -39,11 +39,11 @@ describe("validation utilities", () => {
     });
 
     it("returns Lifetime for admin", () => {
-      expect(getEffectiveSubscription({ subscription: "Free", role: "admin" })).toBe("Lifetime");
+      expect(getEffectiveSubscription({ plan: "free", role: "admin" })).toBe("Lifetime");
     });
 
     it("returns user subscription for non-admin", () => {
-      expect(getEffectiveSubscription({ subscription: "Pro", role: "user" })).toBe("Pro");
+      expect(getEffectiveSubscription({ plan: "pro", role: "user" })).toBe("Pro");
     });
   });
 
@@ -182,6 +182,18 @@ describe("validation utilities", () => {
       };
 
       expect(toSafeUser(admin).subscription).toBe("Lifetime");
+    });
+
+    it("does not fall back to a raw legacy subscription string", () => {
+      const user = {
+        id: "legacy-1",
+        email: "legacy@test.com",
+        role: "user",
+        primaryCurrency: "USD",
+        emailVerified: true,
+      };
+
+      expect(toSafeUser(user).subscription).toBe("Free");
     });
   });
 
