@@ -164,6 +164,8 @@ describe("validation utilities", () => {
       expect(toSafeUser(user)).toEqual({
         id: "123",
         email: "user@test.com",
+        plan: "pro",
+        billingStatus: "inactive",
         subscription: "Pro",
         role: "user",
         primaryCurrency: "USD",

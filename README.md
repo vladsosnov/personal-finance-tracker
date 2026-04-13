@@ -91,6 +91,11 @@ See [`backend/.env.example`](backend/.env.example) for the full list.
 | `MONGODB_URI` | Yes | MongoDB connection string |
 | `JWT_SECRET` | Yes | Long random secret for production |
 | `FRONTEND_ORIGIN` | No | Defaults to `http://localhost:3000` |
+| `PADDLE_API_KEY` | Yes for billing | Paddle API key for checkout and portal requests |
+| `PADDLE_WEBHOOK_SECRET` | Yes for billing | Secret used to verify Paddle webhook signatures |
+| `PADDLE_PRO_PRICE_ID` | Yes for billing | Paddle price ID for the Pro subscription |
+| `PADDLE_LIFETIME_PRICE_ID` | Yes for billing | Paddle price ID for the Lifetime one-time purchase |
+| `PADDLE_DEFAULT_RETURN_URL` | No | Defaults to `FRONTEND_ORIGIN`; used for post-checkout returns |
 | `SMTP_HOST` | No | SMTP provider host |
 | `SMTP_PORT` | No | SMTP port |
 | `SMTP_USER` | No | SMTP username |

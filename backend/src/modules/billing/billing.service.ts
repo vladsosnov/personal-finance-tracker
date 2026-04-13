@@ -77,6 +77,13 @@ const getConfiguredPaddlePriceIds = () => ({
 
 const getDefaultReturnUrl = () => process.env.PADDLE_DEFAULT_RETURN_URL ?? process.env.FRONTEND_ORIGIN ?? "http://localhost:3000";
 
+const getProfileReturnUrl = (plan: BillingCheckoutPlan) => {
+  const url = new URL("/profile", getDefaultReturnUrl());
+  url.searchParams.set("billing", "return");
+  url.searchParams.set("plan", toStoredPlan(plan));
+  return url.toString();
+};
+
 const getConfiguredToleranceSeconds = () => {
   const parsedTolerance = Number(process.env.PADDLE_WEBHOOK_TOLERANCE_SECONDS ?? "5");
 
@@ -443,7 +450,7 @@ export const createCheckoutForUser = async (
       plan: toStoredPlan(plan),
     },
     checkout: {
-      url: getDefaultReturnUrl(),
+      url: getProfileReturnUrl(plan),
     },
     customer_id: user.paddleCustomerId,
   });

@@ -3,12 +3,26 @@ import { useRouter } from "next/navigation";
 import { useApolloClient, useMutation, useQuery } from "@apollo/client/react";
 import { GET_GOALS, RESET_ALL_DATA, type GoalsQueryData } from "@/features/dashboard/gql/dashboard";
 import { GET_ME, type MeQueryData } from "@/shared/gql/queries";
+import { CREATE_BILLING_CHECKOUT, CREATE_BILLING_PORTAL_SESSION } from "@/features/profile/gql/billing";
 import { showToast } from "@/shared/lib/toast-store";
 import { API_BASE_URL } from "@/shared/constants/auth";
 import { APP_ROUTES } from "@/shared/constants/routes";
 import { trackEvent } from "@/shared/lib/analytics";
+import { redirectToUrl } from "@/shared/lib/browser-navigation";
 import { useImport } from "@/features/profile/hooks/useImport";
 import { useExport } from "@/features/profile/hooks/useExport";
+
+type BillingCheckoutResponse = {
+  createBillingCheckout: {
+    url: string;
+  };
+};
+
+type BillingPortalResponse = {
+  createBillingPortalSession: {
+    url: string;
+  };
+};
 
 export const useDataManagement = () => {
   const apolloClient = useApolloClient();
@@ -27,6 +41,10 @@ export const useDataManagement = () => {
   const [resetAllDataMutation, { loading: isResettingAllData }] = useMutation<{
     resetAllData: { deletedGoalsCount: number; deletedOperationsCount: number };
   }>(RESET_ALL_DATA);
+  const [createBillingCheckoutMutation, { loading: isCreatingBillingCheckout }] =
+    useMutation<BillingCheckoutResponse>(CREATE_BILLING_CHECKOUT);
+  const [createBillingPortalSessionMutation, { loading: isCreatingBillingPortalSession }] =
+    useMutation<BillingPortalResponse>(CREATE_BILLING_PORTAL_SESSION);
 
   const imp = useImport(meData?.me?.subscription ?? "Free", goalsData?.goals.length ?? 0);
   const exp = useExport();
@@ -74,12 +92,55 @@ export const useDataManagement = () => {
     }
   };
 
+  const handleStartCheckout = async (plan: "PRO" | "LIFETIME") => {
+    trackEvent(plan === "PRO" ? "billing_checkout_pro" : "billing_checkout_lifetime");
+    try {
+      const result = await createBillingCheckoutMutation({
+        variables: { plan },
+      });
+      const url = result.data?.createBillingCheckout?.url;
+      if (!url) {
+        throw new Error("Failed to create billing checkout");
+      }
+
+      redirectToUrl(url);
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : "Failed to start checkout", "red");
+    }
+  };
+
+  const handleManageBilling = async () => {
+    trackEvent("billing_portal_open");
+    try {
+      const result = await createBillingPortalSessionMutation();
+      const url = result.data?.createBillingPortalSession?.url;
+      if (!url) {
+        throw new Error("Failed to create billing portal session");
+      }
+
+      redirectToUrl(url);
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : "Failed to open billing portal", "red");
+    }
+  };
+
+  const canManageBilling = meData?.me?.plan === "pro" && meData?.me?.billingStatus === "active";
+  const billingState: "idle" | "checkout" | "portal" = isCreatingBillingCheckout
+    ? "checkout"
+    : isCreatingBillingPortalSession
+      ? "portal"
+      : "idle";
+
   return {
     // user info
     meData,
     isLoadingMe,
     meError,
     refetchMe,
+    canManageBilling,
+    billingState,
+    handleStartCheckout,
+    handleManageBilling,
     // goals meta
     goalsData,
     isLoadingGoals,

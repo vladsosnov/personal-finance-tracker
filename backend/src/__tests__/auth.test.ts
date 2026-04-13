@@ -197,7 +197,7 @@ describe("auth", () => {
   describe("billing graphql", () => {
     it("returns a checkout url for an authenticated pro upgrade", async () => {
       const createCheckoutForUser = jest.fn().mockResolvedValue({
-        url: "https://sandbox.paddle.com/checkout/pro-user-1",
+        url: "https://sandbox.paddle.com/checkout/pro-user-1?return_url=http%3A%2F%2Flocalhost%3A3000%2Fprofile%3Fbilling%3Dreturn%26plan%3Dpro",
       });
 
       await jest.isolateModulesAsync(async () => {
@@ -229,7 +229,7 @@ describe("auth", () => {
         expect(response.errors).toBeUndefined();
         expect(response.data).toEqual({
           createBillingCheckout: {
-            url: expect.stringContaining("paddle"),
+            url: expect.stringContaining("billing%3Dreturn"),
           },
         });
         expect(createCheckoutForUser).toHaveBeenCalledWith("user-1", "PRO");
@@ -262,6 +262,8 @@ describe("auth", () => {
             query {
               me {
                 subscription
+                plan
+                billingStatus
               }
             }
           `,
@@ -277,6 +279,8 @@ describe("auth", () => {
         expect(response.errors).toBeUndefined();
         expect(response.data).toEqual({
           me: {
+            billingStatus: "inactive",
+            plan: "free",
             subscription: "Free",
           },
         });

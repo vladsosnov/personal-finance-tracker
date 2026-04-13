@@ -4,11 +4,16 @@ import type { MockedResponse } from '@apollo/client/testing';
 import { useDataManagement } from '../useDataManagement';
 import { EXPORT_ALL_DATA, GET_GOALS, RESET_ALL_DATA } from '@/features/dashboard/gql/dashboard';
 import { GET_ME } from '@/shared/gql/queries';
+import { CREATE_BILLING_CHECKOUT, CREATE_BILLING_PORTAL_SESSION } from '@/features/profile/gql/billing';
 import { showToast } from '@/shared/lib/toast-store';
 import { trackEvent } from '@/shared/lib/analytics';
+import { redirectToUrl } from '@/shared/lib/browser-navigation';
 
 jest.mock('@/shared/lib/toast-store');
 jest.mock('@/shared/lib/analytics');
+jest.mock('@/shared/lib/browser-navigation', () => ({
+  redirectToUrl: jest.fn(),
+}));
 jest.mock('@/features/profile/utils/prepareImport');
 jest.mock('next/navigation', () => ({
   useRouter: () => ({
@@ -239,6 +244,79 @@ describe('useDataManagement', () => {
       });
 
       expect(mockLink.click).toHaveBeenCalled();
+    });
+  });
+
+  describe('billing operations', () => {
+    it('starts a Paddle checkout and redirects the browser', async () => {
+      const mockList: MockedResponse[] = [
+        {
+          request: { query: GET_ME },
+          result: { data: mockMeData },
+        },
+        {
+          request: { query: GET_GOALS },
+          result: { data: { goals: mockGoals } },
+        },
+        {
+          request: {
+            query: CREATE_BILLING_CHECKOUT,
+            variables: { plan: 'PRO' },
+          },
+          result: {
+            data: {
+              createBillingCheckout: {
+                url: 'https://sandbox.paddle.com/checkout/pro-user-1',
+              },
+            },
+          },
+        },
+      ];
+
+      const { result } = renderHook(() => useDataManagement(), {
+        wrapper: createWrapper(mockList),
+      });
+
+      await act(async () => {
+        await result.current.handleStartCheckout('PRO');
+      });
+
+      expect(redirectToUrl).toHaveBeenCalledWith('https://sandbox.paddle.com/checkout/pro-user-1');
+    });
+
+    it('starts a billing portal session and redirects the browser', async () => {
+      const mockList: MockedResponse[] = [
+        {
+          request: { query: GET_ME },
+          result: { data: mockMeData },
+        },
+        {
+          request: { query: GET_GOALS },
+          result: { data: { goals: mockGoals } },
+        },
+        {
+          request: {
+            query: CREATE_BILLING_PORTAL_SESSION,
+          },
+          result: {
+            data: {
+              createBillingPortalSession: {
+                url: 'https://sandbox.paddle.com/portal/customer-1',
+              },
+            },
+          },
+        },
+      ];
+
+      const { result } = renderHook(() => useDataManagement(), {
+        wrapper: createWrapper(mockList),
+      });
+
+      await act(async () => {
+        await result.current.handleManageBilling();
+      });
+
+      expect(redirectToUrl).toHaveBeenCalledWith('https://sandbox.paddle.com/portal/customer-1');
     });
   });
 

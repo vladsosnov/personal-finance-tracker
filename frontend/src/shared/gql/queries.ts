@@ -3,6 +3,8 @@ import { gql } from "@apollo/client";
 export type MeUser = {
   id: string;
   email: string;
+  plan: string;
+  billingStatus: string;
   subscription: string;
   role: string;
   primaryCurrency: string;
@@ -16,6 +18,8 @@ export const GET_ME = gql`
     me {
       id
       email
+      plan
+      billingStatus
       subscription
       role
       primaryCurrency

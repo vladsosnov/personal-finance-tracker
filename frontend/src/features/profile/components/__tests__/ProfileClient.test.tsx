@@ -5,6 +5,8 @@ import { GET_ME } from '@/shared/gql/queries';
 import { GET_GOALS } from '@/features/dashboard/gql/dashboard';
 import type { MockedResponse } from '@apollo/client/testing';
 
+const mockSearchParamsGet = jest.fn();
+
 jest.mock('@/shared/lib/token-storage', () => ({
   tokenStorage: {
     set: jest.fn(),
@@ -17,6 +19,9 @@ jest.mock('@/shared/lib/token-storage', () => ({
 jest.mock('next/navigation', () => ({
   useRouter: () => ({ push: jest.fn(), replace: jest.fn(), refresh: jest.fn() }),
   usePathname: () => '/profile',
+  useSearchParams: () => ({
+    get: mockSearchParamsGet,
+  }),
 }));
 
 jest.mock('@/shared/lib/analytics', () => ({
@@ -58,6 +63,11 @@ const goalsMock: MockedResponse = {
 };
 
 describe('ProfileClient', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockSearchParamsGet.mockReturnValue(null);
+  });
+
   it('renders profile heading', async () => {
     render(<ProfileClient />, { mocks: [meMock, goalsMock] });
 
@@ -86,5 +96,17 @@ describe('ProfileClient', () => {
     render(<ProfileClient />, { mocks: [meMock, goalsMock] });
 
     expect(await screen.findByTestId('currency-card')).toBeInTheDocument();
+  });
+
+  it('shows billing return feedback after checkout redirect', async () => {
+    mockSearchParamsGet.mockImplementation((key: string) => {
+      if (key === 'billing') return 'return';
+      if (key === 'plan') return 'pro';
+      return null;
+    });
+
+    render(<ProfileClient />, { mocks: [meMock, goalsMock] });
+
+    expect(await screen.findByText(/confirming your pro upgrade/i)).toBeInTheDocument();
   });
 });

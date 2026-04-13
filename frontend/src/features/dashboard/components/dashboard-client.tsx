@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useMemo, useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import { useQuery } from "@apollo/client/react";
@@ -24,6 +25,7 @@ import { GET_ME, type MeQueryData } from "@/shared/gql/queries";
 import { getPlanByName } from "@/shared/constants/plans";
 import { GET_EXCHANGE_RATES } from "@/features/profile/gql/currency";
 import { StateMessage } from "@/shared/components/state-message";
+import { APP_ROUTES } from "@/shared/constants/routes";
 import { tokenStorage } from "@/shared/lib/token-storage";
 import anim from "@/shared/styles/page-animations.module.css";
 
@@ -232,6 +234,12 @@ export const DashboardClient = () => {
         ) : (
           <CreateGoalForm {...createGoalFormProps} />
         )}
+
+        {goalLimitMessage ? (
+          <Button component={Link} href={`${APP_ROUTES.profile}?upgrade=pro`} variant="light" size="compact-sm">
+            Upgrade to Pro
+          </Button>
+        ) : null}
 
         {!shouldShowGoalsSkeleton && goalsError && !goals.length ? (
           <Card withBorder radius="md" p="xl">

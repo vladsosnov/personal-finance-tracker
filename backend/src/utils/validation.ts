@@ -70,6 +70,7 @@ export type SafeUserSource = {
   id: string;
   email: string;
   plan?: BillingPlan | string;
+  billingStatus?: string;
   role: string;
   primaryCurrency: string;
   emailVerified: boolean;
@@ -78,6 +79,8 @@ export type SafeUserSource = {
 export const toSafeUser = (user: SafeUserSource) => ({
   id: user.id,
   email: user.email,
+  plan: getEffectivePlan(user),
+  billingStatus: user.billingStatus ?? "inactive",
   subscription: getSubscriptionLabel(getEffectivePlan(user)),
   role: user.role,
   primaryCurrency: user.primaryCurrency,

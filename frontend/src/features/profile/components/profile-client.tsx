@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect } from "react";
-import { Stack, Text, Title } from "@mantine/core";
+import { useSearchParams } from "next/navigation";
+import { Alert, Stack, Text, Title } from "@mantine/core";
 import { EmailVerificationBanner } from "@/features/auth/components/email-verification-banner";
 import { PageContainer } from "@/shared/components/page-container";
 import { DataManagementCard } from "@/features/profile/components/DataManagementCard";
@@ -14,11 +15,19 @@ import { CustomColorsCard } from "@/features/profile/components/CustomColorsCard
 import { DeleteAccountModal } from "@/features/profile/components/modals/DeleteAccountModal";
 import { ResetDataModal } from "@/features/profile/components/modals/ResetDataModal";
 import { useDataManagement } from "@/features/profile/hooks/useDataManagement";
+import { APP_ROUTES } from "@/shared/constants/routes";
 import { trackEvent } from "@/shared/lib/analytics";
 import anim from "@/shared/styles/page-animations.module.css";
 
 export const ProfileClient = () => {
   const dm = useDataManagement();
+  const searchParams = useSearchParams();
+  const billingQueryState = searchParams.get("billing");
+  const returningPlan = searchParams.get("plan");
+  const normalizedPlan = returningPlan?.toLowerCase();
+  const isBillingReturn = billingQueryState === "return";
+  const isBillingCancel = billingQueryState === "cancel";
+  const hasAppliedReturnedPlan = normalizedPlan ? dm.meData?.me?.plan === normalizedPlan : false;
 
   useEffect(() => {
     trackEvent("profile_page_view");
@@ -37,6 +46,20 @@ export const ProfileClient = () => {
           <div className={anim.gradientDivider} style={{ marginTop: 4, marginLeft: 0 }} />
         </Stack>
 
+        {isBillingReturn ? (
+          <Alert color={hasAppliedReturnedPlan ? "teal" : "blue"} variant="light">
+            {hasAppliedReturnedPlan
+              ? `Your ${returningPlan ?? "paid"} plan is active.`
+              : `Confirming your ${returningPlan ?? "paid"} upgrade...`}
+          </Alert>
+        ) : null}
+
+        {isBillingCancel ? (
+          <Alert color="gray" variant="light">
+            Checkout was canceled. You can upgrade anytime from the subscription section below.
+          </Alert>
+        ) : null}
+
         <div className={anim.stagger1}>
           <ProfileInfoCard
             email={dm.meData?.me?.email}
@@ -49,7 +72,13 @@ export const ProfileClient = () => {
         </div>
 
         <div className={anim.stagger2}>
-          <SubscriptionCard currentSubscription={dm.meData?.me?.subscription ?? "Free"} />
+          <SubscriptionCard
+            currentSubscription={dm.meData?.me?.subscription ?? "Free"}
+            billingState={dm.billingState}
+            canManageBilling={dm.canManageBilling}
+            onCheckout={dm.handleStartCheckout}
+            onManageBilling={dm.handleManageBilling}
+          />
         </div>
 
         <div className={anim.stagger3}>
@@ -74,6 +103,7 @@ export const ProfileClient = () => {
             importProgressValue={dm.importProgressValue}
             importLimitMessage={dm.importLimitMessage}
             isImportOverLimit={dm.isImportOverLimit}
+            upgradeHref={`${APP_ROUTES.profile}?upgrade=pro`}
             isPreparingImport={dm.isPreparingImport}
             isImporting={dm.isImporting}
             includedZeroTargetGoalIndexes={dm.includedZeroTargetGoalIndexes}

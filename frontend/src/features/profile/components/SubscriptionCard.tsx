@@ -1,12 +1,22 @@
-import { Badge, Card, Group, SimpleGrid, Stack, Table, Text, Title } from "@mantine/core";
+import { Badge, Button, Card, Group, SimpleGrid, Stack, Table, Text, Title } from "@mantine/core";
 import { PLANS } from "@/shared/constants/plans";
 import anim from "@/shared/styles/page-animations.module.css";
 
 type SubscriptionCardProps = {
   currentSubscription: string;
+  billingState: "idle" | "checkout" | "portal";
+  canManageBilling?: boolean;
+  onCheckout: (plan: "PRO" | "LIFETIME") => void;
+  onManageBilling: () => void;
 };
 
-export const SubscriptionCard = ({ currentSubscription }: SubscriptionCardProps) => (
+export const SubscriptionCard = ({
+  currentSubscription,
+  billingState,
+  canManageBilling = false,
+  onCheckout,
+  onManageBilling,
+}: SubscriptionCardProps) => (
   <Card withBorder radius="md" p="lg">
     <Stack gap="md">
       <Stack gap={2}>
@@ -36,9 +46,7 @@ export const SubscriptionCard = ({ currentSubscription }: SubscriptionCardProps)
                     <Badge color="teal">Current</Badge>
                   ) : plan.name === "Free" ? (
                     <Badge variant="light" color="gray">Available</Badge>
-                  ) : (
-                    <Badge variant="light">Soon</Badge>
-                  )}
+                  ) : null}
                 </Group>
                 <Text c="dimmed">{plan.description}</Text>
                 <Table aria-label={`${plan.name} plan features`}>
@@ -50,6 +58,21 @@ export const SubscriptionCard = ({ currentSubscription }: SubscriptionCardProps)
                     ))}
                   </Table.Tbody>
                 </Table>
+                {plan.name === "Pro" && !isCurrentPlan ? (
+                  <Button fullWidth onClick={() => onCheckout("PRO")} loading={billingState === "checkout"}>
+                    Upgrade to Pro
+                  </Button>
+                ) : null}
+                {plan.name === "Lifetime" && !isCurrentPlan ? (
+                  <Button fullWidth variant="light" onClick={() => onCheckout("LIFETIME")} loading={billingState === "checkout"}>
+                    Get Lifetime
+                  </Button>
+                ) : null}
+                {plan.name === "Pro" && isCurrentPlan && canManageBilling ? (
+                  <Button fullWidth variant="light" onClick={onManageBilling} loading={billingState === "portal"}>
+                    Manage billing
+                  </Button>
+                ) : null}
               </Stack>
             </Card>
           );

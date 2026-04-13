@@ -136,6 +136,8 @@ export const schema = buildSchema(`
   type User {
     id: ID!
     email: String!
+    plan: String!
+    billingStatus: String!
     subscription: String!
     role: String!
     primaryCurrency: String!
