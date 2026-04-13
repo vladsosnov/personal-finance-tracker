@@ -14,7 +14,7 @@ const mockDashboardOverviewStats = jest.fn(() => null);
 
 jest.mock('../dashboard-overview-stats', () => ({
   DashboardOverviewStats: (props: { totalTarget: number | null; totalCurrent: number | null; currency: string }) => {
-    mockDashboardOverviewStats(props);
+    mockDashboardOverviewStats();
     return (
       <section aria-label="Dashboard overview" data-testid="dashboard-overview-stats">
         <div>Total target</div>
