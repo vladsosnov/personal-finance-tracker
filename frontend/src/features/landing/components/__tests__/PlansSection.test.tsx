@@ -47,12 +47,12 @@ describe('PlansSection', () => {
     expect(screen.getByRole('link', { name: /start free with free plan/i })).toBeInTheDocument();
   });
 
-  it('renders Coming soon buttons for paid plans', () => {
+  it('renders active signup links for paid plans', () => {
     render(<PlansSection />);
 
-    const comingSoonButtons = screen.getAllByRole('button', { name: /coming soon/i });
-    expect(comingSoonButtons.length).toBe(2);
-    comingSoonButtons.forEach((btn) => expect(btn).toBeDisabled());
+    expect(screen.getByRole('link', { name: /get pro with pro plan/i })).toHaveAttribute('href', '/auth');
+    expect(screen.getByRole('link', { name: /get lifetime with lifetime plan/i })).toHaveAttribute('href', '/auth');
+    expect(screen.queryByRole('button', { name: /coming soon/i })).not.toBeInTheDocument();
   });
 
   it('has proper accessibility with labelledby', () => {

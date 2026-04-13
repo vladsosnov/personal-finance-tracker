@@ -15,8 +15,7 @@ export const PlansSection = () => (
           <Text fw={700}>Plans</Text>
           <Title order={2} id="plans-heading">Choose the plan that fits your tracking needs</Title>
           <Text c="dimmed" maw={720} mx="auto">
-            Free is available now. Paid plans are shown here so users can understand the product direction, while upgrade
-            checkout is still coming later.
+            Start free right away, then move to Pro or Lifetime once you want unlimited goals and the full product.
           </Text>
           <div className={styles.sectionDivider} style={{ marginTop: 8 }} />
         </Stack>
@@ -44,24 +43,14 @@ export const PlansSection = () => (
                     <List.Item key={feature}>{feature}</List.Item>
                   ))}
                 </List>
-                {plan.cta === "Coming soon" ? (
-                  <Button
-                    variant={plan.highlight ? "filled" : "light"}
-                    disabled
-                    aria-label={`${plan.name} plan — coming soon`}
-                  >
-                    {plan.cta}
-                  </Button>
-                ) : (
-                  <Button
-                    component={Link}
-                    href={plan.href}
-                    variant={plan.highlight ? "filled" : "light"}
-                    aria-label={`${plan.cta} with ${plan.name} plan`}
-                  >
-                    {plan.cta}
-                  </Button>
-                )}
+                <Button
+                  component={Link}
+                  href={plan.href}
+                  variant={plan.highlight ? "filled" : "light"}
+                  aria-label={`${plan.cta} with ${plan.name} plan`}
+                >
+                  {plan.cta}
+                </Button>
               </Stack>
             </Card>
           </AnimateOnScroll>
