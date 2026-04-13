@@ -1,11 +1,21 @@
 import mongoose from "mongoose";
 import { UserModel } from "../../db/models/user.model";
 import type { User, UserRole } from "./types";
+import { getSubscriptionLabel } from "../../utils/validation";
+import type { BillingPlan, BillingStatus } from "../../db/models/user.model";
 
 type UserDoc = {
   _id: mongoose.Types.ObjectId;
   email: string;
-  subscription?: string;
+  plan?: BillingPlan;
+  billingStatus?: BillingStatus;
+  billingProvider?: "paddle";
+  paddleCustomerId?: string;
+  paddleSubscriptionId?: string;
+  paddleTransactionId?: string;
+  subscriptionRenewsAt?: Date | null;
+  subscriptionCanceledAt?: Date | null;
+  lifetimeUnlockedAt?: Date | null;
   role?: UserRole;
   primaryCurrency?: string;
   passwordHash: string;
@@ -17,12 +27,29 @@ type UserDoc = {
   emailVerificationExpiry?: Date | null;
   passwordResetToken?: string;
   passwordResetExpiry?: Date | null;
+  subscription?: string;
+};
+
+const normalizePlan = (doc: UserDoc): BillingPlan => {
+  if (doc.plan) return doc.plan;
+  const subscription = doc.subscription?.toLowerCase();
+  if (subscription === "pro" || subscription === "lifetime") return subscription;
+  return "free";
 };
 
 const toUser = (doc: UserDoc): User => ({
   id: doc._id.toString(),
   email: doc.email,
-  subscription: doc.subscription ?? "Free",
+  plan: normalizePlan(doc),
+  billingStatus: doc.billingStatus ?? "inactive",
+  billingProvider: doc.billingProvider,
+  paddleCustomerId: doc.paddleCustomerId,
+  paddleSubscriptionId: doc.paddleSubscriptionId,
+  paddleTransactionId: doc.paddleTransactionId,
+  subscriptionRenewsAt: doc.subscriptionRenewsAt?.toISOString(),
+  subscriptionCanceledAt: doc.subscriptionCanceledAt?.toISOString(),
+  lifetimeUnlockedAt: doc.lifetimeUnlockedAt?.toISOString(),
+  subscription: getSubscriptionLabel(normalizePlan(doc)),
   role: doc.role ?? "user",
   primaryCurrency: doc.primaryCurrency ?? "USD",
   passwordHash: doc.passwordHash,
@@ -44,7 +71,8 @@ export const findUserByEmail = async (email: string): Promise<User | undefined> 
 export const createUser = async (email: string, passwordHash: string, passwordSalt: string): Promise<User> => {
   const user = await UserModel.create({
     email: email.toLowerCase(),
-    subscription: "Free",
+    plan: "free",
+    billingStatus: "inactive",
     passwordHash,
     passwordSalt,
     emailVerified: false,
@@ -131,7 +159,8 @@ export const findUserByGoogleId = async (googleId: string): Promise<User | undef
 export const createGoogleUser = async (email: string, googleId: string): Promise<User> => {
   const user = await UserModel.create({
     email: email.toLowerCase(),
-    subscription: "Free",
+    plan: "free",
+    billingStatus: "inactive",
     passwordHash: "",
     passwordSalt: "",
     googleId,

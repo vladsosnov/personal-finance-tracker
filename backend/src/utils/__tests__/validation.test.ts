@@ -1,7 +1,9 @@
 import {
   emailRegex,
+  getEffectivePlan,
   getEffectiveSubscription,
   getMaxGoals,
+  getSubscriptionLabel,
   assertFiniteNonNegative,
   assertValidGoalTitle,
   assertValidNote,
@@ -42,6 +44,28 @@ describe("validation utilities", () => {
 
     it("returns user subscription for non-admin", () => {
       expect(getEffectiveSubscription({ subscription: "Pro", role: "user" })).toBe("Pro");
+    });
+  });
+
+  describe("getEffectivePlan", () => {
+    it("returns free when user is missing", () => {
+      expect(getEffectivePlan(undefined)).toBe("free");
+    });
+
+    it("returns lifetime for admins", () => {
+      expect(getEffectivePlan({ role: "admin", plan: "free" })).toBe("lifetime");
+    });
+
+    it("returns lifetime when unlocked", () => {
+      expect(getEffectivePlan({ role: "user", plan: "lifetime" })).toBe("lifetime");
+    });
+  });
+
+  describe("getSubscriptionLabel", () => {
+    it("maps normalized plans to display labels", () => {
+      expect(getSubscriptionLabel("free")).toBe("Free");
+      expect(getSubscriptionLabel("pro")).toBe("Pro");
+      expect(getSubscriptionLabel("lifetime")).toBe("Lifetime");
     });
   });
 
@@ -127,7 +151,7 @@ describe("validation utilities", () => {
       const user = {
         id: "123",
         email: "user@test.com",
-        subscription: "Pro",
+        plan: "pro",
         role: "user",
         primaryCurrency: "USD",
         emailVerified: true,
@@ -147,7 +171,7 @@ describe("validation utilities", () => {
       const admin = {
         id: "1",
         email: "admin@test.com",
-        subscription: "Free",
+        plan: "free",
         role: "admin",
         primaryCurrency: "USD",
         emailVerified: true,
