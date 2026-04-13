@@ -12,11 +12,21 @@ const normalizeBillingPlan = (plan: string | undefined): BillingPlan => {
   return "free";
 };
 
+type PlanSource = {
+  role: string;
+  plan?: BillingPlan | string;
+  subscription?: string;
+};
+
 export const getEffectivePlan = (
-  user: { role: string; plan: BillingPlan } | null | undefined
+  user: PlanSource | null | undefined
 ): BillingPlan => {
   if (!user) return "free";
-  return user.role === "admin" ? "lifetime" : user.plan;
+  const normalizedPlan = normalizeBillingPlan(
+    typeof user.plan === "string" ? user.plan.toLowerCase() : user.subscription?.toLowerCase()
+  );
+
+  return user.role === "admin" ? "lifetime" : normalizedPlan;
 };
 
 export const getSubscriptionLabel = (plan: BillingPlan): string => {
@@ -26,17 +36,13 @@ export const getSubscriptionLabel = (plan: BillingPlan): string => {
 };
 
 export const getEffectiveSubscription = (
-  user: { subscription?: string; plan?: BillingPlan | string; role: string } | null | undefined
+  user: PlanSource | null | undefined
 ): string => {
-  if (!user) return "Free";
-  const normalizedPlan = normalizeBillingPlan(
-    typeof user.plan === "string" ? user.plan.toLowerCase() : user.subscription?.toLowerCase()
-  );
-  return getSubscriptionLabel(user.role === "admin" ? "lifetime" : normalizedPlan ?? "free");
+  return getSubscriptionLabel(getEffectivePlan(user));
 };
 
-export const getMaxGoals = (subscription: string): number | null => {
-  return subscription.toLowerCase() === "free" ? FREE_MAX_GOALS : null;
+export const getMaxGoals = (plan: BillingPlan | string): number | null => {
+  return normalizeBillingPlan(plan.toLowerCase()) === "free" ? FREE_MAX_GOALS : null;
 };
 
 export const assertFiniteNonNegative = (value: number, label: string) => {
@@ -61,7 +67,7 @@ export const assertValidNote = (note?: string) => {
   }
 };
 
-export const toSafeUser = (user: {
+export type SafeUserSource = {
   id: string;
   email: string;
   plan?: BillingPlan | string;
@@ -69,14 +75,12 @@ export const toSafeUser = (user: {
   role: string;
   primaryCurrency: string;
   emailVerified: boolean;
-}) => ({
+};
+
+export const toSafeUser = (user: SafeUserSource) => ({
   id: user.id,
   email: user.email,
-  subscription: getSubscriptionLabel(
-    user.role === "admin"
-      ? "lifetime"
-      : normalizeBillingPlan(typeof user.plan === "string" ? user.plan.toLowerCase() : user.subscription?.toLowerCase())
-  ),
+  subscription: getSubscriptionLabel(getEffectivePlan(user)),
   role: user.role,
   primaryCurrency: user.primaryCurrency,
   emailVerified: user.emailVerified,

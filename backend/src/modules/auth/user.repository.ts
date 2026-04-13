@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 import { UserModel } from "../../db/models/user.model";
 import type { User, UserRole } from "./types";
-import { getSubscriptionLabel } from "../../utils/validation";
+import { getEffectivePlan, getSubscriptionLabel } from "../../utils/validation";
 import type { BillingPlan, BillingStatus } from "../../db/models/user.model";
 
 type UserDoc = {
@@ -65,7 +65,7 @@ const toUser = (doc: UserDoc): User => ({
   subscriptionRenewsAt: doc.subscriptionRenewsAt?.toISOString(),
   subscriptionCanceledAt: doc.subscriptionCanceledAt?.toISOString(),
   lifetimeUnlockedAt: doc.lifetimeUnlockedAt?.toISOString(),
-  subscription: getSubscriptionLabel(normalizePlan(doc)),
+  subscription: getSubscriptionLabel(getEffectivePlan({ role: doc.role ?? "user", plan: normalizePlan(doc) })),
   role: doc.role ?? "user",
   primaryCurrency: doc.primaryCurrency ?? "USD",
   passwordHash: doc.passwordHash,

@@ -193,4 +193,47 @@ describe("auth", () => {
       expect(AUTH_REFRESH_COOKIE).toBe("fgt_refresh");
     });
   });
+
+  describe("billing graphql", () => {
+    it("returns a checkout url for an authenticated pro upgrade", async () => {
+      const createCheckoutForUser = jest.fn().mockResolvedValue({
+        url: "https://sandbox.paddle.com/checkout/pro-user-1",
+      });
+
+      await jest.isolateModulesAsync(async () => {
+        jest.doMock("../modules/billing/billing.service", () => ({
+          createCheckoutForUser,
+          createPortalForUser: jest.fn(),
+        }));
+
+        const { graphql } = await import("graphql");
+        const { schema, rootValue } = require("../schema");
+        const response = await graphql({
+          schema,
+          source: `
+            mutation {
+              createBillingCheckout(plan: PRO) {
+                url
+              }
+            }
+          `,
+          rootValue,
+          contextValue: {
+            userId: "user-1",
+            userRole: "user",
+            tokenVersion: 0,
+            clientIp: "127.0.0.1",
+          },
+        });
+
+        expect(response.errors).toBeUndefined();
+        expect(response.data).toEqual({
+          createBillingCheckout: {
+            url: expect.stringContaining("paddle"),
+          },
+        });
+        expect(createCheckoutForUser).toHaveBeenCalledWith("user-1", "PRO");
+      });
+    });
+  });
 });

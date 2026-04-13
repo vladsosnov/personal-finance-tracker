@@ -10,6 +10,11 @@ import {
   updateUserBillingForWebhookEvent,
 } from "../auth/user.repository";
 import { createTransactionCheckout, type PaddleTransactionPayload } from "./paddle.client";
+import type {
+  BillingCheckoutPayload,
+  BillingCheckoutPlan,
+  BillingPortalPayload,
+} from "./types";
 
 type SupportedBillingEventType =
   | "transaction.completed"
@@ -55,6 +60,8 @@ type ProcessBillingWebhookResult =
   | { status: "applied"; update: BillingUpdate; userId: string }
   | { status: "ignored"; reason: "duplicate_event" | "invalid_payload" | "stale_event" | "user_not_found" };
 
+const PADDLE_API_BASE = process.env.PADDLE_API_BASE ?? "https://api.paddle.com";
+
 const isRecord = (value: unknown): value is Record<string, unknown> => {
   return typeof value === "object" && value !== null;
 };
@@ -67,6 +74,8 @@ const getConfiguredPaddlePriceIds = () => ({
   pro: process.env.PADDLE_PRO_PRICE_ID ?? "",
   lifetime: process.env.PADDLE_LIFETIME_PRICE_ID ?? "",
 });
+
+const getDefaultReturnUrl = () => process.env.PADDLE_DEFAULT_RETURN_URL ?? process.env.FRONTEND_ORIGIN ?? "http://localhost:3000";
 
 const getConfiguredToleranceSeconds = () => {
   const parsedTolerance = Number(process.env.PADDLE_WEBHOOK_TOLERANCE_SECONDS ?? "5");
@@ -98,6 +107,60 @@ const resolvePlanFromPriceIds = (priceIds: string[]): BillingPlan | undefined =>
   }
 
   return undefined;
+};
+
+const readCheckoutUrl = (payload: unknown): string | undefined => {
+  if (!isRecord(payload)) {
+    return undefined;
+  }
+
+  const data = isRecord(payload.data) ? payload.data : undefined;
+  const checkout = data && isRecord(data.checkout) ? data.checkout : undefined;
+
+  return readString(checkout?.url) ?? readString(data?.checkout_url) ?? readString((payload as Record<string, unknown>).url);
+};
+
+const readPortalUrl = (payload: unknown): string | undefined => {
+  if (!isRecord(payload)) {
+    return undefined;
+  }
+
+  const data = isRecord(payload.data) ? payload.data : undefined;
+  const urls = data && isRecord(data.urls) ? data.urls : undefined;
+  const general = urls && isRecord(urls.general) ? urls.general : undefined;
+
+  return readString(general?.overview) ?? readString((payload as Record<string, unknown>).url);
+};
+
+const getCheckoutPriceId = (plan: BillingCheckoutPlan): string => {
+  const configuredPriceIds = getConfiguredPaddlePriceIds();
+  const priceId = plan === "PRO" ? configuredPriceIds.pro : configuredPriceIds.lifetime;
+
+  if (!priceId) {
+    throw new Error(`Missing Paddle price id for ${plan.toLowerCase()} plan`);
+  }
+
+  return priceId;
+};
+
+const createCustomerPortalSession = async (customerId: string) => {
+  const response = await fetch(`${PADDLE_API_BASE}/customers/${customerId}/portal-sessions`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${process.env.PADDLE_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to create Paddle customer portal session");
+  }
+
+  return response.json() as Promise<unknown>;
+};
+
+const toStoredPlan = (plan: BillingCheckoutPlan): BillingPlan => {
+  return plan === "PRO" ? "pro" : "lifetime";
 };
 
 const withPaddleMetadata = (user: User, event: PaddleWebhookEvent, update: BillingUpdate): BillingUpdate => ({
@@ -356,4 +419,58 @@ export const processBillingWebhook = async (payload: unknown): Promise<ProcessBi
 
 export const createBillingCheckout = async (payload: PaddleTransactionPayload) => {
   return createTransactionCheckout(payload);
+};
+
+export const createCheckoutForUser = async (
+  userId: string,
+  plan: BillingCheckoutPlan
+): Promise<BillingCheckoutPayload> => {
+  const user = await findUserById(userId);
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  const response = await createBillingCheckout({
+    items: [
+      {
+        price_id: getCheckoutPriceId(plan),
+        quantity: 1,
+      },
+    ],
+    collection_mode: "automatic",
+    custom_data: {
+      userId,
+      plan: toStoredPlan(plan),
+    },
+    checkout: {
+      url: getDefaultReturnUrl(),
+    },
+    customer_id: user.paddleCustomerId,
+  });
+
+  const url = readCheckoutUrl(response);
+  if (!url) {
+    throw new Error("Failed to create Paddle checkout");
+  }
+
+  return { url };
+};
+
+export const createPortalForUser = async (userId: string): Promise<BillingPortalPayload> => {
+  const user = await findUserById(userId);
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  if (user.plan !== "pro" || user.billingStatus !== "active" || !user.paddleCustomerId) {
+    throw new Error("Billing portal is only available for active Pro subscribers");
+  }
+
+  const response = await createCustomerPortalSession(user.paddleCustomerId);
+  const url = readPortalUrl(response);
+  if (!url) {
+    throw new Error("Failed to create Paddle customer portal session");
+  }
+
+  return { url };
 };
