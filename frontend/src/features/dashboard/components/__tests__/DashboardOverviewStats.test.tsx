@@ -89,6 +89,14 @@ describe('DashboardOverviewStats', () => {
       expect(screen.getByText('Progress')).toBeInTheDocument();
     });
 
+    it('keeps totals on the first mobile row and progress on a second row', () => {
+      render(<DashboardOverviewStats totalTarget={10000} totalCurrent={5000} currency="USD" />);
+
+      expect(screen.getByTestId('dashboard-overview-mobile-totals-row')).toContainElement(screen.getByText('Total target'));
+      expect(screen.getByTestId('dashboard-overview-mobile-totals-row')).toContainElement(screen.getByText('Total current'));
+      expect(screen.getByTestId('dashboard-overview-mobile-progress-row')).toContainElement(screen.getByText('Progress'));
+    });
+
     it('uses h4 headings on mobile for compact layout', () => {
       render(<DashboardOverviewStats totalTarget={10000} totalCurrent={5000} currency="USD" />);
 

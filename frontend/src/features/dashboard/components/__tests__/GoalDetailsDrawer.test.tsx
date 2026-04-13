@@ -148,4 +148,24 @@ describe('GoalDetailsDrawer', () => {
     // Panel renders without fixed scroll height — content fills the drawer naturally
     expect(screen.getByRole('dialog')).toBeInTheDocument();
   });
+
+  it('uses xs padding for drawer content on mobile', () => {
+    render(<GoalDetailsDrawer {...defaultProps} />);
+
+    expect(screen.getByTestId('goal-details-drawer-content')).toHaveStyle({
+      padding: 'var(--mantine-spacing-xs)',
+    });
+  });
+
+  it('keeps the drawer header sticky above scrolling content', () => {
+    render(<GoalDetailsDrawer {...defaultProps} />);
+
+    expect(screen.getByTestId('goal-details-drawer-header')).toHaveStyle({
+      position: 'sticky',
+      top: '0',
+      zIndex: '10',
+      isolation: 'isolate',
+      boxShadow: '0 1px 0 0 var(--mantine-color-default-border)',
+    });
+  });
 });

@@ -103,7 +103,7 @@ export const GoalDetailsPanel = ({
   };
 
   return (
-    <Card withBorder radius="md" p="lg">
+    <Card withBorder radius="md" p={isMobile ? "xs" : "lg"} data-testid="goal-details-card">
       {isLoadingGoalDetails ? (
         <LoadingSkeleton />
       ) : goalDetailsErrorMessage ? (
@@ -133,8 +133,13 @@ export const GoalDetailsPanel = ({
           )}
         </Stack>
       ) : (
-        <ScrollArea h={scrollHeight} offsetScrollbars scrollbarSize={8}>
-          <Stack gap="md" pr={4}>
+        <ScrollArea
+          h={scrollHeight}
+          offsetScrollbars={!isMobile}
+          scrollbarSize={8}
+          data-testid="goal-details-scroll-area"
+        >
+          <Stack gap="md" pr={isMobile ? 0 : 4}>
             <GoalDetailHeader
               goal={selectedGoal}
               chartRange={chartRange}

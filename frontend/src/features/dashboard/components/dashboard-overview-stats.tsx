@@ -77,24 +77,37 @@ export const DashboardOverviewStats = ({ totalTarget, totalCurrent, currency }: 
       <Stack gap="xs" role="region" aria-label="Dashboard overview">
         <div className={styles.stagger1}>
           <Card withBorder radius="md" p="md">
-            <Group justify="space-between" align="center" wrap="nowrap">
-              <div>
-                <Text c="dimmed" size="xs" id="stat-target-label-m">Total target</Text>
-                {isLoading ? <Skeleton height={24} width="70%" mt={2} /> : (
-                  <Title order={4} aria-labelledby="stat-target-label-m" aria-live="polite">
-                    {formatMoney(animatedTarget, currency)}
-                  </Title>
-                )}
-              </div>
-              <div>
-                <TotalCurrentLabel id="stat-current-label-m" size="xs" />
-                {isLoading ? <Skeleton height={24} width={80} mt={2} /> : (
-                  <Title order={4} aria-labelledby="stat-current-label-m" aria-live="polite">
-                    {formatMoney(animatedCurrent, currency)}
-                  </Title>
-                )}
-              </div>
-              <Group gap={8} wrap="nowrap" align="center">
+            <Stack gap="sm">
+              <Group
+                justify="space-between"
+                align="flex-start"
+                wrap="nowrap"
+                data-testid="dashboard-overview-mobile-totals-row"
+              >
+                <div>
+                  <Text c="dimmed" size="xs" id="stat-target-label-m">Total target</Text>
+                  {isLoading ? <Skeleton height={24} width="70%" mt={2} /> : (
+                    <Title order={4} aria-labelledby="stat-target-label-m" aria-live="polite">
+                      {formatMoney(animatedTarget, currency)}
+                    </Title>
+                  )}
+                </div>
+                <div>
+                  <TotalCurrentLabel id="stat-current-label-m" size="xs" />
+                  {isLoading ? <Skeleton height={24} width={80} mt={2} /> : (
+                    <Title order={4} aria-labelledby="stat-current-label-m" aria-live="polite">
+                      {formatMoney(animatedCurrent, currency)}
+                    </Title>
+                  )}
+                </div>
+              </Group>
+              <Group
+                gap={8}
+                wrap="nowrap"
+                align="center"
+                justify="center"
+                data-testid="dashboard-overview-mobile-progress-row"
+              >
                 {!isLoading && (
                   <RingProgress
                     size={42}
@@ -113,7 +126,7 @@ export const DashboardOverviewStats = ({ totalTarget, totalCurrent, currency }: 
                   )}
                 </div>
               </Group>
-            </Group>
+            </Stack>
           </Card>
         </div>
       </Stack>

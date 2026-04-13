@@ -21,7 +21,10 @@ export const metadata: Metadata = {
   description: "Set financial goals, track your savings progress, and stay motivated with visual charts and transaction history.",
   manifest: `${BASE_PATH}/manifest.json`,
   icons: {
-    icon: "/icons/icon.svg",
+    icon: [
+      { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+      { url: "/icons/icon.svg", type: "image/svg+xml" },
+    ],
     apple: "/icons/icon-192x192.png",
   },
   appleWebApp: {

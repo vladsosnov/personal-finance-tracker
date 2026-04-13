@@ -64,7 +64,7 @@ export const GoalsList = ({
   }, [goals, selectedGoalId, onSelectGoal]);
 
   return (
-    <Card withBorder radius="md" p="lg">
+    <Card withBorder radius="md" p={isMobile ? "xs" : "lg"} data-testid="goals-list-card">
       <Stack gap={6}>
         <Group justify="space-between" align="center">
           {isLoadingGoals ? (
@@ -89,7 +89,13 @@ export const GoalsList = ({
             </Button>
           )}
         </Group>
-        <ScrollArea h={isMobile ? 360 : 520} offsetScrollbars scrollbarSize={8} onKeyDown={handleListKeyDown}>
+        <ScrollArea
+          h={isMobile ? 360 : 520}
+          offsetScrollbars={!isMobile}
+          scrollbarSize={8}
+          onKeyDown={handleListKeyDown}
+          data-testid="goals-list-scroll-area"
+        >
           <Stack gap="sm">
             {isLoadingGoals ? (
               <GoalsLoadingSkeleton />

@@ -3,6 +3,14 @@ import userEvent from '@testing-library/user-event';
 import { render } from '@/__tests__/test-utils';
 import { GoalDetailsPanel, type GoalDetailsPanelProps, type GoalOperationActions } from '../goal-details-panel';
 import type { GoalDetails, GoalOperation } from '@/features/dashboard/types';
+import { useMediaQuery } from '@mantine/hooks';
+
+jest.mock('@mantine/hooks', () => ({
+  ...jest.requireActual('@mantine/hooks'),
+  useMediaQuery: jest.fn(() => false),
+}));
+
+const mockUseMediaQuery = useMediaQuery as jest.Mock;
 
 jest.mock('next/dynamic', () => {
   const names = ['GoalChart', 'DeleteOperationModal', 'OperationModal'];
@@ -122,6 +130,10 @@ const defaultProps: GoalDetailsPanelProps = {
 };
 
 describe('GoalDetailsPanel', () => {
+  beforeEach(() => {
+    mockUseMediaQuery.mockReturnValue(false);
+  });
+
   it('shows loading skeleton when loading', () => {
     render(<GoalDetailsPanel {...defaultProps} isLoadingGoalDetails={true} />);
 
@@ -186,6 +198,28 @@ describe('GoalDetailsPanel', () => {
     expect(screen.getByText('Operations')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /add operation/i })).toBeInTheDocument();
     expect(screen.getByTestId('goal-operations-table')).toBeInTheDocument();
+  });
+
+  it('removes scrollbar offset padding on mobile', () => {
+    mockUseMediaQuery.mockReturnValue(true);
+
+    render(
+      <GoalDetailsPanel {...defaultProps} selectedGoal={mockGoalDetails} />
+    );
+
+    expect(screen.getByTestId('goal-details-scroll-area')).not.toHaveAttribute('data-offset-scrollbars');
+  });
+
+  it('uses xs card padding on mobile', () => {
+    mockUseMediaQuery.mockReturnValue(true);
+
+    render(
+      <GoalDetailsPanel {...defaultProps} selectedGoal={mockGoalDetails} />
+    );
+
+    expect(screen.getByTestId('goal-details-card')).toHaveStyle({
+      padding: 'var(--mantine-spacing-xs)',
+    });
   });
 
   it('opens operation modal on "Add operation" click', async () => {

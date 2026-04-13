@@ -19,7 +19,19 @@ export const GoalDetailsDrawer = ({ opened, onClose, panelProps }: GoalDetailsDr
     styles={{ body: { padding: 0, height: "100%" }, content: { display: "flex", flexDirection: "column" } }}
   >
     <Stack gap={0} style={{ height: "100%" }}>
-      <Group px="md" py="sm" style={{ borderBottom: "1px solid var(--mantine-color-default-border)" }}>
+      <Group
+        data-testid="goal-details-drawer-header"
+        px="md"
+        py="sm"
+        style={{
+          position: "sticky",
+          top: 0,
+          zIndex: 10,
+          isolation: "isolate",
+          background: "var(--mantine-color-body)",
+          boxShadow: "0 1px 0 0 var(--mantine-color-default-border)",
+        }}
+      >
         <Button
           variant="subtle"
           leftSection={<IconArrowLeft size={16} />}
@@ -29,7 +41,10 @@ export const GoalDetailsDrawer = ({ opened, onClose, panelProps }: GoalDetailsDr
           Goals
         </Button>
       </Group>
-      <div style={{ flex: 1, overflow: "auto", padding: "var(--mantine-spacing-md)" }}>
+      <div
+        data-testid="goal-details-drawer-content"
+        style={{ flex: 1, overflow: "auto", padding: "var(--mantine-spacing-xs)" }}
+      >
         <GoalDetailsPanel {...panelProps} scrollHeight={undefined} />
       </div>
     </Stack>

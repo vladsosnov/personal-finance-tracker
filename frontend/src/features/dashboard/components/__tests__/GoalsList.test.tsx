@@ -4,12 +4,15 @@ import { render } from '@/__tests__/test-utils';
 import { GoalsList, type GoalManageMode } from '../goals-list';
 import type { Goal } from '@/features/dashboard/types';
 import { mockGoal, mockCompletedGoal } from '@/__tests__/mock-data';
+import { useMediaQuery } from '@mantine/hooks';
 
 // Mock useMediaQuery to return false (desktop)
 jest.mock('@mantine/hooks', () => ({
   ...jest.requireActual('@mantine/hooks'),
-  useMediaQuery: () => false,
+  useMediaQuery: jest.fn(() => false),
 }));
+
+const mockUseMediaQuery = useMediaQuery as jest.Mock;
 
 jest.mock('@/features/dashboard/components/GoalCard', () => ({
   GoalCard: ({
@@ -74,7 +77,10 @@ const defaultProps = {
 };
 
 describe('GoalsList', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockUseMediaQuery.mockReturnValue(false);
+  });
 
   it('renders goal cards', () => {
     render(<GoalsList {...defaultProps} />);
@@ -178,6 +184,24 @@ describe('GoalsList', () => {
     render(<GoalsList {...defaultProps} manageMode={makeManageMode({ showToggle: false })} />);
 
     expect(screen.queryByRole('button', { name: /manage goals/i })).not.toBeInTheDocument();
+  });
+
+  it('removes scrollbar offset padding on mobile', () => {
+    mockUseMediaQuery.mockReturnValue(true);
+
+    render(<GoalsList {...defaultProps} />);
+
+    expect(screen.getByTestId('goals-list-scroll-area')).not.toHaveAttribute('data-offset-scrollbars');
+  });
+
+  it('uses xs card padding on mobile', () => {
+    mockUseMediaQuery.mockReturnValue(true);
+
+    render(<GoalsList {...defaultProps} />);
+
+    expect(screen.getByTestId('goals-list-card')).toHaveStyle({
+      padding: 'var(--mantine-spacing-xs)',
+    });
   });
 
   describe('keyboard navigation', () => {
