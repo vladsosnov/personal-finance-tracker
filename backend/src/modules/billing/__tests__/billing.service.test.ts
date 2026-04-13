@@ -118,6 +118,26 @@ describe("billing.service", () => {
     expect(result.billingStatus).toBe("active");
   });
 
+  it("does not downgrade a lifetime user when a pro subscription expires", async () => {
+    const lifetimeUser = makeUser({
+      plan: "lifetime",
+      billingStatus: "active",
+      subscription: "Lifetime",
+      lifetimeUnlockedAt: "2026-04-10T10:00:00.000Z",
+    });
+    const proExpiredEvent = {
+      eventId: "evt_expired_1",
+      eventType: "subscription.expired",
+      plan: "pro",
+      occurredAt: "2026-04-13T12:00:00.000Z",
+    } as const;
+
+    const result = applyBillingEvent(lifetimeUser, proExpiredEvent as never);
+
+    expect(result.plan).toBe("lifetime");
+    expect(result.billingStatus).toBe("active");
+  });
+
   it("marks a pro subscription as past_due when Paddle sends subscription.past_due", async () => {
     const proUser = makeUser({
       plan: "pro",
