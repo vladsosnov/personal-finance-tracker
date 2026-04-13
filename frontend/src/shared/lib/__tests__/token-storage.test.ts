@@ -42,4 +42,29 @@ describe('tokenStorage', () => {
     expect(tokenStorage.getAccess()).toBeNull();
     expect(tokenStorage.getRefresh()).toBeNull();
   });
+
+  it('returns null instead of throwing when localStorage reads fail', () => {
+    jest.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
+      throw new Error('storage unavailable');
+    });
+
+    expect(tokenStorage.getAccess()).toBeNull();
+    expect(tokenStorage.getRefresh()).toBeNull();
+  });
+
+  it('does not throw when localStorage writes fail', () => {
+    jest.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new Error('storage unavailable');
+    });
+
+    expect(() => tokenStorage.set('access-abc', 'refresh-xyz')).not.toThrow();
+  });
+
+  it('does not throw when localStorage removals fail', () => {
+    jest.spyOn(Storage.prototype, 'removeItem').mockImplementation(() => {
+      throw new Error('storage unavailable');
+    });
+
+    expect(() => tokenStorage.clear()).not.toThrow();
+  });
 });

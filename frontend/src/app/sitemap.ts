@@ -1,7 +1,8 @@
 import type { MetadataRoute } from "next";
+import { getSiteUrl } from "@/shared/lib/site-url";
 
 const sitemap = (): MetadataRoute.Sitemap => {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://localhost:3000";
+  const baseUrl = getSiteUrl();
 
   return [
     {
@@ -11,7 +12,7 @@ const sitemap = (): MetadataRoute.Sitemap => {
       priority: 1,
     },
     {
-      url: `${baseUrl}/auth/login`,
+      url: `${baseUrl}/auth`,
       lastModified: new Date(),
       changeFrequency: "monthly",
       priority: 0.5,

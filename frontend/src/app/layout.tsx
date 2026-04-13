@@ -6,19 +6,24 @@ import { AppThemeProvider } from "@/shared/components/app-theme-provider";
 import { Header } from "@/shared/components/header";
 import { Providers } from "@/shared/components/providers";
 import { RegisterSW } from "@/shared/components/register-sw";
+import { getSiteUrl } from "@/shared/lib/site-url";
 import "./globals.css";
 import "@mantine/core/styles.css";
 
 const inter = Inter({ subsets: ["latin"] });
 
 const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
-const SITE_URL = `https://vladsosnov.github.io${BASE_PATH}`;
+const SITE_URL = `${getSiteUrl()}${BASE_PATH}`;
 const OG_IMAGE = `${SITE_URL}/icons/icon-512x512.png`;
 
 export const metadata: Metadata = {
   title: "Financial Goals Tracker",
   description: "Set financial goals, track your savings progress, and stay motivated with visual charts and transaction history.",
   manifest: `${BASE_PATH}/manifest.json`,
+  icons: {
+    icon: "/icons/icon.svg",
+    apple: "/icons/icon-192x192.png",
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
@@ -59,8 +64,6 @@ const RootLayout = ({
     <html lang="en" suppressHydrationWarning>
       <head>
         <ColorSchemeScript defaultColorScheme="light" />
-        <link rel="icon" type="image/png" href="/favicon-32x32.png" sizes="32x32" />
-        <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
       </head>
       <body className={inter.className}>
         <AppThemeProvider>

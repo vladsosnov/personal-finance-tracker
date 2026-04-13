@@ -25,6 +25,10 @@ const authLink = new ApolloLink((operation, forward) => {
   return forward(operation);
 });
 
+const clearFallbackTokens = () => {
+  tokenStorage.clear();
+};
+
 const refreshSession = async () => {
   const refreshToken = tokenStorage.getRefresh();
   const headers: Record<string, string> = {};
@@ -37,13 +41,18 @@ const refreshSession = async () => {
   });
 
   if (!response.ok) {
+    clearFallbackTokens();
     throw new Error("Session refresh failed");
   }
 
   const data = (await response.json().catch(() => null)) as { accessToken?: string; refreshToken?: string } | null;
   if (data?.accessToken && data?.refreshToken) {
     tokenStorage.set(data.accessToken, data.refreshToken);
+    return;
   }
+
+  clearFallbackTokens();
+  throw new Error("Session refresh failed");
 };
 
 // eslint-disable-next-line prefer-const
@@ -77,6 +86,7 @@ const errorLink = new ErrorLink(({ error, operation, forward }) => {
         return () => subscription.unsubscribe();
       })
       .catch(() => {
+        clearFallbackTokens();
         // Refresh failed — just propagate the error, let the UI handle it
         observer.error(error);
       });
@@ -94,3 +104,4 @@ apolloClient = new ApolloClient({
 });
 
 export { apolloClient };
+export const __private__ = { refreshSession };

@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { getSiteUrl } from "@/shared/lib/site-url";
 
 const robots = (): MetadataRoute.Robots => ({
   rules: [
@@ -8,7 +9,7 @@ const robots = (): MetadataRoute.Robots => ({
       disallow: ["/auth/", "/goals/", "/profile/", "/expenses/"],
     },
   ],
-  sitemap: `${process.env.NEXT_PUBLIC_SITE_URL ?? "https://localhost:3000"}/sitemap.xml`,
+  sitemap: `${getSiteUrl()}/sitemap.xml`,
 });
 
 export default robots;

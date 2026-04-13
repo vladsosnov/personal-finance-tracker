@@ -102,9 +102,14 @@ export const DashboardClient = () => {
 
   const isOperationSubmitDisabled = !selectedGoalId || !operationForm.operationAmount || Number(operationForm.operationAmount) <= 0;
 
-  // Pick up tokens passed as URL params after Google OAuth redirect on mobile
+  // Pick up tokens passed after Google OAuth redirect on mobile.
+  // The backend uses URL fragments to avoid sending tokens in referrers and logs.
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
+    const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+    const searchParams = new URLSearchParams(window.location.search);
+    const params = hashParams.get("access_token") && hashParams.get("refresh_token")
+      ? hashParams
+      : searchParams;
     const access = params.get("access_token");
     const refresh = params.get("refresh_token");
     if (access && refresh) {
@@ -112,6 +117,7 @@ export const DashboardClient = () => {
       const url = new URL(window.location.href);
       url.searchParams.delete("access_token");
       url.searchParams.delete("refresh_token");
+      url.hash = "";
       window.history.replaceState({}, "", url.toString());
     }
   }, []);

@@ -25,6 +25,9 @@ const sendEmail = async (to: string, subject: string, html: string) => {
   if (transporter) {
     await transporter.sendMail({ from: smtpFrom, to, subject, html });
   } else {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error("SMTP is required in production");
+    }
     console.log("\n========== EMAIL (dev mode) ==========");
     console.log(`To: ${to}`);
     console.log(`Subject: ${subject}`);

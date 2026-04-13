@@ -10,11 +10,14 @@ import type { MockedResponse } from '@apollo/client/testing';
 import { mockGoal, mockCompletedGoal } from '@/__tests__/mock-data';
 import { tokenStorage } from '@/shared/lib/token-storage';
 
-const mockDashboardOverviewStats = jest.fn(() => null);
+const mockDashboardOverviewStats = jest.fn<
+  void,
+  [{ totalTarget: number | null; totalCurrent: number | null; currency: string }]
+>();
 
 jest.mock('../dashboard-overview-stats', () => ({
   DashboardOverviewStats: (props: { totalTarget: number | null; totalCurrent: number | null; currency: string }) => {
-    mockDashboardOverviewStats();
+    mockDashboardOverviewStats(props);
     return (
       <section aria-label="Dashboard overview" data-testid="dashboard-overview-stats">
         <div>Total target</div>
@@ -237,9 +240,8 @@ describe('DashboardClient', () => {
   });
 
   describe('OAuth token handling', () => {
-    it('picks up tokens from URL and stores them', async () => {
-      // Push a query string that the component will read
-      window.history.pushState({}, '', '?access_token=abc123&refresh_token=xyz789');
+    it('picks up tokens from URL fragment and stores them', async () => {
+      window.history.pushState({}, '', '/goals#access_token=abc123&refresh_token=xyz789');
 
       render(<DashboardClient />, { mocks: [meMock, goalsMock, ratesMock] });
 
@@ -247,7 +249,6 @@ describe('DashboardClient', () => {
         expect(tokenStorage.set).toHaveBeenCalledWith('abc123', 'xyz789');
       });
 
-      // Clean up the URL
       window.history.pushState({}, '', '/');
     });
   });
