@@ -9,6 +9,7 @@ export type UserDocument = {
   plan: BillingPlan;
   billingStatus: BillingStatus;
   billingProvider?: "paddle";
+  subscription?: string;
   paddleCustomerId?: string;
   paddleSubscriptionId?: string;
   paddleTransactionId?: string;
@@ -31,6 +32,7 @@ export type UserDocument = {
 const userSchema = new Schema<UserDocument>(
   {
     email: { type: String, required: true, unique: true, index: true },
+    subscription: { type: String },
     plan: { type: String, enum: ["free", "pro", "lifetime"], required: true, default: "free" },
     billingStatus: {
       type: String,
