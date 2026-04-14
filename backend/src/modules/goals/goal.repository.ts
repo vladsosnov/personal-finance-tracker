@@ -212,7 +212,7 @@ export const reorderGoals = async (userId: string, orderedGoalIds: string[]): Pr
   const goals = await GoalModel.find({ userId }).select("_id").lean();
   const existingIds = new Set(goals.map((goal) => goal._id.toString()));
 
-  // Validate that every incoming ID belongs to this user (subset check — completed goals
+  // Validate that every incoming ID belongs to this user (subset check - completed goals
   // are not included in the reorder payload but should not cause an error)
   if (orderedGoalIds.some((goalId) => !existingIds.has(goalId))) {
     throw new Error("Goal order payload is invalid");

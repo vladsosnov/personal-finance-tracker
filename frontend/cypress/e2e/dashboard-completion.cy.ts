@@ -100,7 +100,7 @@ function stubCompletionGraphQL() {
   cy.intercept("POST", `${Cypress.env("apiUrl")}/analytics/track`, { statusCode: 200, body: { ok: true } });
 }
 
-describe("Dashboard — Goal Completion", { testIsolation: false }, () => {
+describe("Dashboard - Goal Completion", { testIsolation: false }, () => {
   before(() => {
     cy.window().then((win) => { win.location.href = "about:blank"; });
     cy.wait(500);
@@ -139,7 +139,7 @@ describe("Dashboard — Goal Completion", { testIsolation: false }, () => {
   });
 
   it("confirms goal completion via the modal", () => {
-    // Modal is still open from previous test — click Complete inside the dialog
+    // Modal is still open from previous test - click Complete inside the dialog
     cy.get("[role='dialog']").within(() => {
       cy.contains("button", "Complete").click();
     });

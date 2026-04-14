@@ -8,6 +8,7 @@ const mockPush = jest.fn();
 const mockReplace = jest.fn();
 const mockRefresh = jest.fn();
 const mockRefetchQueries = jest.fn();
+const mockSearchParamGet = jest.fn();
 
 jest.mock('next/navigation', () => ({
   useRouter: () => ({
@@ -16,7 +17,7 @@ jest.mock('next/navigation', () => ({
     refresh: mockRefresh,
   }),
   useSearchParams: () => ({
-    get: () => null,
+    get: mockSearchParamGet,
   }),
 }));
 
@@ -50,6 +51,7 @@ describe('AuthClient', () => {
     jest.clearAllMocks();
     (global.fetch as jest.Mock).mockClear();
     mockRefetchQueries.mockResolvedValue(undefined);
+    mockSearchParamGet.mockReturnValue(null);
   });
 
   it('renders login form by default', () => {
@@ -215,6 +217,27 @@ describe('AuthClient', () => {
 
     await waitFor(() => {
       expect(mockReplace).toHaveBeenCalledWith('/goals');
+    });
+  });
+
+  it('redirects to next path on successful login when provided', async () => {
+    const user = userEvent.setup();
+    mockSearchParamGet.mockImplementation((key: string) => (
+      key === 'next' ? '/profile?upgrade=pro' : null
+    ));
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({}),
+    });
+
+    render(<AuthClient />);
+
+    await user.type(screen.getByLabelText(/email/i), 'test@example.com');
+    await user.type(screen.getByLabelText(/password/i), 'password123');
+    await user.click(screen.getByRole('button', { name: /log in/i }));
+
+    await waitFor(() => {
+      expect(mockReplace).toHaveBeenCalledWith('/profile?upgrade=pro');
     });
   });
 

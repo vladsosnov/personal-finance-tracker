@@ -48,7 +48,7 @@ export const convert = (
   if (fromCurrency === toCurrency) return amount;
 
   // rates are relative to a base currency (the goal's currency).
-  // If toCurrency is the base, it won't appear in the map — divide by fromCurrency rate instead.
+  // If toCurrency is the base, it won't appear in the map - divide by fromCurrency rate instead.
   const directRate = rates[toCurrency];
   if (directRate != null) {
     // fromCurrency is the base → multiply

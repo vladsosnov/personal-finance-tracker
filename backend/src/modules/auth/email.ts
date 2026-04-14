@@ -40,7 +40,7 @@ export const sendVerificationEmail = async (to: string, token: string) => {
   const link = `${FRONTEND_URL}/auth/verify-email?token=${token}`;
   await sendEmail(
     to,
-    "Verify your email — Financial Goals Tracker",
+    "Verify your email - Financial Goals Tracker",
     `<h2>Verify your email</h2>
      <p>Click the link below to verify your email address:</p>
      <p><a href="${link}">${link}</a></p>
@@ -53,7 +53,7 @@ export const sendPasswordResetEmail = async (to: string, token: string) => {
   const link = `${FRONTEND_URL}/auth/reset-password?token=${token}`;
   await sendEmail(
     to,
-    "Reset your password — Financial Goals Tracker",
+    "Reset your password - Financial Goals Tracker",
     `<h2>Reset your password</h2>
      <p>Click the link below to reset your password:</p>
      <p><a href="${link}">${link}</a></p>

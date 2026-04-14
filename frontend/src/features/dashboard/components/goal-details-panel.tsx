@@ -209,7 +209,7 @@ export const GoalDetailsPanel = ({
             <Modal
               opened={isChartModalOpen}
               onClose={() => setIsChartModalOpen(false)}
-              title={`${selectedGoal.title} — Progress chart`}
+              title={`${selectedGoal.title} - Progress chart`}
               centered
               fullScreen={isMobile}
               size={isMobile ? undefined : "calc(100vw - 96px)"}

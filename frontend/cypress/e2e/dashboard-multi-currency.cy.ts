@@ -110,7 +110,7 @@ function stubMultiCurrencyGraphQL() {
 // Use testIsolation: false because the dashboard page's dynamic import + React concurrent
 // rendering causes "Unknown root exit status" errors that corrupt the Next.js page cache,
 // preventing subsequent cy.visit("/goals") from rendering the client component.
-describe("Dashboard — Multi-Currency", { testIsolation: false }, () => {
+describe("Dashboard - Multi-Currency", { testIsolation: false }, () => {
   before(() => {
     // Navigate to about:blank to fully reset Next.js client state from prior specs
     cy.window().then((win) => { win.location.href = "about:blank"; });
@@ -144,7 +144,7 @@ describe("Dashboard — Multi-Currency", { testIsolation: false }, () => {
     cy.contains("Car Fund").click();
     // PLN operation
     cy.contains("zł 800.00").should("exist");
-    // USD operation in a PLN goal — should show original currency
+    // USD operation in a PLN goal - should show original currency
     cy.contains("$ 900.00").should("exist");
   });
 

@@ -1,9 +1,23 @@
 import { Schema, model } from "mongoose";
 import type { UserRole } from "../../modules/auth/types";
 
+export type BillingPlan = "free" | "pro" | "lifetime";
+export type BillingStatus = "inactive" | "active" | "canceled" | "past_due";
+
 export type UserDocument = {
   email: string;
-  subscription: string;
+  plan: BillingPlan;
+  billingStatus: BillingStatus;
+  billingProvider?: "stripe";
+  subscription?: string;
+  processedBillingWebhookEventIds?: string[];
+  latestBillingEventAt?: Date;
+  stripeCustomerId?: string;
+  stripeSubscriptionId?: string;
+  stripeCheckoutSessionId?: string;
+  subscriptionRenewsAt?: Date;
+  subscriptionCanceledAt?: Date;
+  lifetimeUnlockedAt?: Date;
   role: UserRole;
   primaryCurrency: string;
   passwordHash: string;
@@ -20,7 +34,23 @@ export type UserDocument = {
 const userSchema = new Schema<UserDocument>(
   {
     email: { type: String, required: true, unique: true, index: true },
-    subscription: { type: String, required: true, default: "Free" },
+    subscription: { type: String },
+    plan: { type: String, enum: ["free", "pro", "lifetime"], required: true, default: "free" },
+    billingStatus: {
+      type: String,
+      enum: ["inactive", "active", "canceled", "past_due"],
+      required: true,
+      default: "inactive",
+    },
+    billingProvider: { type: String, enum: ["stripe"] },
+    processedBillingWebhookEventIds: { type: [String], default: [] },
+    latestBillingEventAt: { type: Date },
+    stripeCustomerId: { type: String, unique: true, sparse: true },
+    stripeSubscriptionId: { type: String, unique: true, sparse: true },
+    stripeCheckoutSessionId: { type: String, unique: true, sparse: true },
+    subscriptionRenewsAt: { type: Date },
+    subscriptionCanceledAt: { type: Date },
+    lifetimeUnlockedAt: { type: Date },
     role: { type: String, enum: ["user", "admin"], required: true, default: "user" },
     primaryCurrency: { type: String, required: true, default: "USD" },
     passwordHash: { type: String, required: true, default: "" },

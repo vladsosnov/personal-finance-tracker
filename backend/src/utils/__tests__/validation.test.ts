@@ -1,7 +1,9 @@
 import {
   emailRegex,
+  getEffectivePlan,
   getEffectiveSubscription,
   getMaxGoals,
+  getSubscriptionLabel,
   assertFiniteNonNegative,
   assertValidGoalTitle,
   assertValidNote,
@@ -37,11 +39,37 @@ describe("validation utilities", () => {
     });
 
     it("returns Lifetime for admin", () => {
-      expect(getEffectiveSubscription({ subscription: "Free", role: "admin" })).toBe("Lifetime");
+      expect(getEffectiveSubscription({ plan: "free", role: "admin" })).toBe("Lifetime");
     });
 
     it("returns user subscription for non-admin", () => {
-      expect(getEffectiveSubscription({ subscription: "Pro", role: "user" })).toBe("Pro");
+      expect(getEffectiveSubscription({ plan: "pro", role: "user" })).toBe("Pro");
+    });
+  });
+
+  describe("getEffectivePlan", () => {
+    it("returns free when user is missing", () => {
+      expect(getEffectivePlan(undefined)).toBe("free");
+    });
+
+    it("returns a regular user's plan", () => {
+      expect(getEffectivePlan({ role: "user", plan: "pro" })).toBe("pro");
+    });
+
+    it("returns lifetime for admins", () => {
+      expect(getEffectivePlan({ role: "admin", plan: "free" })).toBe("lifetime");
+    });
+
+    it("returns lifetime when unlocked", () => {
+      expect(getEffectivePlan({ role: "user", plan: "lifetime" })).toBe("lifetime");
+    });
+  });
+
+  describe("getSubscriptionLabel", () => {
+    it("maps normalized plans to display labels", () => {
+      expect(getSubscriptionLabel("free")).toBe("Free");
+      expect(getSubscriptionLabel("pro")).toBe("Pro");
+      expect(getSubscriptionLabel("lifetime")).toBe("Lifetime");
     });
   });
 
@@ -127,7 +155,7 @@ describe("validation utilities", () => {
       const user = {
         id: "123",
         email: "user@test.com",
-        subscription: "Pro",
+        plan: "pro",
         role: "user",
         primaryCurrency: "USD",
         emailVerified: true,
@@ -136,6 +164,8 @@ describe("validation utilities", () => {
       expect(toSafeUser(user)).toEqual({
         id: "123",
         email: "user@test.com",
+        plan: "pro",
+        billingStatus: "inactive",
         subscription: "Pro",
         role: "user",
         primaryCurrency: "USD",
@@ -147,13 +177,25 @@ describe("validation utilities", () => {
       const admin = {
         id: "1",
         email: "admin@test.com",
-        subscription: "Free",
+        plan: "free",
         role: "admin",
         primaryCurrency: "USD",
         emailVerified: true,
       };
 
       expect(toSafeUser(admin).subscription).toBe("Lifetime");
+    });
+
+    it("does not fall back to a raw legacy subscription string", () => {
+      const user = {
+        id: "legacy-1",
+        email: "legacy@test.com",
+        role: "user",
+        primaryCurrency: "USD",
+        emailVerified: true,
+      };
+
+      expect(toSafeUser(user).subscription).toBe("Free");
     });
   });
 

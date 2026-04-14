@@ -8,11 +8,13 @@ const mockReplace = jest.fn();
 
 jest.mock('next/navigation', () => ({
   usePathname: jest.fn(),
+  useSearchParams: jest.fn(),
   useRouter: () => ({ replace: mockReplace }),
 }));
 
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 const mockUsePathname = usePathname as jest.Mock;
+const mockUseSearchParams = useSearchParams as jest.Mock;
 
 const authedMock: MockedResponse = {
   request: { query: GET_ME },
@@ -26,6 +28,10 @@ const unauthedMock: MockedResponse = {
 
 beforeEach(() => {
   mockReplace.mockClear();
+  mockUseSearchParams.mockReturnValue({
+    get: () => null,
+    toString: () => '',
+  });
 });
 
 describe('AuthGuard', () => {
@@ -41,7 +47,7 @@ describe('AuthGuard', () => {
   it('redirects unauthenticated user from protected path to /auth', async () => {
     mockUsePathname.mockReturnValue('/goals');
     render(<AuthGuard><div>content</div></AuthGuard>, { mocks: [unauthedMock] });
-    await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/auth'));
+    await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/auth?next=%2Fgoals'));
   });
 
   it('redirects authenticated user from /auth to /goals', async () => {
@@ -74,6 +80,36 @@ describe('AuthGuard', () => {
   it('redirects unauthenticated user from /profile to /auth', async () => {
     mockUsePathname.mockReturnValue('/profile');
     render(<AuthGuard><div>content</div></AuthGuard>, { mocks: [unauthedMock] });
-    await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/auth'));
+    await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/auth?next=%2Fprofile'));
+  });
+
+  it('redirects unauthenticated user from /expenses to /auth', async () => {
+    mockUsePathname.mockReturnValue('/expenses');
+    render(<AuthGuard><div>content</div></AuthGuard>, { mocks: [unauthedMock] });
+    await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/auth?next=%2Fexpenses'));
+  });
+
+  it('preserves query params when redirecting protected upgrade routes to auth', async () => {
+    mockUsePathname.mockReturnValue('/profile');
+    mockUseSearchParams.mockReturnValue({
+      get: () => null,
+      toString: () => 'upgrade=pro',
+    });
+
+    render(<AuthGuard><div>content</div></AuthGuard>, { mocks: [unauthedMock] });
+
+    await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/auth?next=%2Fprofile%3Fupgrade%3Dpro'));
+  });
+
+  it('redirects authenticated user from /auth to next when present', async () => {
+    mockUsePathname.mockReturnValue('/auth');
+    mockUseSearchParams.mockReturnValue({
+      get: (key: string) => key === 'next' ? '/profile?upgrade=pro' : null,
+      toString: () => 'next=%2Fprofile%3Fupgrade%3Dpro',
+    });
+
+    render(<AuthGuard><div>content</div></AuthGuard>, { mocks: [authedMock] });
+
+    await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/profile?upgrade=pro'));
   });
 });

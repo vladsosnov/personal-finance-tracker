@@ -14,6 +14,9 @@ export type TrackedEvent =
   | "operation_deleted"
   // profile
   | "profile_page_view"
+  | "billing_checkout_pro"
+  | "billing_checkout_lifetime"
+  | "billing_portal_open"
   | "data_exported"
   | "data_imported"
   | "data_reset"

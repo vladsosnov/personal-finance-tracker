@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Badge, Button, Card, Checkbox, FileInput, Group, Progress, Stack, Table, Text, Title } from "@mantine/core";
 import type { ImportProgressState, PreparedImportGoal, SkippedImportGoal } from "@/features/profile/types";
 import { formatMoney } from "@/shared/utils/number";
@@ -18,6 +19,7 @@ type ImportProgressCardProps = {
   onImport: () => void;
   onToggleZeroTargetGoal: (sourceIndex: number, include: boolean) => void;
   onRemoveFromImport: (sourceIndex: number) => void;
+  upgradeHref?: string;
 };
 
 export const ImportProgressCard = ({
@@ -36,6 +38,7 @@ export const ImportProgressCard = ({
   onImport,
   onToggleZeroTargetGoal,
   onRemoveFromImport,
+  upgradeHref,
 }: ImportProgressCardProps) => (
   <Card withBorder radius="md" p="lg">
     <Stack gap="md">
@@ -60,7 +63,14 @@ export const ImportProgressCard = ({
       {file && (
         <Stack gap="xs">
           {importLimitMessage && (
-            <Text size="sm" c="yellow">{importLimitMessage}</Text>
+            <Group gap="xs" align="center">
+              <Text size="sm" c="yellow">{importLimitMessage}</Text>
+              {upgradeHref ? (
+                <Button component={Link} href={upgradeHref} size="compact-sm" variant="light">
+                  Upgrade to Pro
+                </Button>
+              ) : null}
+            </Group>
           )}
           <Group>
             <Button onClick={onImport} loading={isImporting} disabled={!preparedGoals.length || isPreparingImport || isImportOverLimit}>

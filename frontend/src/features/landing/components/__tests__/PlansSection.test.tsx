@@ -31,8 +31,8 @@ describe('PlansSection', () => {
     render(<PlansSection />);
 
     expect(screen.getByText('$0')).toBeInTheDocument();
-    expect(screen.getByText('$3/mo')).toBeInTheDocument();
-    expect(screen.getByText('$9 once')).toBeInTheDocument();
+    expect(screen.getByText('$5/mo')).toBeInTheDocument();
+    expect(screen.getByText('$12 once')).toBeInTheDocument();
   });
 
   it('renders Popular badge on Lifetime plan', () => {
@@ -47,12 +47,12 @@ describe('PlansSection', () => {
     expect(screen.getByRole('link', { name: /start free with free plan/i })).toBeInTheDocument();
   });
 
-  it('renders Coming soon buttons for paid plans', () => {
+  it('renders active signup links for paid plans', () => {
     render(<PlansSection />);
 
-    const comingSoonButtons = screen.getAllByRole('button', { name: /coming soon/i });
-    expect(comingSoonButtons.length).toBe(2);
-    comingSoonButtons.forEach((btn) => expect(btn).toBeDisabled());
+    expect(screen.getByRole('link', { name: /get pro with pro plan/i })).toHaveAttribute('href', '/profile?upgrade=pro');
+    expect(screen.getByRole('link', { name: /get lifetime with lifetime plan/i })).toHaveAttribute('href', '/profile?upgrade=lifetime');
+    expect(screen.queryByRole('button', { name: /coming soon/i })).not.toBeInTheDocument();
   });
 
   it('has proper accessibility with labelledby', () => {

@@ -7,7 +7,7 @@ const FAQ_ITEMS = [
   {
     question: "Is it really free?",
     answer:
-      "Yes. The core product — goal tracking, operations, charts, multi-currency, import/export — is free with no limits. Paid plans will add convenience features later, but free stays free.",
+      "Yes. The core product - goal tracking, operations, charts, multi-currency, import/export - is free with no limits. Paid plans will add convenience features later, but free stays free.",
   },
   {
     question: "Where is my data stored?",

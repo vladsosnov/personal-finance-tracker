@@ -20,6 +20,7 @@ const defaultProps = {
   onImport: jest.fn(),
   onToggleZeroTargetGoal: jest.fn(),
   onRemoveFromImport: jest.fn(),
+  upgradeHref: '/profile?upgrade=pro',
 };
 
 const mockPreparedGoal: PreparedImportGoal = {
@@ -97,6 +98,7 @@ describe('ImportProgressCard', () => {
 
     expect(screen.getByRole('button', { name: /^import$/i })).toBeDisabled();
     expect(screen.getByText('Free plan is limited to 3 goals.')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /upgrade to pro/i })).toHaveAttribute('href', '/profile?upgrade=pro');
   });
 
   it('renders prepared goals table', () => {

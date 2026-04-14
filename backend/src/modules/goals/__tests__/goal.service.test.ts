@@ -180,4 +180,83 @@ describe("goal.service", () => {
       expect(views).toEqual([]);
     });
   });
+
+  describe("premium entitlements", () => {
+    it("keeps free users limited to three goals", async () => {
+      const countGoalsByUser = jest.fn().mockResolvedValue(3);
+      const createGoal = jest.fn();
+
+      await jest.isolateModulesAsync(async () => {
+        jest.doMock("../../auth/user.repository", () => ({
+          findUserById: jest.fn().mockResolvedValue({
+            id: "user-1",
+            email: "user@example.com",
+            subscription: "Pro",
+            plan: "free",
+            billingStatus: "inactive",
+            role: "user",
+            primaryCurrency: "USD",
+            passwordHash: "hash",
+            passwordSalt: "salt",
+            tokenVersion: 0,
+            emailVerified: true,
+          }),
+          updatePrimaryCurrency: jest.fn(),
+        }));
+
+        jest.doMock("../goal.repository", () => ({
+          bulkCreateGoals: jest.fn(),
+          countGoalsByUser,
+          createGoal,
+          deleteAllGoalsByUser: jest.fn(),
+          deleteGoal: jest.fn(),
+          getGoalById: jest.fn(),
+          listGoalsByUser: jest.fn(),
+          reorderGoals: jest.fn(),
+          updateGoal: jest.fn(),
+          updateGoalColor: jest.fn(),
+          updateGoalCompletion: jest.fn(),
+        }));
+
+        jest.doMock("../operation.repository", () => ({
+          bulkCreateGoalOperations: jest.fn(),
+          createGoalOperation: jest.fn(),
+          deleteAllOperationsByUser: jest.fn(),
+          deleteGoalOperation: jest.fn(),
+          deleteOperationsByGoal: jest.fn(),
+          getGoalOperationById: jest.fn(),
+          updateGoalOperation: jest.fn(),
+        }));
+
+        jest.doMock("../goal.service", () => ({
+          buildGoalView: jest.fn(),
+          buildGoalViews: jest.fn(),
+        }));
+
+        const { graphql } = await import("graphql");
+        const { schema, rootValue } = require("../../../schema");
+        const response = await graphql({
+          schema,
+          source: `
+            mutation {
+              createGoal(title: "Extra Goal", targetAmount: 5000, color: "#0F766E") {
+                id
+              }
+            }
+          `,
+          rootValue,
+          contextValue: {
+            userId: "user-1",
+            userRole: "user",
+            tokenVersion: 0,
+            clientIp: "127.0.0.1",
+          },
+        });
+
+        expect(response.errors?.[0]?.message).toContain("Upgrade to create more");
+        expect(countGoalsByUser).toHaveBeenCalledWith("user-1");
+        expect(createGoal).not.toHaveBeenCalled();
+      });
+    });
+  });
 });

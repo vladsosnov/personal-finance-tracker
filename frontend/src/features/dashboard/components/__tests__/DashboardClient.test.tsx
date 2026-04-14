@@ -42,7 +42,7 @@ jest.mock('next/navigation', () => ({
   usePathname: () => '/goals',
 }));
 
-// Mock useMediaQuery — jest.fn so we can change return value per test
+// Mock useMediaQuery - jest.fn so we can change return value per test
 jest.mock('@mantine/hooks', () => ({
   ...jest.requireActual('@mantine/hooks'),
   useMediaQuery: jest.fn(() => false),
@@ -275,5 +275,6 @@ describe('DashboardClient', () => {
 
     // Free plan has maxGoals=3, with 3 goals the limit message should appear
     expect(screen.getByText(/free plan supports up to/i)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /upgrade to pro/i })).toHaveAttribute('href', '/profile?upgrade=pro');
   });
 });

@@ -193,4 +193,98 @@ describe("auth", () => {
       expect(AUTH_REFRESH_COOKIE).toBe("fgt_refresh");
     });
   });
+
+  describe("billing graphql", () => {
+    it("returns a checkout url for an authenticated pro upgrade", async () => {
+      const createCheckoutForUser = jest.fn().mockResolvedValue({
+        url: "https://checkout.stripe.com/c/pay/cs_test_123",
+      });
+
+      await jest.isolateModulesAsync(async () => {
+        jest.doMock("../modules/billing/billing.service", () => ({
+          createCheckoutForUser,
+          createPortalForUser: jest.fn(),
+        }));
+
+        const { graphql } = await import("graphql");
+        const { schema, rootValue } = require("../schema");
+        const response = await graphql({
+          schema,
+          source: `
+            mutation {
+              createBillingCheckout(plan: PRO) {
+                url
+              }
+            }
+          `,
+          rootValue,
+          contextValue: {
+            userId: "user-1",
+            userRole: "user",
+            tokenVersion: 0,
+            clientIp: "127.0.0.1",
+          },
+        });
+
+        expect(response.errors).toBeUndefined();
+        expect(response.data).toEqual({
+          createBillingCheckout: {
+            url: expect.stringContaining("stripe.com"),
+          },
+        });
+        expect(createCheckoutForUser).toHaveBeenCalledWith("user-1", "PRO");
+      });
+    });
+
+    it("derives me.subscription from the normalized plan instead of the legacy subscription string", async () => {
+      await jest.isolateModulesAsync(async () => {
+        jest.doMock("../modules/auth/user.repository", () => ({
+          findUserById: jest.fn().mockResolvedValue({
+            id: "user-1",
+            email: "user@example.com",
+            subscription: "Pro",
+            billingStatus: "inactive",
+            role: "user",
+            primaryCurrency: "USD",
+            passwordHash: "hash",
+            passwordSalt: "salt",
+            tokenVersion: 0,
+            emailVerified: true,
+          }),
+          updatePrimaryCurrency: jest.fn(),
+        }));
+
+        const { graphql } = await import("graphql");
+        const { schema, rootValue } = require("../schema");
+        const response = await graphql({
+          schema,
+          source: `
+            query {
+              me {
+                subscription
+                plan
+                billingStatus
+              }
+            }
+          `,
+          rootValue,
+          contextValue: {
+            userId: "user-1",
+            userRole: "user",
+            tokenVersion: 0,
+            clientIp: "127.0.0.1",
+          },
+        });
+
+        expect(response.errors).toBeUndefined();
+        expect(response.data).toEqual({
+          me: {
+            billingStatus: "inactive",
+            plan: "free",
+            subscription: "Free",
+          },
+        });
+      });
+    });
+  });
 });

@@ -1,4 +1,5 @@
 import { isValidCurrency } from "../shared/currencies";
+import type { BillingPlan } from "../db/models/user.model";
 
 const MAX_GOAL_TITLE_LENGTH = 80;
 const MAX_NOTE_LENGTH = 500;
@@ -6,13 +7,41 @@ const FREE_MAX_GOALS = 3;
 
 export const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-export const getEffectiveSubscription = (user: { subscription: string; role: string } | null | undefined): string => {
-  if (!user) return "Free";
-  return user.role === "admin" ? "Lifetime" : user.subscription;
+const normalizeBillingPlan = (plan: string | undefined): BillingPlan => {
+  if (plan === "pro" || plan === "lifetime") return plan;
+  return "free";
 };
 
-export const getMaxGoals = (subscription: string): number | null => {
-  return subscription.toLowerCase() === "free" ? FREE_MAX_GOALS : null;
+type PlanSource = {
+  role: string;
+  plan?: BillingPlan | string;
+};
+
+export const getEffectivePlan = (
+  user: PlanSource | null | undefined
+): BillingPlan => {
+  if (!user) return "free";
+  const normalizedPlan = normalizeBillingPlan(
+    typeof user.plan === "string" ? user.plan.toLowerCase() : undefined
+  );
+
+  return user.role === "admin" ? "lifetime" : normalizedPlan;
+};
+
+export const getSubscriptionLabel = (plan: BillingPlan): string => {
+  if (plan === "pro") return "Pro";
+  if (plan === "lifetime") return "Lifetime";
+  return "Free";
+};
+
+export const getEffectiveSubscription = (
+  user: PlanSource | null | undefined
+): string => {
+  return getSubscriptionLabel(getEffectivePlan(user));
+};
+
+export const getMaxGoals = (plan: BillingPlan | string): number | null => {
+  return normalizeBillingPlan(plan.toLowerCase()) === "free" ? FREE_MAX_GOALS : null;
 };
 
 export const assertFiniteNonNegative = (value: number, label: string) => {
@@ -37,10 +66,22 @@ export const assertValidNote = (note?: string) => {
   }
 };
 
-export const toSafeUser = (user: { id: string; email: string; subscription: string; role: string; primaryCurrency: string; emailVerified: boolean }) => ({
+export type SafeUserSource = {
+  id: string;
+  email: string;
+  plan?: BillingPlan | string;
+  billingStatus?: string;
+  role: string;
+  primaryCurrency: string;
+  emailVerified: boolean;
+};
+
+export const toSafeUser = (user: SafeUserSource) => ({
   id: user.id,
   email: user.email,
-  subscription: user.role === "admin" ? "Lifetime" : user.subscription,
+  plan: getEffectivePlan(user),
+  billingStatus: user.billingStatus ?? "inactive",
+  subscription: getSubscriptionLabel(getEffectivePlan(user)),
   role: user.role,
   primaryCurrency: user.primaryCurrency,
   emailVerified: user.emailVerified,
@@ -66,4 +107,3 @@ export const ensureAdmin = (context: { userId: string | null; userRole: string }
   }
   return userId;
 };
-

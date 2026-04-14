@@ -234,7 +234,7 @@ describe('goalUtils', () => {
         makeOp({ operationDate: '2024-02-01', type: 'DECREASE', convertedAmount: 100 }),
         makeOp({ operationDate: '2024-03-01', type: 'INCREASE', convertedAmount: 600 }),
       ];
-      // Cumulative: 500, 400, 1000 — still positive overall
+      // Cumulative: 500, 400, 1000 - still positive overall
       const result = getProjectedDate(ops, 10000, 1000, false);
       expect(result).not.toBeNull();
     });

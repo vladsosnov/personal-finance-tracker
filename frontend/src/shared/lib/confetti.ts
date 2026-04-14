@@ -1,6 +1,6 @@
 /**
  * Lightweight confetti burst using DOM elements.
- * No dependencies — just CSS animations + cleanup.
+ * No dependencies - just CSS animations + cleanup.
  */
 export const fireConfetti = () => {
   const PARTICLE_COUNT = 60;

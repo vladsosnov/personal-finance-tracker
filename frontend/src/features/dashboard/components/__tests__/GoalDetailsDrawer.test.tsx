@@ -145,7 +145,7 @@ describe('GoalDetailsDrawer', () => {
   it('passes scrollHeight as undefined to the panel', () => {
     render(<GoalDetailsDrawer {...defaultProps} />);
 
-    // Panel renders without fixed scroll height — content fills the drawer naturally
+    // Panel renders without fixed scroll height - content fills the drawer naturally
     expect(screen.getByRole('dialog')).toBeInTheDocument();
   });
 

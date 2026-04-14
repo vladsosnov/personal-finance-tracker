@@ -91,6 +91,12 @@ See [`backend/.env.example`](backend/.env.example) for the full list.
 | `MONGODB_URI` | Yes | MongoDB connection string |
 | `JWT_SECRET` | Yes | Long random secret for production |
 | `FRONTEND_ORIGIN` | No | Defaults to `http://localhost:3000` |
+| `STRIPE_SECRET_KEY` | Yes for billing | Stripe secret API key for Checkout and Billing Portal |
+| `STRIPE_WEBHOOK_SECRET` | Yes for billing | Stripe webhook signing secret |
+| `STRIPE_PRO_PRICE_ID` | Yes for billing | Stripe price ID for the Pro subscription |
+| `STRIPE_LIFETIME_PRICE_ID` | Yes for billing | Stripe price ID for the Lifetime one-time purchase |
+| `STRIPE_SUCCESS_RETURN_URL` | No | Defaults to `FRONTEND_ORIGIN`; used as the success return base URL |
+| `STRIPE_CANCEL_RETURN_URL` | No | Defaults to `FRONTEND_ORIGIN`; used as the cancel return base URL |
 | `SMTP_HOST` | No | SMTP provider host |
 | `SMTP_PORT` | No | SMTP port |
 | `SMTP_USER` | No | SMTP username |

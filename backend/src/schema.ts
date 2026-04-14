@@ -4,9 +4,12 @@ import { getEventCounts, getUniqueUserLogins, getRecentEvents } from "./modules/
 import { bulkCreateGoals, countGoalsByUser, createGoal, deleteAllGoalsByUser, deleteGoal, getGoalById, listGoalsByUser, reorderGoals, updateGoal, updateGoalColor, updateGoalCompletion } from "./modules/goals/goal.repository";
 import { bulkCreateGoalOperations, createGoalOperation, deleteAllOperationsByUser, deleteGoalOperation, deleteOperationsByGoal, getGoalOperationById, updateGoalOperation } from "./modules/goals/operation.repository";
 import { buildGoalView, buildGoalViews } from "./modules/goals/goal.service";
+import { createCheckoutForUser, createPortalForUser } from "./modules/billing/billing.service";
 import { createProposal, deleteProposal, listProposals, voteProposal, updateProposalStatus } from "./modules/proposals/proposal.repository";
 import type { OperationType } from "./modules/goals/types";
 import type { UserRole } from "./modules/auth/types";
+import type { BillingPlanInput } from "./modules/billing/types";
+import { isBillingCheckoutPlan } from "./modules/billing/types";
 import {
   ensureAuthed,
   ensureAdmin,
@@ -15,7 +18,7 @@ import {
   assertValidGoalTitle,
   assertValidNote,
   assertValidCurrency,
-  getEffectiveSubscription,
+  getEffectivePlan,
   getMaxGoals,
 } from "./utils/validation";
 import { assertValidObjectId } from "./utils/object-id";
@@ -66,6 +69,10 @@ type GoalLookupArgs = {
 
 type ReorderGoalsArgs = {
   goalIds: string[];
+};
+
+type BillingCheckoutArgs = {
+  plan: BillingPlanInput;
 };
 
 type UpdateGoalColorArgs = {
@@ -120,9 +127,17 @@ export const schema = buildSchema(`
     DECREASE
   }
 
+  enum BillingPlan {
+    FREE
+    PRO
+    LIFETIME
+  }
+
   type User {
     id: ID!
     email: String!
+    plan: String!
+    billingStatus: String!
     subscription: String!
     role: String!
     primaryCurrency: String!
@@ -154,6 +169,14 @@ export const schema = buildSchema(`
   type ResetAllDataPayload {
     deletedGoalsCount: Int!
     deletedOperationsCount: Int!
+  }
+
+  type BillingCheckoutPayload {
+    url: String!
+  }
+
+  type BillingPortalPayload {
+    url: String!
   }
 
   type GoalOperation {
@@ -250,6 +273,8 @@ export const schema = buildSchema(`
   }
 
   type Mutation {
+    createBillingCheckout(plan: BillingPlan!): BillingCheckoutPayload!
+    createBillingPortalSession: BillingPortalPayload!
     createGoal(title: String!, targetAmount: Float!, initialAmount: Float, color: String, currency: String): Goal!
     editGoal(goalId: ID!, title: String!, targetAmount: Float!, initialAmount: Float, color: String!, currency: String): Goal!
     updateGoalColor(goalId: ID!, color: String!): Goal!
@@ -374,6 +399,18 @@ export const rootValue = {
 
     return JSON.stringify(exportPayload, null, 2);
   },
+  createBillingCheckout: async ({ plan }: BillingCheckoutArgs, context: Context) => {
+    const userId = ensureAuthed(context);
+    if (!isBillingCheckoutPlan(plan)) {
+      throw new Error("Only PRO and LIFETIME checkout plans are supported");
+    }
+
+    return createCheckoutForUser(userId, plan);
+  },
+  createBillingPortalSession: async (_args: unknown, context: Context) => {
+    const userId = ensureAuthed(context);
+    return createPortalForUser(userId);
+  },
   createGoal: async ({ title, targetAmount, initialAmount = 0, color = "#0F766E", currency }: GoalArgs, context: Context) => {
     const userId = ensureAuthed(context);
     assertValidGoalTitle(title);
@@ -387,7 +424,7 @@ export const rootValue = {
     const goalCurrency = currency ?? user?.primaryCurrency ?? "USD";
     assertValidCurrency(goalCurrency);
 
-    const maxGoals = getMaxGoals(getEffectiveSubscription(user));
+    const maxGoals = getMaxGoals(getEffectivePlan(user));
     if (maxGoals !== null) {
       const currentCount = await countGoalsByUser(userId);
       if (currentCount >= maxGoals) {
@@ -479,7 +516,7 @@ export const rootValue = {
     }
 
     const user = await findUserById(userId);
-    const maxGoals = getMaxGoals(getEffectiveSubscription(user));
+    const maxGoals = getMaxGoals(getEffectivePlan(user));
     if (maxGoals !== null) {
       const currentCount = await countGoalsByUser(userId);
       const available = maxGoals - currentCount;
