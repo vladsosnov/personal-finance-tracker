@@ -9,12 +9,12 @@ type UserDoc = {
   email: string;
   plan?: BillingPlan;
   billingStatus?: BillingStatus;
-  billingProvider?: "paddle";
-  processedPaddleWebhookEventIds?: string[];
-  latestPaddleBillingEventAt?: Date | null;
-  paddleCustomerId?: string;
-  paddleSubscriptionId?: string;
-  paddleTransactionId?: string;
+  billingProvider?: "stripe";
+  processedBillingWebhookEventIds?: string[];
+  latestBillingEventAt?: Date | null;
+  stripeCustomerId?: string;
+  stripeSubscriptionId?: string;
+  stripeCheckoutSessionId?: string;
   subscriptionRenewsAt?: Date | null;
   subscriptionCanceledAt?: Date | null;
   lifetimeUnlockedAt?: Date | null;
@@ -35,11 +35,11 @@ type UserDoc = {
 export type UserBillingUpdate = {
   plan: BillingPlan;
   billingStatus: BillingStatus;
-  billingProvider?: "paddle";
-  paddleCustomerId?: string;
-  paddleSubscriptionId?: string;
-  paddleTransactionId?: string;
-  latestPaddleBillingEventAt?: Date | null;
+  billingProvider?: "stripe";
+  stripeCustomerId?: string;
+  stripeSubscriptionId?: string;
+  stripeCheckoutSessionId?: string;
+  latestBillingEventAt?: Date | null;
   subscriptionRenewsAt?: Date | null;
   subscriptionCanceledAt?: Date | null;
   lifetimeUnlockedAt?: Date | null;
@@ -58,10 +58,10 @@ const toUser = (doc: UserDoc): User => ({
   plan: normalizePlan(doc),
   billingStatus: doc.billingStatus ?? "inactive",
   billingProvider: doc.billingProvider,
-  paddleCustomerId: doc.paddleCustomerId,
-  paddleSubscriptionId: doc.paddleSubscriptionId,
-  paddleTransactionId: doc.paddleTransactionId,
-  latestPaddleBillingEventAt: doc.latestPaddleBillingEventAt?.toISOString(),
+  stripeCustomerId: doc.stripeCustomerId,
+  stripeSubscriptionId: doc.stripeSubscriptionId,
+  stripeCheckoutSessionId: doc.stripeCheckoutSessionId,
+  latestBillingEventAt: doc.latestBillingEventAt?.toISOString(),
   subscriptionRenewsAt: doc.subscriptionRenewsAt?.toISOString(),
   subscriptionCanceledAt: doc.subscriptionCanceledAt?.toISOString(),
   lifetimeUnlockedAt: doc.lifetimeUnlockedAt?.toISOString(),
@@ -87,10 +87,10 @@ const toBillingSet = (billing: UserBillingUpdate): Record<string, unknown> => {
   };
 
   if (billing.billingProvider !== undefined) update.billingProvider = billing.billingProvider;
-  if (billing.paddleCustomerId !== undefined) update.paddleCustomerId = billing.paddleCustomerId;
-  if (billing.paddleSubscriptionId !== undefined) update.paddleSubscriptionId = billing.paddleSubscriptionId;
-  if (billing.paddleTransactionId !== undefined) update.paddleTransactionId = billing.paddleTransactionId;
-  if (billing.latestPaddleBillingEventAt !== undefined) update.latestPaddleBillingEventAt = billing.latestPaddleBillingEventAt;
+  if (billing.stripeCustomerId !== undefined) update.stripeCustomerId = billing.stripeCustomerId;
+  if (billing.stripeSubscriptionId !== undefined) update.stripeSubscriptionId = billing.stripeSubscriptionId;
+  if (billing.stripeCheckoutSessionId !== undefined) update.stripeCheckoutSessionId = billing.stripeCheckoutSessionId;
+  if (billing.latestBillingEventAt !== undefined) update.latestBillingEventAt = billing.latestBillingEventAt;
   if (billing.subscriptionRenewsAt !== undefined) update.subscriptionRenewsAt = billing.subscriptionRenewsAt;
   if (billing.subscriptionCanceledAt !== undefined) update.subscriptionCanceledAt = billing.subscriptionCanceledAt;
   if (billing.lifetimeUnlockedAt !== undefined) update.lifetimeUnlockedAt = billing.lifetimeUnlockedAt;
@@ -120,18 +120,18 @@ export const findUserById = async (id: string): Promise<User | undefined> => {
   return user ? toUser(user as unknown as UserDoc) : undefined;
 };
 
-export const findUserByPaddleCustomerId = async (paddleCustomerId: string): Promise<User | undefined> => {
-  const user = await UserModel.findOne({ paddleCustomerId }).lean();
+export const findUserByStripeCustomerId = async (stripeCustomerId: string): Promise<User | undefined> => {
+  const user = await UserModel.findOne({ stripeCustomerId }).lean();
   return user ? toUser(user as unknown as UserDoc) : undefined;
 };
 
-export const findUserByPaddleSubscriptionId = async (paddleSubscriptionId: string): Promise<User | undefined> => {
-  const user = await UserModel.findOne({ paddleSubscriptionId }).lean();
+export const findUserByStripeSubscriptionId = async (stripeSubscriptionId: string): Promise<User | undefined> => {
+  const user = await UserModel.findOne({ stripeSubscriptionId }).lean();
   return user ? toUser(user as unknown as UserDoc) : undefined;
 };
 
-export const findUserByPaddleTransactionId = async (paddleTransactionId: string): Promise<User | undefined> => {
-  const user = await UserModel.findOne({ paddleTransactionId }).lean();
+export const findUserByStripeCheckoutSessionId = async (stripeCheckoutSessionId: string): Promise<User | undefined> => {
+  const user = await UserModel.findOne({ stripeCheckoutSessionId }).lean();
   return user ? toUser(user as unknown as UserDoc) : undefined;
 };
 
@@ -148,7 +148,7 @@ export const updateUserBilling = async (userId: string, billing: UserBillingUpda
 export const hasProcessedBillingWebhookEvent = async (userId: string, eventId: string): Promise<boolean> => {
   const existing = await UserModel.exists({
     _id: userId,
-    processedPaddleWebhookEventIds: eventId,
+    processedBillingWebhookEventIds: eventId,
   });
 
   return existing !== null;
@@ -163,19 +163,19 @@ export const updateUserBillingForWebhookEvent = async (
   const user = await UserModel.findOneAndUpdate(
     {
       _id: userId,
-      processedPaddleWebhookEventIds: { $ne: eventId },
+      processedBillingWebhookEventIds: { $ne: eventId },
       $or: [
-        { latestPaddleBillingEventAt: { $exists: false } },
-        { latestPaddleBillingEventAt: null },
-        { latestPaddleBillingEventAt: { $lte: occurredAt } },
+        { latestBillingEventAt: { $exists: false } },
+        { latestBillingEventAt: null },
+        { latestBillingEventAt: { $lte: occurredAt } },
       ],
     },
     {
       $set: {
         ...toBillingSet(billing),
-        latestPaddleBillingEventAt: occurredAt,
+        latestBillingEventAt: occurredAt,
       },
-      $addToSet: { processedPaddleWebhookEventIds: eventId },
+      $addToSet: { processedBillingWebhookEventIds: eventId },
     },
     { new: true }
   ).lean();

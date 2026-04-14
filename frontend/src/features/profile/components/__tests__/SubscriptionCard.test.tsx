@@ -65,7 +65,7 @@ describe('SubscriptionCard', () => {
       />
     );
 
-    expect(screen.getByRole('button', { name: /upgrade to pro/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /get pro/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /get lifetime/i })).toBeInTheDocument();
   });
 
@@ -120,8 +120,8 @@ describe('SubscriptionCard', () => {
     );
 
     expect(screen.getByText('$0')).toBeInTheDocument();
-    expect(screen.getByText('$3/mo')).toBeInTheDocument();
-    expect(screen.getByText('$9 once')).toBeInTheDocument();
+    expect(screen.getByText('$5/mo')).toBeInTheDocument();
+    expect(screen.getByText('$12 once')).toBeInTheDocument();
   });
 
   it('displays plan descriptions', () => {
@@ -185,9 +185,23 @@ describe('SubscriptionCard', () => {
       />
     );
 
-    await user.click(screen.getByRole('button', { name: /upgrade to pro/i }));
+    await user.click(screen.getByRole('button', { name: /get pro/i }));
 
     expect(onCheckout).toHaveBeenCalledWith('PRO');
+  });
+
+  it('marks lifetime as popular with a teal border', () => {
+    render(
+      <SubscriptionCard
+        currentSubscription="Free"
+        billingState="idle"
+        onCheckout={onCheckout}
+        onManageBilling={onManageBilling}
+      />
+    );
+
+    expect(screen.getByText('Popular')).toBeInTheDocument();
+    expect(screen.getByLabelText(/^lifetime plan$/i)).toHaveStyle({ borderColor: 'var(--mantine-color-teal-6)' });
   });
 
   it('renders manage billing for active pro users', () => {
@@ -202,5 +216,20 @@ describe('SubscriptionCard', () => {
     );
 
     expect(screen.getByRole('button', { name: /manage billing/i })).toBeInTheDocument();
+  });
+
+  it('shows loading only for the active checkout plan', () => {
+    render(
+      <SubscriptionCard
+        currentSubscription="Free"
+        billingState="checkout"
+        activeCheckoutPlan="PRO"
+        onCheckout={onCheckout}
+        onManageBilling={onManageBilling}
+      />
+    );
+
+    expect(screen.getByRole('button', { name: /get pro/i })).toHaveAttribute('data-loading');
+    expect(screen.getByRole('button', { name: /get lifetime/i })).not.toHaveAttribute('data-loading');
   });
 });

@@ -5,6 +5,7 @@ import anim from "@/shared/styles/page-animations.module.css";
 type SubscriptionCardProps = {
   currentSubscription: string;
   billingState: "idle" | "checkout" | "portal";
+  activeCheckoutPlan?: "PRO" | "LIFETIME" | null;
   canManageBilling?: boolean;
   onCheckout: (plan: "PRO" | "LIFETIME") => void;
   onManageBilling: () => void;
@@ -13,6 +14,7 @@ type SubscriptionCardProps = {
 export const SubscriptionCard = ({
   currentSubscription,
   billingState,
+  activeCheckoutPlan = null,
   canManageBilling = false,
   onCheckout,
   onManageBilling,
@@ -26,6 +28,7 @@ export const SubscriptionCard = ({
       <SimpleGrid cols={{ base: 1, md: 3 }} spacing="sm">
         {PLANS.map((plan) => {
           const isCurrentPlan = currentSubscription.toLowerCase() === plan.name.toLowerCase();
+          const isHighlightedPlan = plan.name === "Lifetime";
           return (
             <Card
               key={plan.name}
@@ -35,6 +38,7 @@ export const SubscriptionCard = ({
               className={`${anim.hoverLift} ${isCurrentPlan ? anim.planCardCurrent : ""}`}
               aria-label={`${plan.name} plan${isCurrentPlan ? " (current)" : ""}`}
               aria-current={isCurrentPlan ? true : undefined}
+              style={isHighlightedPlan ? { borderColor: "var(--mantine-color-teal-6)" } : undefined}
             >
               <Stack gap="sm">
                 <Group justify="space-between" align="flex-start">
@@ -44,6 +48,8 @@ export const SubscriptionCard = ({
                   </Stack>
                   {isCurrentPlan ? (
                     <Badge color="teal">Current</Badge>
+                  ) : isHighlightedPlan ? (
+                    <Badge color="teal">Popular</Badge>
                   ) : plan.name === "Free" ? (
                     <Badge variant="light" color="gray">Available</Badge>
                   ) : null}
@@ -59,12 +65,12 @@ export const SubscriptionCard = ({
                   </Table.Tbody>
                 </Table>
                 {plan.name === "Pro" && !isCurrentPlan ? (
-                  <Button fullWidth onClick={() => onCheckout("PRO")} loading={billingState === "checkout"}>
-                    Upgrade to Pro
+                  <Button fullWidth variant="light" onClick={() => onCheckout("PRO")} loading={billingState === "checkout" && activeCheckoutPlan === "PRO"}>
+                    Get Pro
                   </Button>
                 ) : null}
                 {plan.name === "Lifetime" && !isCurrentPlan ? (
-                  <Button fullWidth variant="light" onClick={() => onCheckout("LIFETIME")} loading={billingState === "checkout"}>
+                  <Button fullWidth onClick={() => onCheckout("LIFETIME")} loading={billingState === "checkout" && activeCheckoutPlan === "LIFETIME"}>
                     Get Lifetime
                   </Button>
                 ) : null}

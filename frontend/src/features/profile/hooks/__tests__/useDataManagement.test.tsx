@@ -248,7 +248,7 @@ describe('useDataManagement', () => {
   });
 
   describe('billing operations', () => {
-    it('starts a Paddle checkout and redirects the browser', async () => {
+    it('starts a Stripe checkout and redirects the browser', async () => {
       const mockList: MockedResponse[] = [
         {
           request: { query: GET_ME },
@@ -266,7 +266,7 @@ describe('useDataManagement', () => {
           result: {
             data: {
               createBillingCheckout: {
-                url: 'https://sandbox.paddle.com/checkout/pro-user-1',
+                url: 'https://checkout.stripe.com/c/pay/cs_test_123',
               },
             },
           },
@@ -281,10 +281,10 @@ describe('useDataManagement', () => {
         await result.current.handleStartCheckout('PRO');
       });
 
-      expect(redirectToUrl).toHaveBeenCalledWith('https://sandbox.paddle.com/checkout/pro-user-1');
+      expect(redirectToUrl).toHaveBeenCalledWith('https://checkout.stripe.com/c/pay/cs_test_123');
     });
 
-    it('starts a billing portal session and redirects the browser', async () => {
+    it('starts a Stripe billing portal session and redirects the browser', async () => {
       const mockList: MockedResponse[] = [
         {
           request: { query: GET_ME },
@@ -301,7 +301,7 @@ describe('useDataManagement', () => {
           result: {
             data: {
               createBillingPortalSession: {
-                url: 'https://sandbox.paddle.com/portal/customer-1',
+                url: 'https://billing.stripe.com/p/session/test_123',
               },
             },
           },
@@ -316,7 +316,7 @@ describe('useDataManagement', () => {
         await result.current.handleManageBilling();
       });
 
-      expect(redirectToUrl).toHaveBeenCalledWith('https://sandbox.paddle.com/portal/customer-1');
+      expect(redirectToUrl).toHaveBeenCalledWith('https://billing.stripe.com/p/session/test_123');
     });
   });
 

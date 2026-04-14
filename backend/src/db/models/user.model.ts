@@ -8,13 +8,13 @@ export type UserDocument = {
   email: string;
   plan: BillingPlan;
   billingStatus: BillingStatus;
-  billingProvider?: "paddle";
+  billingProvider?: "stripe";
   subscription?: string;
-  processedPaddleWebhookEventIds?: string[];
-  latestPaddleBillingEventAt?: Date;
-  paddleCustomerId?: string;
-  paddleSubscriptionId?: string;
-  paddleTransactionId?: string;
+  processedBillingWebhookEventIds?: string[];
+  latestBillingEventAt?: Date;
+  stripeCustomerId?: string;
+  stripeSubscriptionId?: string;
+  stripeCheckoutSessionId?: string;
   subscriptionRenewsAt?: Date;
   subscriptionCanceledAt?: Date;
   lifetimeUnlockedAt?: Date;
@@ -42,12 +42,12 @@ const userSchema = new Schema<UserDocument>(
       required: true,
       default: "inactive",
     },
-    billingProvider: { type: String, enum: ["paddle"] },
-    processedPaddleWebhookEventIds: { type: [String], default: [] },
-    latestPaddleBillingEventAt: { type: Date },
-    paddleCustomerId: { type: String, unique: true, sparse: true },
-    paddleSubscriptionId: { type: String, unique: true, sparse: true },
-    paddleTransactionId: { type: String, unique: true, sparse: true },
+    billingProvider: { type: String, enum: ["stripe"] },
+    processedBillingWebhookEventIds: { type: [String], default: [] },
+    latestBillingEventAt: { type: Date },
+    stripeCustomerId: { type: String, unique: true, sparse: true },
+    stripeSubscriptionId: { type: String, unique: true, sparse: true },
+    stripeCheckoutSessionId: { type: String, unique: true, sparse: true },
     subscriptionRenewsAt: { type: Date },
     subscriptionCanceledAt: { type: Date },
     lifetimeUnlockedAt: { type: Date },

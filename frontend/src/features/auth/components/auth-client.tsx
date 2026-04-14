@@ -25,6 +25,7 @@ export const AuthClient = () => {
   );
   const [emailError, setEmailError] = useState<string | null>(null);
   const [passwordError, setPasswordError] = useState<string | null>(null);
+  const nextPath = searchParams.get("next");
 
   const handleAuth = async () => {
     setEmailError(null);
@@ -73,7 +74,7 @@ export const AuthClient = () => {
       }
 
       await apolloClient.refetchQueries({ include: [GET_ME] });
-      router.replace(APP_ROUTES.dashboard);
+      router.replace(nextPath || APP_ROUTES.dashboard);
     } catch (authError) {
       setError(authError instanceof Error ? authError.message : "Authentication failed");
     } finally {
@@ -81,7 +82,9 @@ export const AuthClient = () => {
     }
   };
 
-  const googleAuthUrl = `${API_BASE_URL}/auth/google`;
+  const googleAuthUrl = nextPath
+    ? `${API_BASE_URL}/auth/google?next=${encodeURIComponent(nextPath)}`
+    : `${API_BASE_URL}/auth/google`;
 
   return (
     <AuthView

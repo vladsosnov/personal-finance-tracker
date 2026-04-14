@@ -36,9 +36,10 @@ export const ProfileClient = () => {
   return (
     <PageContainer>
       <Stack gap="lg" className={anim.pageEnter}>
+        {/* Email verification banner hidden until email sending is configured
         {dm.meData?.me && !dm.meData.me.emailVerified && (
           <EmailVerificationBanner emailVerified={false} />
-        )}
+        )} */}
 
         <Stack gap={2}>
           <Title order={1}>Profile</Title>
@@ -75,6 +76,7 @@ export const ProfileClient = () => {
           <SubscriptionCard
             currentSubscription={dm.meData?.me?.subscription ?? "Free"}
             billingState={dm.billingState}
+            activeCheckoutPlan={dm.activeCheckoutPlan}
             canManageBilling={dm.canManageBilling}
             onCheckout={dm.handleStartCheckout}
             onManageBilling={dm.handleManageBilling}

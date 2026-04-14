@@ -8,11 +8,11 @@ export type User = {
   subscription: string;
   plan: BillingPlan;
   billingStatus: BillingStatus;
-  billingProvider?: "paddle";
-  paddleCustomerId?: string;
-  paddleSubscriptionId?: string;
-  paddleTransactionId?: string;
-  latestPaddleBillingEventAt?: string;
+  billingProvider?: "stripe";
+  stripeCustomerId?: string;
+  stripeSubscriptionId?: string;
+  stripeCheckoutSessionId?: string;
+  latestBillingEventAt?: string;
   subscriptionRenewsAt?: string;
   subscriptionCanceledAt?: string;
   lifetimeUnlockedAt?: string;

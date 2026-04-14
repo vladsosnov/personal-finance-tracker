@@ -1,44 +1,36 @@
 import express, { Router } from "express";
 import {
   processBillingWebhook,
-  verifyPaddleWebhookSignature,
+  verifyStripeWebhookEvent,
 } from "./billing.service";
 
 type BillingRoutesConfig = {
-  paddleWebhookSecret: string;
+  stripeWebhookSecret: string;
 };
 
-export const createBillingRouter = ({ paddleWebhookSecret }: BillingRoutesConfig): Router => {
+export const createBillingRouter = ({ stripeWebhookSecret }: BillingRoutesConfig): Router => {
   const router = Router();
 
   router.post("/webhook", express.raw({ type: "application/json" }), async (req, res) => {
-    if (!paddleWebhookSecret) {
-      res.status(503).json({ error: "Paddle webhook secret is not configured" });
+    if (!stripeWebhookSecret) {
+      res.status(503).json({ error: "Stripe webhook secret is not configured" });
       return;
     }
 
-    const signatureHeader = req.get("Paddle-Signature") ?? "";
+    const signatureHeader = req.get("Stripe-Signature") ?? "";
     const rawBody = Buffer.isBuffer(req.body) ? req.body.toString("utf8") : "";
 
-    if (!verifyPaddleWebhookSignature(rawBody, signatureHeader, paddleWebhookSecret)) {
-      res.status(400).json({ error: "Invalid Paddle signature" });
-      return;
-    }
-
-    let payload: unknown;
-
     try {
-      payload = JSON.parse(rawBody);
-    } catch {
-      res.status(400).json({ error: "Invalid Paddle webhook payload" });
-      return;
-    }
-
-    try {
-      const result = await processBillingWebhook(payload);
+      const event = verifyStripeWebhookEvent(rawBody, signatureHeader, stripeWebhookSecret);
+      const result = await processBillingWebhook(event);
       res.json({ ok: true, status: result.status });
-    } catch {
-      res.status(500).json({ error: "Failed to process billing webhook" });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "";
+      const invalidSignature = message.toLowerCase().includes("signature");
+
+      res.status(invalidSignature ? 400 : 500).json({
+        error: invalidSignature ? "Invalid Stripe signature" : "Failed to process billing webhook",
+      });
     }
   });
 

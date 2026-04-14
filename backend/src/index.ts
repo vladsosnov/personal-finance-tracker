@@ -42,7 +42,7 @@ app.use(
 app.use(
   "/billing",
   createBillingRouter({
-    paddleWebhookSecret: process.env.PADDLE_WEBHOOK_SECRET ?? "",
+    stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET ?? "",
   })
 );
 app.use(express.json({ limit: "100kb" }));

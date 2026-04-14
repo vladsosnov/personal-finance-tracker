@@ -31,6 +31,7 @@ export const useDataManagement = () => {
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
   const [isDeleteAccountModalOpen, setIsDeleteAccountModalOpen] = useState(false);
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+  const [activeCheckoutPlan, setActiveCheckoutPlan] = useState<"PRO" | "LIFETIME" | null>(null);
 
   const { data: meData, loading: isLoadingMe, error: meError, refetch: refetchMe } =
     useQuery<MeQueryData>(GET_ME);
@@ -94,6 +95,7 @@ export const useDataManagement = () => {
 
   const handleStartCheckout = async (plan: "PRO" | "LIFETIME") => {
     trackEvent(plan === "PRO" ? "billing_checkout_pro" : "billing_checkout_lifetime");
+    setActiveCheckoutPlan(plan);
     try {
       const result = await createBillingCheckoutMutation({
         variables: { plan },
@@ -105,6 +107,7 @@ export const useDataManagement = () => {
 
       redirectToUrl(url);
     } catch (error) {
+      setActiveCheckoutPlan(null);
       showToast(error instanceof Error ? error.message : "Failed to start checkout", "red");
     }
   };
@@ -139,6 +142,7 @@ export const useDataManagement = () => {
     refetchMe,
     canManageBilling,
     billingState,
+    activeCheckoutPlan,
     handleStartCheckout,
     handleManageBilling,
     // goals meta

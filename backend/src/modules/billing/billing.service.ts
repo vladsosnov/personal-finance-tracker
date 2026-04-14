@@ -1,15 +1,14 @@
-import { createHmac, timingSafeEqual } from "crypto";
 import type { BillingPlan, BillingStatus } from "../../db/models/user.model";
 import type { User } from "../auth/types";
 import {
   findUserById,
-  findUserByPaddleCustomerId,
-  findUserByPaddleSubscriptionId,
-  findUserByPaddleTransactionId,
+  findUserByStripeCheckoutSessionId,
+  findUserByStripeCustomerId,
+  findUserByStripeSubscriptionId,
   hasProcessedBillingWebhookEvent,
   updateUserBillingForWebhookEvent,
 } from "../auth/user.repository";
-import { createTransactionCheckout, type PaddleTransactionPayload } from "./paddle.client";
+import { getStripeClient } from "./stripe.client";
 import type {
   BillingCheckoutPayload,
   BillingCheckoutPlan,
@@ -17,13 +16,12 @@ import type {
 } from "./types";
 
 type SupportedBillingEventType =
-  | "transaction.completed"
-  | "subscription.activated"
-  | "subscription.canceled"
-  | "subscription.expired"
-  | "subscription.past_due";
+  | "checkout.session.completed"
+  | "customer.subscription.created"
+  | "customer.subscription.updated"
+  | "customer.subscription.deleted";
 
-export type PaddleWebhookEvent = {
+export type StripeBillingEvent = {
   eventId: string;
   eventType: SupportedBillingEventType;
   occurredAt: string;
@@ -31,79 +29,91 @@ export type PaddleWebhookEvent = {
   userId?: string;
   customerId?: string;
   subscriptionId?: string;
-  transactionId?: string;
+  checkoutSessionId?: string;
   renewsAt?: string;
   canceledAt?: string;
+  subscriptionStatus?: string;
 };
 
 export type BillingUpdate = {
   plan: BillingPlan;
   billingStatus: BillingStatus;
-  billingProvider?: "paddle";
-  paddleCustomerId?: string;
-  paddleSubscriptionId?: string;
-  paddleTransactionId?: string;
-  latestPaddleBillingEventAt?: Date | null;
+  billingProvider?: "stripe";
+  stripeCustomerId?: string;
+  stripeSubscriptionId?: string;
+  stripeCheckoutSessionId?: string;
+  latestBillingEventAt?: Date | null;
   subscriptionRenewsAt?: Date | null;
   subscriptionCanceledAt?: Date | null;
   lifetimeUnlockedAt?: Date | null;
-};
-
-type SupportedWebhookPayload = {
-  event_id?: unknown;
-  event_type?: unknown;
-  occurred_at?: unknown;
-  data?: Record<string, unknown>;
 };
 
 type ProcessBillingWebhookResult =
   | { status: "applied"; update: BillingUpdate; userId: string }
   | { status: "ignored"; reason: "duplicate_event" | "invalid_payload" | "stale_event" | "user_not_found" };
 
-const PADDLE_API_BASE = process.env.PADDLE_API_BASE ?? "https://api.paddle.com";
+type StripeIdLike = string | { id: string } | null | undefined;
 
-const isRecord = (value: unknown): value is Record<string, unknown> => {
-  return typeof value === "object" && value !== null;
+type StripeCheckoutSessionLike = {
+  id: string;
+  mode?: string | null;
+  customer?: StripeIdLike;
+  subscription?: StripeIdLike;
+  metadata?: Record<string, string | undefined> | null;
+};
+
+type StripeSubscriptionLike = {
+  id: string;
+  customer?: StripeIdLike;
+  status?: string;
+  canceled_at?: number | null;
+  current_period_end?: number | null;
+  metadata?: Record<string, string | undefined> | null;
+  items: {
+    data: Array<{
+      price?: {
+        id?: string | null;
+      } | null;
+    }>;
+  };
+};
+
+type StripeEventLike = {
+  id?: string;
+  type?: string;
+  created?: number;
+  data?: {
+    object?: unknown;
+  };
 };
 
 const readString = (value: unknown): string | undefined => {
   return typeof value === "string" && value.length > 0 ? value : undefined;
 };
 
-const getConfiguredPaddlePriceIds = () => ({
-  pro: process.env.PADDLE_PRO_PRICE_ID ?? "",
-  lifetime: process.env.PADDLE_LIFETIME_PRICE_ID ?? "",
+const readStripeId = (value: StripeIdLike): string | undefined => {
+  if (!value) return undefined;
+  return typeof value === "string" ? value : value.id;
+};
+
+const getConfiguredStripePriceIds = () => ({
+  pro: process.env.STRIPE_PRO_PRICE_ID ?? "",
+  lifetime: process.env.STRIPE_LIFETIME_PRICE_ID ?? "",
 });
 
-const getDefaultReturnUrl = () => process.env.PADDLE_DEFAULT_RETURN_URL ?? process.env.FRONTEND_ORIGIN ?? "http://localhost:3000";
+const getDefaultReturnOrigin = () => process.env.FRONTEND_ORIGIN ?? "http://localhost:3000";
 
-const getProfileReturnUrl = (plan: BillingCheckoutPlan) => {
-  const url = new URL("/profile", getDefaultReturnUrl());
-  url.searchParams.set("billing", "return");
-  url.searchParams.set("plan", toStoredPlan(plan));
-  return url.toString();
-};
-
-const getConfiguredToleranceSeconds = () => {
-  const parsedTolerance = Number(process.env.PADDLE_WEBHOOK_TOLERANCE_SECONDS ?? "5");
-
-  return Number.isFinite(parsedTolerance) && parsedTolerance >= 0
-    ? parsedTolerance
-    : 5;
-};
-
-const readPriceIds = (items: unknown): string[] => {
-  if (!Array.isArray(items)) {
-    return [];
-  }
-
-  return items
-    .map((item) => (isRecord(item) && isRecord(item.price) ? readString(item.price.id) : undefined))
-    .filter((value): value is string => Boolean(value));
+const getProfileReturnUrl = (plan: BillingCheckoutPlan, state: "return" | "cancel") => {
+  const baseUrl = new URL("/profile", state === "return"
+    ? (process.env.STRIPE_SUCCESS_RETURN_URL ?? getDefaultReturnOrigin())
+    : (process.env.STRIPE_CANCEL_RETURN_URL ?? getDefaultReturnOrigin()));
+  baseUrl.searchParams.set("billing", state);
+  baseUrl.searchParams.set("plan", plan === "PRO" ? "pro" : "lifetime");
+  return baseUrl.toString();
 };
 
 const resolvePlanFromPriceIds = (priceIds: string[]): BillingPlan | undefined => {
-  const configuredPriceIds = getConfiguredPaddlePriceIds();
+  const configuredPriceIds = getConfiguredStripePriceIds();
 
   if (configuredPriceIds.lifetime && priceIds.includes(configuredPriceIds.lifetime)) {
     return "lifetime";
@@ -116,129 +126,157 @@ const resolvePlanFromPriceIds = (priceIds: string[]): BillingPlan | undefined =>
   return undefined;
 };
 
-const readCheckoutUrl = (payload: unknown): string | undefined => {
-  if (!isRecord(payload)) {
-    return undefined;
-  }
-
-  const data = isRecord(payload.data) ? payload.data : undefined;
-  const checkout = data && isRecord(data.checkout) ? data.checkout : undefined;
-
-  return readString(checkout?.url) ?? readString(data?.checkout_url) ?? readString((payload as Record<string, unknown>).url);
-};
-
-const readPortalUrl = (payload: unknown): string | undefined => {
-  if (!isRecord(payload)) {
-    return undefined;
-  }
-
-  const data = isRecord(payload.data) ? payload.data : undefined;
-  const urls = data && isRecord(data.urls) ? data.urls : undefined;
-  const general = urls && isRecord(urls.general) ? urls.general : undefined;
-
-  return readString(general?.overview) ?? readString((payload as Record<string, unknown>).url);
-};
-
 const getCheckoutPriceId = (plan: BillingCheckoutPlan): string => {
-  const configuredPriceIds = getConfiguredPaddlePriceIds();
+  const configuredPriceIds = getConfiguredStripePriceIds();
   const priceId = plan === "PRO" ? configuredPriceIds.pro : configuredPriceIds.lifetime;
 
   if (!priceId) {
-    throw new Error(`Missing Paddle price id for ${plan.toLowerCase()} plan`);
+    throw new Error(`Missing Stripe price id for ${plan.toLowerCase()} plan`);
   }
 
   return priceId;
-};
-
-const createCustomerPortalSession = async (customerId: string) => {
-  const response = await fetch(`${PADDLE_API_BASE}/customers/${customerId}/portal-sessions`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${process.env.PADDLE_API_KEY}`,
-      "Content-Type": "application/json",
-    },
-  });
-
-  if (!response.ok) {
-    throw new Error("Failed to create Paddle customer portal session");
-  }
-
-  return response.json() as Promise<unknown>;
 };
 
 const toStoredPlan = (plan: BillingCheckoutPlan): BillingPlan => {
   return plan === "PRO" ? "pro" : "lifetime";
 };
 
-const withPaddleMetadata = (user: User, event: PaddleWebhookEvent, update: BillingUpdate): BillingUpdate => ({
+const withStripeMetadata = (user: User, event: StripeBillingEvent, update: BillingUpdate): BillingUpdate => ({
   ...update,
-  billingProvider: event.customerId || event.subscriptionId || event.transactionId || user.billingProvider ? "paddle" : undefined,
-  paddleCustomerId: event.customerId ?? user.paddleCustomerId,
-  paddleSubscriptionId: event.subscriptionId ?? user.paddleSubscriptionId,
-  paddleTransactionId: event.transactionId ?? user.paddleTransactionId,
+  billingProvider: event.customerId || event.subscriptionId || event.checkoutSessionId || user.billingProvider ? "stripe" : undefined,
+  stripeCustomerId: event.customerId ?? user.stripeCustomerId,
+  stripeSubscriptionId: event.subscriptionId ?? user.stripeSubscriptionId,
+  stripeCheckoutSessionId: event.checkoutSessionId ?? user.stripeCheckoutSessionId,
 });
 
-export const applyBillingEvent = (user: User, event: PaddleWebhookEvent): BillingUpdate => {
-  if (event.eventType === "transaction.completed" && event.plan === "lifetime") {
-    return withPaddleMetadata(user, event, {
+const toIsoFromUnixSeconds = (value: number | null | undefined): string | undefined => {
+  return typeof value === "number" ? new Date(value * 1000).toISOString() : undefined;
+};
+
+const toIsoFromStripeEvent = (created: number): string => {
+  return new Date(created * 1000).toISOString();
+};
+
+const getSubscriptionBillingStatus = (status: string | undefined): BillingStatus => {
+  if (status === "past_due" || status === "unpaid") {
+    return "past_due";
+  }
+
+  if (status === "canceled") {
+    return "inactive";
+  }
+
+  return "active";
+};
+
+const parseStripeBillingEvent = (payload: unknown): StripeBillingEvent | null => {
+  if (!payload || typeof payload !== "object") {
+    return null;
+  }
+
+  const event = payload as StripeEventLike;
+  if (!event.id || !event.type || typeof event.created !== "number" || !event.data?.object) {
+    return null;
+  }
+
+  if (
+    event.type !== "checkout.session.completed" &&
+    event.type !== "customer.subscription.created" &&
+    event.type !== "customer.subscription.updated" &&
+    event.type !== "customer.subscription.deleted"
+  ) {
+    return null;
+  }
+
+  if (event.type === "checkout.session.completed") {
+    const session = event.data.object as StripeCheckoutSessionLike;
+    const metadata = session.metadata ?? {};
+
+    return {
+      eventId: event.id,
+      eventType: event.type,
+      occurredAt: toIsoFromStripeEvent(event.created),
+      plan: (readString(metadata.plan) as BillingPlan | undefined) ?? (session.mode === "payment" ? "lifetime" : "pro"),
+      userId: readString(metadata.userId),
+      customerId: readStripeId(session.customer),
+      subscriptionId: readStripeId(session.subscription),
+      checkoutSessionId: session.id,
+    };
+  }
+
+  const subscription = event.data.object as StripeSubscriptionLike;
+  const metadata = subscription.metadata ?? {};
+  const priceIds = subscription.items.data
+    .map((item: { price?: { id?: string | null } | null }) => item.price?.id)
+    .filter((value): value is string => Boolean(value));
+  const plan = (readString(metadata.plan) as BillingPlan | undefined) ?? resolvePlanFromPriceIds(priceIds) ?? "pro";
+
+  return {
+    eventId: event.id,
+    eventType: event.type,
+    occurredAt: toIsoFromStripeEvent(event.created),
+    plan,
+    userId: readString(metadata.userId),
+    customerId: readStripeId(subscription.customer),
+    subscriptionId: subscription.id,
+    renewsAt: toIsoFromUnixSeconds(subscription.current_period_end),
+    canceledAt: toIsoFromUnixSeconds(subscription.canceled_at),
+    subscriptionStatus: subscription.status,
+  };
+};
+
+export const applyBillingEvent = (user: User, event: StripeBillingEvent): BillingUpdate => {
+  if (event.eventType === "checkout.session.completed" && event.plan === "lifetime") {
+    return withStripeMetadata(user, event, {
       plan: "lifetime",
       billingStatus: "active",
-      latestPaddleBillingEventAt: new Date(event.occurredAt),
+      latestBillingEventAt: new Date(event.occurredAt),
       lifetimeUnlockedAt: new Date(event.occurredAt),
     });
   }
 
-  if (event.eventType === "transaction.completed" && event.plan === "pro") {
-    return withPaddleMetadata(user, event, {
+  if (event.eventType === "checkout.session.completed" && event.plan === "pro") {
+    return withStripeMetadata(user, event, {
       plan: user.plan === "lifetime" ? "lifetime" : "pro",
       billingStatus: "active",
-      latestPaddleBillingEventAt: new Date(event.occurredAt),
+      latestBillingEventAt: new Date(event.occurredAt),
       subscriptionCanceledAt: null,
       lifetimeUnlockedAt: user.lifetimeUnlockedAt ? new Date(user.lifetimeUnlockedAt) : undefined,
     });
   }
 
-  if (event.eventType === "subscription.activated") {
-    return withPaddleMetadata(user, event, {
-      plan: user.plan === "lifetime" ? "lifetime" : (event.plan ?? "pro"),
-      billingStatus: "active",
-      latestPaddleBillingEventAt: new Date(event.occurredAt),
-      subscriptionRenewsAt: event.renewsAt ? new Date(event.renewsAt) : undefined,
-      subscriptionCanceledAt: null,
-      lifetimeUnlockedAt: user.lifetimeUnlockedAt ? new Date(user.lifetimeUnlockedAt) : undefined,
-    });
-  }
-
-  if (event.eventType === "subscription.past_due") {
-    return withPaddleMetadata(
+  if (event.eventType === "customer.subscription.created" || event.eventType === "customer.subscription.updated") {
+    return withStripeMetadata(
       user,
       event,
       user.plan === "lifetime"
         ? {
             plan: "lifetime",
             billingStatus: "active",
-            latestPaddleBillingEventAt: new Date(event.occurredAt),
+            latestBillingEventAt: new Date(event.occurredAt),
             subscriptionRenewsAt: event.renewsAt ? new Date(event.renewsAt) : undefined,
+            subscriptionCanceledAt: event.canceledAt ? new Date(event.canceledAt) : null,
             lifetimeUnlockedAt: user.lifetimeUnlockedAt ? new Date(user.lifetimeUnlockedAt) : undefined,
           }
         : {
-            plan: event.plan ?? (user.plan === "free" ? "pro" : user.plan),
-            billingStatus: "past_due",
-            latestPaddleBillingEventAt: new Date(event.occurredAt),
+            plan: event.plan ?? "pro",
+            billingStatus: getSubscriptionBillingStatus(event.subscriptionStatus),
+            latestBillingEventAt: new Date(event.occurredAt),
             subscriptionRenewsAt: event.renewsAt ? new Date(event.renewsAt) : undefined,
+            subscriptionCanceledAt: event.canceledAt ? new Date(event.canceledAt) : null,
           }
     );
   }
 
-  if (event.eventType === "subscription.canceled" || event.eventType === "subscription.expired") {
-    return withPaddleMetadata(
+  if (event.eventType === "customer.subscription.deleted") {
+    return withStripeMetadata(
       user,
       event,
       user.plan === "lifetime"
         ? {
             plan: "lifetime",
             billingStatus: "active",
-            latestPaddleBillingEventAt: new Date(event.occurredAt),
+            latestBillingEventAt: new Date(event.occurredAt),
             subscriptionRenewsAt: null,
             subscriptionCanceledAt: event.canceledAt ? new Date(event.canceledAt) : new Date(event.occurredAt),
             lifetimeUnlockedAt: user.lifetimeUnlockedAt ? new Date(user.lifetimeUnlockedAt) : undefined,
@@ -246,150 +284,52 @@ export const applyBillingEvent = (user: User, event: PaddleWebhookEvent): Billin
         : {
             plan: "free",
             billingStatus: "inactive",
-            latestPaddleBillingEventAt: new Date(event.occurredAt),
+            latestBillingEventAt: new Date(event.occurredAt),
             subscriptionRenewsAt: null,
             subscriptionCanceledAt: event.canceledAt ? new Date(event.canceledAt) : new Date(event.occurredAt),
           }
     );
   }
 
-  return withPaddleMetadata(user, event, {
+  return withStripeMetadata(user, event, {
     plan: user.plan,
     billingStatus: user.billingStatus,
-    latestPaddleBillingEventAt: user.latestPaddleBillingEventAt ? new Date(user.latestPaddleBillingEventAt) : undefined,
+    latestBillingEventAt: user.latestBillingEventAt ? new Date(user.latestBillingEventAt) : undefined,
     subscriptionRenewsAt: user.subscriptionRenewsAt ? new Date(user.subscriptionRenewsAt) : undefined,
     subscriptionCanceledAt: user.subscriptionCanceledAt ? new Date(user.subscriptionCanceledAt) : undefined,
     lifetimeUnlockedAt: user.lifetimeUnlockedAt ? new Date(user.lifetimeUnlockedAt) : undefined,
   });
 };
 
-const resolveUserForEvent = async (event: PaddleWebhookEvent): Promise<User | undefined> => {
+const resolveUserForEvent = async (event: StripeBillingEvent): Promise<User | undefined> => {
   if (event.userId) {
     const user = await findUserById(event.userId);
     if (user) return user;
   }
 
   if (event.subscriptionId) {
-    const user = await findUserByPaddleSubscriptionId(event.subscriptionId);
+    const user = await findUserByStripeSubscriptionId(event.subscriptionId);
     if (user) return user;
   }
 
   if (event.customerId) {
-    const user = await findUserByPaddleCustomerId(event.customerId);
+    const user = await findUserByStripeCustomerId(event.customerId);
     if (user) return user;
   }
 
-  if (event.transactionId) {
-    return findUserByPaddleTransactionId(event.transactionId);
+  if (event.checkoutSessionId) {
+    return findUserByStripeCheckoutSessionId(event.checkoutSessionId);
   }
 
   return undefined;
 };
 
-export const parsePaddleWebhookEvent = (payload: unknown): PaddleWebhookEvent | null => {
-  if (!isRecord(payload)) {
-    return null;
-  }
-
-  const webhookPayload = payload as SupportedWebhookPayload;
-  const eventId = readString(webhookPayload.event_id);
-  const eventType = readString(webhookPayload.event_type);
-  const occurredAt = readString(webhookPayload.occurred_at);
-  const data = isRecord(webhookPayload.data) ? webhookPayload.data : undefined;
-
-  if (!eventId || !eventType || !occurredAt || !data) {
-    return null;
-  }
-
-  if (
-    eventType !== "transaction.completed" &&
-    eventType !== "subscription.activated" &&
-    eventType !== "subscription.canceled" &&
-    eventType !== "subscription.expired" &&
-    eventType !== "subscription.past_due"
-  ) {
-    return null;
-  }
-
-  const customData = isRecord(data.custom_data) ? data.custom_data : undefined;
-  const plan = resolvePlanFromPriceIds(readPriceIds(data.items));
-
-  return {
-    eventId,
-    eventType,
-    occurredAt,
-    plan,
-    userId: readString(customData?.userId) ?? readString(customData?.user_id),
-    customerId: readString(data.customer_id),
-    subscriptionId:
-      eventType === "transaction.completed"
-        ? readString(data.subscription_id)
-        : readString(data.id),
-    transactionId:
-      eventType === "transaction.completed"
-        ? readString(data.id)
-        : readString(data.transaction_id),
-    renewsAt: readString(data.next_billed_at),
-    canceledAt: readString(data.canceled_at),
-  };
-};
-
-const parseSignatureHeader = (signatureHeader: string): { timestamp: string; signatures: string[] } | null => {
-  const pairs = signatureHeader
-    .split(";")
-    .map((entry) => entry.trim())
-    .filter(Boolean)
-    .map((entry) => entry.split("="))
-    .filter((entry): entry is [string, string] => entry.length === 2);
-
-  const timestamp = pairs.find(([key]) => key === "ts")?.[1];
-  const signatures = pairs.filter(([key]) => key === "h1").map(([, value]) => value);
-
-  if (!timestamp || signatures.length === 0) {
-    return null;
-  }
-
-  return { timestamp, signatures };
-};
-
-export const verifyPaddleWebhookSignature = (
-  rawBody: string,
-  signatureHeader: string,
-  secret: string,
-  now = Date.now()
-): boolean => {
-  if (!rawBody || !signatureHeader || !secret) {
-    return false;
-  }
-
-  const parsedSignature = parseSignatureHeader(signatureHeader);
-  if (!parsedSignature) {
-    return false;
-  }
-
-  const timestampSeconds = Number(parsedSignature.timestamp);
-  if (!Number.isFinite(timestampSeconds)) {
-    return false;
-  }
-
-  if (Math.abs(Math.floor(now / 1000) - timestampSeconds) > getConfiguredToleranceSeconds()) {
-    return false;
-  }
-
-  const signedPayload = `${parsedSignature.timestamp}:${rawBody}`;
-  const expectedSignature = createHmac("sha256", secret).update(signedPayload).digest("hex");
-
-  return parsedSignature.signatures.some((signature) => {
-    if (signature.length !== expectedSignature.length) {
-      return false;
-    }
-
-    return timingSafeEqual(Buffer.from(signature), Buffer.from(expectedSignature));
-  });
+export const verifyStripeWebhookEvent = (rawBody: string, signatureHeader: string, secret: string) => {
+  return getStripeClient().webhooks.constructEvent(rawBody, signatureHeader, secret);
 };
 
 export const processBillingWebhook = async (payload: unknown): Promise<ProcessBillingWebhookResult> => {
-  const event = parsePaddleWebhookEvent(payload);
+  const event = parseStripeBillingEvent(payload);
   if (!event) {
     return { status: "ignored", reason: "invalid_payload" };
   }
@@ -399,7 +339,7 @@ export const processBillingWebhook = async (payload: unknown): Promise<ProcessBi
     return { status: "ignored", reason: "user_not_found" };
   }
 
-  if (user.latestPaddleBillingEventAt && new Date(user.latestPaddleBillingEventAt) > new Date(event.occurredAt)) {
+  if (user.latestBillingEventAt && new Date(user.latestBillingEventAt) > new Date(event.occurredAt)) {
     return { status: "ignored", reason: "stale_event" };
   }
 
@@ -412,7 +352,7 @@ export const processBillingWebhook = async (payload: unknown): Promise<ProcessBi
   if (!updatedUser) {
     const refreshedUser = await findUserById(user.id);
 
-    if (refreshedUser?.latestPaddleBillingEventAt && new Date(refreshedUser.latestPaddleBillingEventAt) > new Date(event.occurredAt)) {
+    if (refreshedUser?.latestBillingEventAt && new Date(refreshedUser.latestBillingEventAt) > new Date(event.occurredAt)) {
       return { status: "ignored", reason: "stale_event" };
     }
 
@@ -424,10 +364,6 @@ export const processBillingWebhook = async (payload: unknown): Promise<ProcessBi
   return { status: "applied", update, userId: updatedUser.id };
 };
 
-export const createBillingCheckout = async (payload: PaddleTransactionPayload) => {
-  return createTransactionCheckout(payload);
-};
-
 export const createCheckoutForUser = async (
   userId: string,
   plan: BillingCheckoutPlan
@@ -437,30 +373,38 @@ export const createCheckoutForUser = async (
     throw new Error("User not found");
   }
 
-  const response = await createBillingCheckout({
-    items: [
+  const session = await getStripeClient().checkout.sessions.create({
+    mode: plan === "PRO" ? "subscription" : "payment",
+    line_items: [
       {
-        price_id: getCheckoutPriceId(plan),
+        price: getCheckoutPriceId(plan),
         quantity: 1,
       },
     ],
-    collection_mode: "automatic",
-    custom_data: {
+    success_url: getProfileReturnUrl(plan, "return"),
+    cancel_url: getProfileReturnUrl(plan, "cancel"),
+    client_reference_id: userId,
+    customer: user.stripeCustomerId,
+    customer_email: user.stripeCustomerId ? undefined : user.email,
+    metadata: {
       userId,
       plan: toStoredPlan(plan),
     },
-    checkout: {
-      url: getProfileReturnUrl(plan),
-    },
-    customer_id: user.paddleCustomerId,
+    subscription_data: plan === "PRO"
+      ? {
+          metadata: {
+            userId,
+            plan: "pro",
+          },
+        }
+      : undefined,
   });
 
-  const url = readCheckoutUrl(response);
-  if (!url) {
-    throw new Error("Failed to create Paddle checkout");
+  if (!session.url) {
+    throw new Error("Failed to create Stripe checkout session");
   }
 
-  return { url };
+  return { url: session.url };
 };
 
 export const createPortalForUser = async (userId: string): Promise<BillingPortalPayload> => {
@@ -469,15 +413,14 @@ export const createPortalForUser = async (userId: string): Promise<BillingPortal
     throw new Error("User not found");
   }
 
-  if (user.plan !== "pro" || user.billingStatus !== "active" || !user.paddleCustomerId) {
+  if (user.plan !== "pro" || user.billingStatus !== "active" || !user.stripeCustomerId) {
     throw new Error("Billing portal is only available for active Pro subscribers");
   }
 
-  const response = await createCustomerPortalSession(user.paddleCustomerId);
-  const url = readPortalUrl(response);
-  if (!url) {
-    throw new Error("Failed to create Paddle customer portal session");
-  }
+  const session = await getStripeClient().billingPortal.sessions.create({
+    customer: user.stripeCustomerId,
+    return_url: new URL("/profile", getDefaultReturnOrigin()).toString(),
+  });
 
-  return { url };
+  return { url: session.url };
 };

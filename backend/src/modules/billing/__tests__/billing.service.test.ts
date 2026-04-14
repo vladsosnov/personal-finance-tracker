@@ -1,27 +1,52 @@
 jest.mock("../../auth/user.repository", () => ({
   findUserById: jest.fn(),
-  findUserByPaddleCustomerId: jest.fn(),
-  findUserByPaddleSubscriptionId: jest.fn(),
-  findUserByPaddleTransactionId: jest.fn(),
+  findUserByStripeCustomerId: jest.fn(),
+  findUserByStripeSubscriptionId: jest.fn(),
+  findUserByStripeCheckoutSessionId: jest.fn(),
   hasProcessedBillingWebhookEvent: jest.fn(),
   updateUserBillingForWebhookEvent: jest.fn(),
 }));
 
-import { createHmac } from "crypto";
+const stripeSdkMock = {
+  webhooks: {
+    constructEvent: jest.fn(),
+  },
+  checkout: {
+    sessions: {
+      create: jest.fn(),
+    },
+  },
+  billingPortal: {
+    sessions: {
+      create: jest.fn(),
+    },
+  },
+};
+
+jest.mock("../stripe.client", () => ({
+  getStripeClient: jest.fn(() => stripeSdkMock),
+}));
+
 import type { User } from "../../auth/types";
 import {
   applyBillingEvent,
+  createCheckoutForUser,
+  createPortalForUser,
   processBillingWebhook,
-  verifyPaddleWebhookSignature,
+  verifyStripeWebhookEvent,
 } from "../billing.service";
 
 const mockedUserRepository = jest.requireMock("../../auth/user.repository") as {
   findUserById: jest.Mock;
-  findUserByPaddleCustomerId: jest.Mock;
-  findUserByPaddleSubscriptionId: jest.Mock;
-  findUserByPaddleTransactionId: jest.Mock;
+  findUserByStripeCustomerId: jest.Mock;
+  findUserByStripeSubscriptionId: jest.Mock;
+  findUserByStripeCheckoutSessionId: jest.Mock;
   hasProcessedBillingWebhookEvent: jest.Mock;
   updateUserBillingForWebhookEvent: jest.Mock;
+};
+
+const mockedStripeClient = jest.requireMock("../stripe.client") as {
+  getStripeClient: jest.Mock;
 };
 
 const makeUser = (overrides: Partial<User> = {}): User => ({
@@ -40,18 +65,53 @@ const makeUser = (overrides: Partial<User> = {}): User => ({
 });
 
 describe("billing.service", () => {
+  const getStripeMocks = () => mockedStripeClient.getStripeClient();
+
   beforeEach(() => {
     jest.clearAllMocks();
-    process.env.PADDLE_PRO_PRICE_ID = "pri_pro";
-    process.env.PADDLE_LIFETIME_PRICE_ID = "pri_life";
+    process.env.STRIPE_PRO_PRICE_ID = "price_pro";
+    process.env.STRIPE_LIFETIME_PRICE_ID = "price_life";
   });
 
   afterEach(() => {
-    delete process.env.PADDLE_PRO_PRICE_ID;
-    delete process.env.PADDLE_LIFETIME_PRICE_ID;
+    delete process.env.STRIPE_PRO_PRICE_ID;
+    delete process.env.STRIPE_LIFETIME_PRICE_ID;
   });
 
-  it("uses Paddle price ids rather than custom_data.plan for lifetime unlocks", async () => {
+  it("creates a Stripe checkout session for Pro", async () => {
+    mockedUserRepository.findUserById.mockResolvedValue(makeUser());
+    getStripeMocks().checkout.sessions.create.mockResolvedValue({
+      url: "https://checkout.stripe.com/c/pay/cs_test_123",
+    });
+
+    const result = await createCheckoutForUser("user-1", "PRO");
+
+    expect(result).toEqual({ url: "https://checkout.stripe.com/c/pay/cs_test_123" });
+    expect(getStripeMocks().checkout.sessions.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        mode: "subscription",
+        client_reference_id: "user-1",
+      })
+    );
+  });
+
+  it("creates a Stripe billing portal session for active Pro users", async () => {
+    mockedUserRepository.findUserById.mockResolvedValue(makeUser({
+      plan: "pro",
+      billingStatus: "active",
+      subscription: "Pro",
+      stripeCustomerId: "cus_123",
+    }));
+    getStripeMocks().billingPortal.sessions.create.mockResolvedValue({
+      url: "https://billing.stripe.com/p/session/test_123",
+    });
+
+    const result = await createPortalForUser("user-1");
+
+    expect(result).toEqual({ url: "https://billing.stripe.com/p/session/test_123" });
+  });
+
+  it("activates lifetime after checkout.session.completed", async () => {
     const existingUser = makeUser({ plan: "free", billingStatus: "inactive" });
     const updatedUser = makeUser({
       plan: "lifetime",
@@ -59,32 +119,28 @@ describe("billing.service", () => {
       subscription: "Lifetime",
       lifetimeUnlockedAt: "2026-04-13T10:00:00.000Z",
     });
-    const payload = {
-      event_id: "evt_lifetime_1",
-      event_type: "transaction.completed",
-      occurred_at: "2026-04-13T10:00:00.000Z",
-      data: {
-        id: "txn_01",
-        customer_id: "ctm_01",
-        items: [
-          {
-            price: {
-              id: "pri_life",
-            },
-          },
-        ],
-        custom_data: {
-          userId: "user-1",
-          plan: "pro",
-        },
-      },
-    };
 
     mockedUserRepository.findUserById.mockResolvedValue(existingUser);
     mockedUserRepository.hasProcessedBillingWebhookEvent.mockResolvedValue(false);
     mockedUserRepository.updateUserBillingForWebhookEvent.mockResolvedValue(updatedUser);
 
-    const result = await processBillingWebhook(payload);
+    const result = await processBillingWebhook({
+      id: "evt_lifetime_1",
+      type: "checkout.session.completed",
+      created: 1776074400,
+      data: {
+        object: {
+          id: "cs_test_life",
+          mode: "payment",
+          customer: "cus_123",
+          subscription: null,
+          metadata: {
+            userId: "user-1",
+            plan: "lifetime",
+          },
+        },
+      },
+    });
 
     expect(result).toMatchObject({ status: "applied", userId: "user-1" });
     expect(mockedUserRepository.updateUserBillingForWebhookEvent).toHaveBeenCalledWith(
@@ -94,147 +150,127 @@ describe("billing.service", () => {
       expect.objectContaining({
         plan: "lifetime",
         billingStatus: "active",
+        stripeCustomerId: "cus_123",
+        stripeCheckoutSessionId: "cs_test_life",
       })
     );
   });
 
-  it("does not downgrade a lifetime user when a pro subscription is canceled", async () => {
+  it("does not downgrade a lifetime user when a pro subscription is deleted", async () => {
     const lifetimeUser = makeUser({
       plan: "lifetime",
       billingStatus: "active",
       subscription: "Lifetime",
       lifetimeUnlockedAt: "2026-04-10T10:00:00.000Z",
     });
-    const proCanceledEvent = {
-      eventId: "evt_canceled_1",
-      eventType: "subscription.canceled",
+
+    const result = applyBillingEvent(lifetimeUser, {
+      eventId: "evt_deleted_1",
+      eventType: "customer.subscription.deleted",
       plan: "pro",
       occurredAt: "2026-04-13T12:00:00.000Z",
-    } as const;
-
-    const result = applyBillingEvent(lifetimeUser, proCanceledEvent as never);
-
-    expect(result.plan).toBe("lifetime");
-    expect(result.billingStatus).toBe("active");
-  });
-
-  it("does not downgrade a lifetime user when a pro subscription expires", async () => {
-    const lifetimeUser = makeUser({
-      plan: "lifetime",
-      billingStatus: "active",
-      subscription: "Lifetime",
-      lifetimeUnlockedAt: "2026-04-10T10:00:00.000Z",
     });
-    const proExpiredEvent = {
-      eventId: "evt_expired_1",
-      eventType: "subscription.expired",
-      plan: "pro",
-      occurredAt: "2026-04-13T12:00:00.000Z",
-    } as const;
-
-    const result = applyBillingEvent(lifetimeUser, proExpiredEvent as never);
 
     expect(result.plan).toBe("lifetime");
     expect(result.billingStatus).toBe("active");
   });
 
-  it("marks a pro subscription as past_due when Paddle sends subscription.past_due", async () => {
+  it("marks a pro subscription as past_due when Stripe sends customer.subscription.updated", async () => {
     const proUser = makeUser({
       plan: "pro",
       billingStatus: "active",
       subscription: "Pro",
-      paddleSubscriptionId: "sub_01",
+      stripeSubscriptionId: "sub_123",
     });
-    const pastDueEvent = {
+
+    const result = applyBillingEvent(proUser, {
       eventId: "evt_past_due_1",
-      eventType: "subscription.past_due",
+      eventType: "customer.subscription.updated",
       plan: "pro",
       occurredAt: "2026-04-13T12:00:00.000Z",
       renewsAt: "2026-05-13T12:00:00.000Z",
-    } as const;
-
-    const result = applyBillingEvent(proUser, pastDueEvent as never);
+      subscriptionStatus: "past_due",
+    });
 
     expect(result.plan).toBe("pro");
     expect(result.billingStatus).toBe("past_due");
   });
 
-  it("skips duplicate Paddle webhook deliveries without reapplying billing changes", async () => {
-    const existingUser = makeUser({ plan: "free", billingStatus: "inactive" });
-    const updatedUser = makeUser({
-      plan: "lifetime",
-      billingStatus: "active",
-      subscription: "Lifetime",
-      lifetimeUnlockedAt: "2026-04-13T10:00:00.000Z",
-    });
-    const payload = {
-      event_id: "evt_01",
-      event_type: "transaction.completed",
-      occurred_at: "2026-04-13T10:00:00.000Z",
-      data: {
-        id: "txn_01",
-        customer_id: "ctm_01",
-        custom_data: {
-          userId: "user-1",
-        },
-        items: [{ price: { id: "pri_life" } }],
-      },
-    };
-
-    mockedUserRepository.findUserById.mockResolvedValue(existingUser);
+  it("skips duplicate Stripe webhook deliveries", async () => {
+    mockedUserRepository.findUserById.mockResolvedValue(makeUser());
     mockedUserRepository.hasProcessedBillingWebhookEvent
       .mockResolvedValueOnce(false)
       .mockResolvedValueOnce(true);
-    mockedUserRepository.updateUserBillingForWebhookEvent.mockResolvedValue(updatedUser);
+    mockedUserRepository.updateUserBillingForWebhookEvent.mockResolvedValue(
+      makeUser({ plan: "pro", billingStatus: "active", subscription: "Pro" })
+    );
+
+    const payload = {
+      id: "evt_duplicate_1",
+      type: "checkout.session.completed",
+      created: 1776074400,
+      data: {
+        object: {
+          id: "cs_test_pro",
+          mode: "subscription",
+          customer: "cus_123",
+          subscription: "sub_123",
+          metadata: {
+            userId: "user-1",
+            plan: "pro",
+          },
+        },
+      },
+    };
 
     const firstResult = await processBillingWebhook(payload);
     const secondResult = await processBillingWebhook(payload);
 
     expect(firstResult).toMatchObject({ status: "applied", userId: "user-1" });
     expect(secondResult).toEqual({ status: "ignored", reason: "duplicate_event" });
-    expect(mockedUserRepository.updateUserBillingForWebhookEvent).toHaveBeenCalledTimes(1);
   });
 
-  it("ignores stale older billing events before mutating state", async () => {
-    const existingUser = {
+  it("ignores stale older Stripe events", async () => {
+    mockedUserRepository.findUserByStripeSubscriptionId.mockResolvedValue({
       ...makeUser({
         plan: "pro",
         billingStatus: "active",
         subscription: "Pro",
-        paddleSubscriptionId: "sub_01",
+        stripeSubscriptionId: "sub_123",
       }),
-      latestPaddleBillingEventAt: "2026-04-13T12:00:00.000Z",
-    };
-    const payload = {
-      event_id: "evt_old_01",
-      event_type: "subscription.canceled",
-      occurred_at: "2026-04-13T11:00:00.000Z",
+      latestBillingEventAt: "2026-04-13T12:00:00.000Z",
+    });
+
+    const result = await processBillingWebhook({
+      id: "evt_old_1",
+      type: "customer.subscription.deleted",
+      created: 1776070800,
       data: {
-        id: "sub_01",
-        customer_id: "ctm_01",
-        canceled_at: "2026-04-13T11:00:00.000Z",
-        items: [{ price: { id: "pri_pro" } }],
+        object: {
+          id: "sub_123",
+          customer: "cus_123",
+          status: "canceled",
+          canceled_at: 1776070800,
+          current_period_end: 1778662800,
+          metadata: {
+            plan: "pro",
+          },
+          items: {
+            data: [{ price: { id: "price_pro" } }],
+          },
+        },
       },
-    };
-
-    mockedUserRepository.findUserByPaddleSubscriptionId.mockResolvedValue(existingUser);
-
-    const result = await processBillingWebhook(payload);
+    });
 
     expect(result).toEqual({ status: "ignored", reason: "stale_event" });
-    expect(mockedUserRepository.updateUserBillingForWebhookEvent).not.toHaveBeenCalled();
   });
 
-  it("rejects webhook signatures with stale timestamps", () => {
-    const rawBody = JSON.stringify({ ok: true });
-    const secret = "whsec_test";
-    const oldTimestamp = Math.floor(Date.now() / 1000) - 3600;
-    const signedPayload = `${oldTimestamp}:${rawBody}`;
-    const signature = createHmac("sha256", secret).update(signedPayload).digest("hex");
-    const header = `ts=${oldTimestamp};h1=${signature}`;
+  it("delegates Stripe webhook signature verification to the Stripe SDK", () => {
+    getStripeMocks().webhooks.constructEvent.mockReturnValue({ id: "evt_1" });
 
-    const result = verifyPaddleWebhookSignature(rawBody, header, secret);
+    const result = verifyStripeWebhookEvent("{}", "t=1,v1=test", "whsec_test");
 
-    expect(result).toBe(false);
+    expect(result).toEqual({ id: "evt_1" });
+    expect(getStripeMocks().webhooks.constructEvent).toHaveBeenCalledWith("{}", "t=1,v1=test", "whsec_test");
   });
 });

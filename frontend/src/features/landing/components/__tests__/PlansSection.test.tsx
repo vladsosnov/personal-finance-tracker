@@ -31,8 +31,8 @@ describe('PlansSection', () => {
     render(<PlansSection />);
 
     expect(screen.getByText('$0')).toBeInTheDocument();
-    expect(screen.getByText('$3/mo')).toBeInTheDocument();
-    expect(screen.getByText('$9 once')).toBeInTheDocument();
+    expect(screen.getByText('$5/mo')).toBeInTheDocument();
+    expect(screen.getByText('$12 once')).toBeInTheDocument();
   });
 
   it('renders Popular badge on Lifetime plan', () => {
@@ -50,8 +50,8 @@ describe('PlansSection', () => {
   it('renders active signup links for paid plans', () => {
     render(<PlansSection />);
 
-    expect(screen.getByRole('link', { name: /get pro with pro plan/i })).toHaveAttribute('href', '/auth');
-    expect(screen.getByRole('link', { name: /get lifetime with lifetime plan/i })).toHaveAttribute('href', '/auth');
+    expect(screen.getByRole('link', { name: /get pro with pro plan/i })).toHaveAttribute('href', '/profile?upgrade=pro');
+    expect(screen.getByRole('link', { name: /get lifetime with lifetime plan/i })).toHaveAttribute('href', '/profile?upgrade=lifetime');
     expect(screen.queryByRole('button', { name: /coming soon/i })).not.toBeInTheDocument();
   });
 

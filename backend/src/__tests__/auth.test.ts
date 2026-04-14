@@ -197,7 +197,7 @@ describe("auth", () => {
   describe("billing graphql", () => {
     it("returns a checkout url for an authenticated pro upgrade", async () => {
       const createCheckoutForUser = jest.fn().mockResolvedValue({
-        url: "https://sandbox.paddle.com/checkout/pro-user-1?return_url=http%3A%2F%2Flocalhost%3A3000%2Fprofile%3Fbilling%3Dreturn%26plan%3Dpro",
+        url: "https://checkout.stripe.com/c/pay/cs_test_123",
       });
 
       await jest.isolateModulesAsync(async () => {
@@ -229,7 +229,7 @@ describe("auth", () => {
         expect(response.errors).toBeUndefined();
         expect(response.data).toEqual({
           createBillingCheckout: {
-            url: expect.stringContaining("billing%3Dreturn"),
+            url: expect.stringContaining("stripe.com"),
           },
         });
         expect(createCheckoutForUser).toHaveBeenCalledWith("user-1", "PRO");
