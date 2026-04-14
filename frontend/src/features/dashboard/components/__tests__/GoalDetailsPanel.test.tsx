@@ -1,4 +1,4 @@
-import { screen } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { render } from '@/__tests__/test-utils';
 import { GoalDetailsPanel, type GoalDetailsPanelProps, type GoalOperationActions } from '../goal-details-panel';
@@ -330,7 +330,9 @@ describe('GoalDetailsPanel', () => {
 
       // Component should still be stable
       expect(screen.getByTestId('goal-detail-header')).toBeInTheDocument();
-      expect(screen.getByTestId('dynamic-GoalChart')).toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.getAllByTestId('dynamic-GoalChart')).toHaveLength(2);
+      });
     });
   });
 });

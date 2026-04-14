@@ -8,13 +8,11 @@ const mockReplace = jest.fn();
 
 jest.mock('next/navigation', () => ({
   usePathname: jest.fn(),
-  useSearchParams: jest.fn(),
   useRouter: () => ({ replace: mockReplace }),
 }));
 
-import { usePathname, useSearchParams } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 const mockUsePathname = usePathname as jest.Mock;
-const mockUseSearchParams = useSearchParams as jest.Mock;
 
 const authedMock: MockedResponse = {
   request: { query: GET_ME },
@@ -28,10 +26,7 @@ const unauthedMock: MockedResponse = {
 
 beforeEach(() => {
   mockReplace.mockClear();
-  mockUseSearchParams.mockReturnValue({
-    get: () => null,
-    toString: () => '',
-  });
+  window.history.replaceState({}, '', 'http://localhost/');
 });
 
 describe('AuthGuard', () => {
@@ -91,10 +86,7 @@ describe('AuthGuard', () => {
 
   it('preserves query params when redirecting protected upgrade routes to auth', async () => {
     mockUsePathname.mockReturnValue('/profile');
-    mockUseSearchParams.mockReturnValue({
-      get: () => null,
-      toString: () => 'upgrade=pro',
-    });
+    window.history.replaceState({}, '', 'http://localhost/profile?upgrade=pro');
 
     render(<AuthGuard><div>content</div></AuthGuard>, { mocks: [unauthedMock] });
 
@@ -103,10 +95,7 @@ describe('AuthGuard', () => {
 
   it('redirects authenticated user from /auth to next when present', async () => {
     mockUsePathname.mockReturnValue('/auth');
-    mockUseSearchParams.mockReturnValue({
-      get: (key: string) => key === 'next' ? '/profile?upgrade=pro' : null,
-      toString: () => 'next=%2Fprofile%3Fupgrade%3Dpro',
-    });
+    window.history.replaceState({}, '', 'http://localhost/auth?next=%2Fprofile%3Fupgrade%3Dpro');
 
     render(<AuthGuard><div>content</div></AuthGuard>, { mocks: [authedMock] });
 
