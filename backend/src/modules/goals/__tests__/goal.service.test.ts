@@ -234,7 +234,7 @@ describe("goal.service", () => {
         }));
 
         const { graphql } = await import("graphql");
-        const { schema, rootValue } = await import("../../../schema");
+        const { schema, rootValue } = await import("../../../schema.js");
         const response = await graphql({
           schema,
           source: `
