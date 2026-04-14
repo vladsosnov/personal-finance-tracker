@@ -33,7 +33,7 @@ export const useGoalDrag = (onDrop: (fromId: string, toId: string) => void) => {
     await onDrop(fromId, goalId);
   };
 
-  // Touch handlers — used by GoalCard for mobile drag-and-drop
+  // Touch handlers - used by GoalCard for mobile drag-and-drop
   const handleTouchStart = (goalId: string) => {
     handleDragStart(goalId);
   };

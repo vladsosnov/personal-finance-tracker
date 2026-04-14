@@ -1,7 +1,7 @@
 // Global Cypress configuration and custom commands
 export {};
 
-// Ignore Next.js / React internal errors — they are not test failures
+// Ignore Next.js / React internal errors - they are not test failures
 Cypress.on("uncaught:exception", (err) => {
   if (
     err.message.includes("Hydration failed") ||

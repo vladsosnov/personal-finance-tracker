@@ -311,7 +311,7 @@ describe('GoalDetailsPanel', () => {
         <GoalDetailsPanel {...defaultProps} selectedGoal={mockGoalDetails} operationActions={actions} />
       );
 
-      // Click close without setting a pending operation — should just close
+      // Click close without setting a pending operation - should just close
       await user.click(screen.getByTestId('DeleteOperationModal-close'));
 
       expect(actions.onDelete).not.toHaveBeenCalled();
@@ -325,7 +325,7 @@ describe('GoalDetailsPanel', () => {
         <GoalDetailsPanel {...defaultProps} selectedGoal={mockGoalDetails} />
       );
 
-      // Click expand chart — exercises setIsChartModalOpen(true)
+      // Click expand chart - exercises setIsChartModalOpen(true)
       await user.click(screen.getByTestId('expand-chart'));
 
       // Component should still be stable

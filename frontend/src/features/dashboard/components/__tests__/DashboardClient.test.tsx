@@ -42,7 +42,7 @@ jest.mock('next/navigation', () => ({
   usePathname: () => '/goals',
 }));
 
-// Mock useMediaQuery — jest.fn so we can change return value per test
+// Mock useMediaQuery - jest.fn so we can change return value per test
 jest.mock('@mantine/hooks', () => ({
   ...jest.requireActual('@mantine/hooks'),
   useMediaQuery: jest.fn(() => false),

@@ -83,6 +83,12 @@ describe('AuthGuard', () => {
     await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/auth?next=%2Fprofile'));
   });
 
+  it('redirects unauthenticated user from /expenses to /auth', async () => {
+    mockUsePathname.mockReturnValue('/expenses');
+    render(<AuthGuard><div>content</div></AuthGuard>, { mocks: [unauthedMock] });
+    await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/auth?next=%2Fexpenses'));
+  });
+
   it('preserves query params when redirecting protected upgrade routes to auth', async () => {
     mockUsePathname.mockReturnValue('/profile');
     mockUseSearchParams.mockReturnValue({

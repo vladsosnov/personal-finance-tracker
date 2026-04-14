@@ -72,7 +72,7 @@ const errorLink = new ErrorLink(({ error, operation, forward }) => {
     return undefined;
   }
 
-  // Skip refresh if GET_ME cache already shows no session — user is logged out
+  // Skip refresh if GET_ME cache already shows no session - user is logged out
   const cached = apolloClient.readQuery<{ me: { id: string } | null }>({ query: GET_ME });
   if (cached?.me === null || cached?.me === undefined) {
     return undefined;
@@ -87,7 +87,7 @@ const errorLink = new ErrorLink(({ error, operation, forward }) => {
       })
       .catch(() => {
         clearFallbackTokens();
-        // Refresh failed — just propagate the error, let the UI handle it
+        // Refresh failed - just propagate the error, let the UI handle it
         observer.error(error);
       });
   });

@@ -5,7 +5,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useQuery } from "@apollo/client/react";
 import { GET_ME, type MeQueryData } from "@/shared/gql/queries";
 
-const PROTECTED_PATHS = ["/goals", "/profile", "/admin"];
+const PROTECTED_PATHS = ["/goals", "/profile", "/expenses", "/admin"];
 const AUTH_ONLY_PATHS = ["/auth"];
 const AUTH_BYPASS_PATHS = ["/auth/verify-email", "/auth/forgot-password", "/auth/reset-password"];
 

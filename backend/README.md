@@ -26,7 +26,7 @@ yarn dev
 | Variable | Required | Notes |
 | --- | --- | --- |
 | `MONGODB_URI` | Yes | MongoDB connection string |
-| `JWT_SECRET` | Yes | Long random secret — `openssl rand -base64 32` |
+| `JWT_SECRET` | Yes | Long random secret - `openssl rand -base64 32` |
 | `FRONTEND_ORIGIN` | No | Defaults to `http://localhost:3000` |
 | `PORT` | No | Defaults to `4000` (set automatically on Render) |
 | `SMTP_HOST` | No | SMTP provider host |
@@ -74,4 +74,4 @@ yarn dev
 | Method | Path |
 | --- | --- |
 | POST | `/graphql` |
-| GET | `/graphql` (dev only — docs UI) |
+| GET | `/graphql` (dev only - docs UI) |
