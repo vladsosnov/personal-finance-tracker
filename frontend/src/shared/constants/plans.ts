@@ -19,15 +19,15 @@ export const PLANS: Plan[] = [
   {
     name: "Pro",
     price: "$5/mo",
-    description: "For users managing multiple goals with deeper tracking.",
-    features: ["Unlimited goals", "Advanced analytics", "More customization"],
+    description: "For users managing multiple goals and unlocking paid product features.",
+    features: ["Unlimited goals", "Expenses tracking", "Future paid features"],
     maxGoals: null,
   },
   {
     name: "Lifetime",
     price: "$12 once",
     description: "One-time payment for long-term planning without subscription.",
-    features: ["Everything in Pro", "Permanent access"],
+    features: ["Everything in Pro", "Permanent access", "Expenses tracking"],
     maxGoals: null,
   },
 ];

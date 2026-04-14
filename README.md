@@ -9,10 +9,20 @@ A full-stack app for tracking savings goals, logging deposits and withdrawals, a
 - Create, edit, delete, reorder, and complete financial goals
 - Record increase and decrease operations with notes and dates
 - Visualize goal progress with interactive charts
+- Offer paid plans for unlimited goals and paid-only features
+- Show the Expenses area only to paid users (`Pro` and `Lifetime`)
 - Export and import account data as JSON
 - Manage account settings, password resets, and email verification
 - Collect product feedback and proposal votes
 - Support light, dark, and system themes
+
+## Plans
+
+| Plan | Price | Includes |
+| --- | --- | --- |
+| `Free` | `$0` | Up to 3 goals, operations log, theme settings |
+| `Pro` | `$5/mo` | Unlimited goals, Expenses access, future paid features |
+| `Lifetime` | `$12 once` | Everything in Pro, permanent access |
 
 ## Tech Stack
 

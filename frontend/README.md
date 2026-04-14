@@ -55,6 +55,12 @@ yarn cypress           # open interactive runner
 yarn cypress:run       # headless run
 ```
 
+## Subscription Model
+
+- `Free`: up to 3 goals, operations log, theme settings
+- `Pro`: unlimited goals, Expenses access, future paid features
+- `Lifetime`: everything in Pro with one-time payment access
+
 ## License
 
 See [`LICENSE`](LICENSE).

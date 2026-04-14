@@ -135,7 +135,7 @@ describe('SubscriptionCard', () => {
     );
 
     expect(screen.getByText(/getting started with your first/i)).toBeInTheDocument();
-    expect(screen.getByText(/managing multiple goals/i)).toBeInTheDocument();
+    expect(screen.getByText(/unlocking paid product features/i)).toBeInTheDocument();
     expect(screen.getByText(/one-time payment/i)).toBeInTheDocument();
   });
 
