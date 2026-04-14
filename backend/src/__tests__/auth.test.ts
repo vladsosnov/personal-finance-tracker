@@ -207,7 +207,7 @@ describe("auth", () => {
         }));
 
         const { graphql } = await import("graphql");
-        const { schema, rootValue } = require("../schema");
+        const { schema, rootValue } = await import("../schema");
         const response = await graphql({
           schema,
           source: `
@@ -255,7 +255,7 @@ describe("auth", () => {
         }));
 
         const { graphql } = await import("graphql");
-        const { schema, rootValue } = require("../schema");
+        const { schema, rootValue } = await import("../schema");
         const response = await graphql({
           schema,
           source: `

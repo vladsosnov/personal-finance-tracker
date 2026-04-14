@@ -1,4 +1,4 @@
-import type { Request, Response, NextFunction } from "express";
+import type { Request, Response } from "express";
 import { createRateLimit } from "../rate-limit";
 
 const mockReq = (ip = "127.0.0.1"): Request =>

@@ -16,7 +16,7 @@ describe("auth email", () => {
   it("throws when SMTP is missing in production", async () => {
     process.env.NODE_ENV = "production";
 
-    const { sendVerificationEmail } = await import("../email.js");
+    const { sendVerificationEmail } = await import("../email");
 
     await expect(sendVerificationEmail("user@example.com", "token")).rejects.toThrow("SMTP is required in production");
   });
