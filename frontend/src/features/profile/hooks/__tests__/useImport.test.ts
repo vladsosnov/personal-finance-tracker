@@ -99,7 +99,9 @@ describe('useImport', () => {
       const { result } = renderHook(() => useImport('Free', 0));
 
       await loadFile(result);
-      expect(result.current.preparedGoals.length).toBe(1);
+      await waitFor(() => {
+        expect(result.current.preparedGoals.length).toBe(1);
+      });
 
       await act(async () => {
         result.current.handleFileChange(null);
