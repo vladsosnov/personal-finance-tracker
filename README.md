@@ -190,7 +190,6 @@ The GitHub Actions pipeline runs on every push and PR to `main`:
 1. **Backend** -- type check, lint, unit tests
 2. **Frontend** -- type check, lint, unit tests, build
 3. **E2E** -- Cypress tests (non-blocking)
-4. **Deploy** -- Vercel deployment (on push to `main`)
 
 The backend is deployed to Render at `https://personal-finance-tracker-7r75.onrender.com`.
 
@@ -205,6 +204,9 @@ The backend is deployed to Render at `https://personal-finance-tracker-7r75.onre
 
 - [`backend/README.md`](backend/README.md) -- backend architecture and API details
 - [`frontend/README.md`](frontend/README.md) -- frontend architecture and component structure
+- [`CONTRIBUTING.md`](CONTRIBUTING.md) -- contribution workflow and expectations
+- [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md) -- community participation standards
+- [`SECURITY.md`](SECURITY.md) -- private vulnerability reporting guidance
 
 ## License
 
