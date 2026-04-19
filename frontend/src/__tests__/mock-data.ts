@@ -13,6 +13,7 @@ export const mockGoal: Goal = {
   sortOrder: 0,
   progress: 50,
   createdAt: '2024-01-01T00:00:00.000Z',
+  operations: [],
 };
 
 export const mockCompletedGoal: Goal = {
@@ -28,6 +29,7 @@ export const mockCompletedGoal: Goal = {
   progress: 100,
   completedAt: '2024-01-15T00:00:00.000Z',
   createdAt: '2024-01-01T00:00:00.000Z',
+  operations: [],
 };
 
 export const mockGoals: Goal[] = [mockGoal, mockCompletedGoal];

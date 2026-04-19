@@ -4,7 +4,7 @@ import { render } from '@/__tests__/test-utils';
 import { useMediaQuery } from '@mantine/hooks';
 import { DashboardClient } from '../dashboard-client';
 import { GET_ME } from '@/shared/gql/queries';
-import { GET_GOALS } from '@/features/dashboard/gql/dashboard';
+import { GET_GOALS, GET_GOAL_DETAILS } from '@/features/dashboard/gql/dashboard';
 import { GET_EXCHANGE_RATES } from '@/features/profile/gql/currency';
 import type { MockedResponse } from '@apollo/client/testing';
 import { mockGoal, mockCompletedGoal } from '@/__tests__/mock-data';
@@ -90,6 +90,31 @@ const goalsMock: MockedResponse = {
   },
 };
 
+const goalDetailsMock: MockedResponse = {
+  request: { query: GET_GOAL_DETAILS, variables: { id: '1' } },
+  result: {
+    data: {
+      goal: {
+        ...mockGoal,
+        operations: [
+          {
+            __typename: 'GoalOperation',
+            id: 'op1',
+            type: 'INCREASE',
+            amount: 500,
+            currency: 'USD',
+            convertedAmount: 500,
+            note: null,
+            operationDate: '2024-01-15',
+            createdAt: '2024-01-15T10:00:00Z',
+          },
+        ],
+        __typename: 'Goal',
+      },
+    },
+  },
+};
+
 const emptyGoalsMock: MockedResponse = {
   request: { query: GET_GOALS },
   result: { data: { goals: [] } },
@@ -161,7 +186,7 @@ describe('DashboardClient', () => {
   });
 
   it('renders overview stats section', async () => {
-    render(<DashboardClient />, { mocks: [meMock, goalsMock, ratesMock] });
+    render(<DashboardClient />, { mocks: [meMock, goalsMock, goalDetailsMock, goalDetailsMock, ratesMock] });
 
     expect(await screen.findByText('Total target')).toBeInTheDocument();
     expect(screen.getByText('Total current')).toBeInTheDocument();
@@ -185,13 +210,29 @@ describe('DashboardClient', () => {
   it('renders goals when loaded', async () => {
     render(<DashboardClient />, { mocks: [meMock, goalsMock, ratesMock] });
 
-    expect(await screen.findByText(mockGoal.title)).toBeInTheDocument();
+    expect(await screen.findAllByText(mockGoal.title)).toHaveLength(2);
   });
 
-  it('renders goal details panel placeholder on desktop', async () => {
+  it('renders preview tabs in the details panel on desktop', async () => {
     render(<DashboardClient />, { mocks: [meMock, goalsMock, ratesMock] });
 
-    expect(await screen.findByText('Select a goal')).toBeInTheDocument();
+    expect(await screen.findByRole('tab', { name: /active/i })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByRole('tab', { name: /all/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /open emergency fund details/i })).toBeInTheDocument();
+    expect(screen.queryByText('Vacation Fund')).not.toBeInTheDocument();
+  });
+
+  it('returns to preview tabs after closing a selected goal', async () => {
+    const user = userEvent.setup();
+
+    render(<DashboardClient />, { mocks: [meMock, goalsMock, goalDetailsMock, goalDetailsMock, ratesMock] });
+
+    await user.click(await screen.findByRole('button', { name: /open emergency fund details/i }));
+    expect(await screen.findByLabelText(/close goal details/i)).toBeInTheDocument();
+
+    await user.click(screen.getByLabelText(/close goal details/i));
+
+    expect(await screen.findByRole('tab', { name: /active/i })).toHaveAttribute('aria-selected', 'true');
   });
 
   it('renders mobile layout with "Create a goal" button', async () => {
@@ -208,7 +249,7 @@ describe('DashboardClient', () => {
     render(<DashboardClient />, { mocks: [meMock, multiCurrencyGoalsMock, ratesWithEurMock] });
 
     // Wait for goals and rates to load
-    expect(await screen.findByText('Euro Goal')).toBeInTheDocument();
+    expect(await screen.findAllByText('Euro Goal')).toHaveLength(2);
 
     // Stats should render (conversion happened via rates)
     expect(screen.getByText('Total target')).toBeInTheDocument();
@@ -218,7 +259,7 @@ describe('DashboardClient', () => {
   it('handles invalid rates JSON gracefully', async () => {
     render(<DashboardClient />, { mocks: [meMock, multiCurrencyGoalsMock, invalidRatesMock] });
 
-    expect(await screen.findByText('Euro Goal')).toBeInTheDocument();
+    expect(await screen.findAllByText('Euro Goal')).toHaveLength(2);
     // Should still render stats (falls back to empty rates = no conversion)
     expect(screen.getByText('Total target')).toBeInTheDocument();
   });
@@ -226,7 +267,7 @@ describe('DashboardClient', () => {
   it('excludes zero-target goals from overview totals and progress', async () => {
     render(<DashboardClient />, { mocks: [meMock, goalsWithZeroTargetMock, ratesMock] });
 
-    expect(await screen.findByText('Open Balance')).toBeInTheDocument();
+    expect(await screen.findAllByText('Open Balance')).toHaveLength(2);
 
     await waitFor(() => {
       expect(mockDashboardOverviewStats).toHaveBeenLastCalledWith(
@@ -270,7 +311,7 @@ describe('DashboardClient', () => {
     render(<DashboardClient />, { mocks: [meMock, threeGoalsMock, ratesMock] });
 
     await waitFor(() => {
-      expect(screen.getByText('Car Fund')).toBeInTheDocument();
+      expect(screen.getAllByText('Car Fund')).toHaveLength(2);
     });
 
     // Free plan has maxGoals=3, with 3 goals the limit message should appear

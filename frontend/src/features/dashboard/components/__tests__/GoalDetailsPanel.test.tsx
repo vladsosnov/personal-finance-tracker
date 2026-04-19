@@ -4,6 +4,7 @@ import { render } from '@/__tests__/test-utils';
 import { GoalDetailsPanel, type GoalDetailsPanelProps, type GoalOperationActions } from '../goal-details-panel';
 import type { GoalDetails, GoalOperation } from '@/features/dashboard/types';
 import { useMediaQuery } from '@mantine/hooks';
+import { mockCompletedGoal, mockGoal } from '@/__tests__/mock-data';
 
 jest.mock('@mantine/hooks', () => ({
   ...jest.requireActual('@mantine/hooks'),
@@ -41,13 +42,16 @@ jest.mock('@/features/dashboard/components/GoalDetailHeader', () => ({
   GoalDetailHeader: ({
     goal,
     onExpandChart,
+    onCloseSelection,
   }: {
     goal: { title: string };
     onExpandChart: () => void;
+    onCloseSelection?: () => void;
   }) => (
     <div data-testid="goal-detail-header">
       {goal.title}
       <button data-testid="expand-chart" onClick={onExpandChart}>Expand</button>
+      {onCloseSelection && <button data-testid="close-goal-details" onClick={onCloseSelection}>Close</button>}
     </div>
   ),
 }));
@@ -123,6 +127,8 @@ const makeOperationActions = (overrides: Partial<GoalOperationActions> = {}): Go
 
 const defaultProps: GoalDetailsPanelProps = {
   hasGoals: true,
+  activeGoals: [],
+  allGoals: [],
   selectedGoal: null,
   isLoadingGoalDetails: false,
   goalCurrency: 'USD',
@@ -155,11 +161,94 @@ describe('GoalDetailsPanel', () => {
     expect(screen.getByRole('button', { name: /try again/i })).toBeInTheDocument();
   });
 
-  it('shows "Select a goal" when hasGoals but no selectedGoal', () => {
-    render(<GoalDetailsPanel {...defaultProps} hasGoals={true} selectedGoal={null} />);
+  it('shows active goal previews when goals exist but no goal is selected', () => {
+    render(
+      <GoalDetailsPanel
+        {...defaultProps}
+        hasGoals={true}
+        activeGoals={[mockGoal]}
+        allGoals={[mockGoal, mockCompletedGoal]}
+        selectedGoal={null}
+        onSelectGoal={jest.fn()}
+      />
+    );
 
-    expect(screen.getByText('Select a goal')).toBeInTheDocument();
-    expect(screen.getByText(/pick a goal from the list/i)).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: /active/i })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByRole('tab', { name: /all/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /open emergency fund details/i })).toBeInTheDocument();
+    expect(screen.queryByText('Select a goal')).not.toBeInTheDocument();
+  });
+
+  it('renders only active goals in the preview state', () => {
+    render(
+        <GoalDetailsPanel
+          {...defaultProps}
+          hasGoals={true}
+          activeGoals={[mockGoal]}
+          allGoals={[mockGoal, mockCompletedGoal]}
+          selectedGoal={null}
+          onSelectGoal={jest.fn()}
+        />
+      );
+
+    expect(screen.getByText('Emergency Fund')).toBeInTheDocument();
+    expect(screen.queryByText('Vacation Fund')).not.toBeInTheDocument();
+  });
+
+  it('shows all goals after switching preview tab', async () => {
+    const user = userEvent.setup();
+
+    render(
+      <GoalDetailsPanel
+        {...defaultProps}
+        hasGoals={true}
+        activeGoals={[mockGoal]}
+        allGoals={[mockGoal, mockCompletedGoal]}
+        selectedGoal={null}
+        onSelectGoal={jest.fn()}
+      />
+    );
+
+    await user.click(screen.getByRole('tab', { name: /all/i }));
+
+    expect(screen.getByText('Vacation Fund')).toBeInTheDocument();
+  });
+
+  it('matches the desktop preview height to the goals sidebar height', () => {
+    render(
+      <GoalDetailsPanel
+        {...defaultProps}
+        hasGoals={true}
+        activeGoals={[mockGoal]}
+        allGoals={[mockGoal, mockCompletedGoal]}
+        selectedGoal={null}
+        onSelectGoal={jest.fn()}
+      />
+    );
+
+    expect(screen.getByTestId('goal-preview-scroll-area')).toHaveStyle({
+      height: 'calc(32.5rem * var(--mantine-scale))',
+    });
+  });
+
+  it('calls onSelectGoal when a preview card is clicked', async () => {
+    const user = userEvent.setup();
+    const onSelectGoal = jest.fn();
+
+    render(
+        <GoalDetailsPanel
+          {...defaultProps}
+          hasGoals={true}
+          activeGoals={[mockGoal]}
+          allGoals={[mockGoal, mockCompletedGoal]}
+          selectedGoal={null}
+          onSelectGoal={onSelectGoal}
+        />
+      );
+
+    await user.click(screen.getByRole('button', { name: /open emergency fund details/i }));
+
+    expect(onSelectGoal).toHaveBeenCalledWith('1');
   });
 
   it('shows "No goals yet" when no goals and no selectedGoal', () => {
@@ -183,7 +272,15 @@ describe('GoalDetailsPanel', () => {
   });
 
   it('does not show create goal button when hasGoals is true', () => {
-    render(<GoalDetailsPanel {...defaultProps} hasGoals={true} selectedGoal={null} />);
+    render(
+      <GoalDetailsPanel
+        {...defaultProps}
+        hasGoals={true}
+        activeGoals={[mockGoal]}
+        allGoals={[mockGoal, mockCompletedGoal]}
+        selectedGoal={null}
+      />
+    );
 
     expect(screen.queryByRole('button', { name: /create a goal/i })).not.toBeInTheDocument();
   });
@@ -198,6 +295,25 @@ describe('GoalDetailsPanel', () => {
     expect(screen.getByText('Operations')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /add operation/i })).toBeInTheDocument();
     expect(screen.getByTestId('goal-operations-table')).toBeInTheDocument();
+  });
+
+  it('returns to previews when close action is clicked from selected goal view', async () => {
+    const user = userEvent.setup();
+    const onClearSelection = jest.fn();
+
+    render(
+      <GoalDetailsPanel
+        {...defaultProps}
+        activeGoals={[mockGoal]}
+        allGoals={[mockGoal, mockCompletedGoal]}
+        selectedGoal={mockGoalDetails}
+        onClearSelection={onClearSelection}
+      />
+    );
+
+    await user.click(screen.getByTestId('close-goal-details'));
+
+    expect(onClearSelection).toHaveBeenCalledTimes(1);
   });
 
   it('removes scrollbar offset padding on mobile', () => {

@@ -29,6 +29,7 @@ const activeGoal: Goal & { __typename: string } = {
   currentAmount: 5000,
   progress: 50,
   createdAt: '2024-01-01T00:00:00.000Z',
+  operations: [],
 };
 
 const activeGoal2: Goal & { __typename: string } = {
@@ -44,6 +45,7 @@ const activeGoal2: Goal & { __typename: string } = {
   currentAmount: 3000,
   progress: 15,
   createdAt: '2024-02-01T00:00:00.000Z',
+  operations: [],
 };
 
 const completedGoal: Goal & { __typename: string } = {
@@ -60,6 +62,7 @@ const completedGoal: Goal & { __typename: string } = {
   currentAmount: 5000,
   progress: 100,
   createdAt: '2024-01-01T00:00:00.000Z',
+  operations: [],
 };
 
 const allGoals = [activeGoal, activeGoal2, completedGoal];

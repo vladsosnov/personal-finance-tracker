@@ -80,6 +80,12 @@ describe('GoalDetailHeader', () => {
     expect(screen.getByLabelText('Expand chart')).toBeInTheDocument();
   });
 
+  it('renders close goal details button when handler is provided', () => {
+    render(<GoalDetailHeader {...defaultProps} onCloseSelection={jest.fn()} />);
+
+    expect(screen.getByLabelText('Close goal details')).toBeInTheDocument();
+  });
+
   it('calls onExpandChart when expand button clicked', async () => {
     const user = userEvent.setup();
     render(<GoalDetailHeader {...defaultProps} />);
@@ -88,6 +94,16 @@ describe('GoalDetailHeader', () => {
     await user.click(expandButton);
 
     expect(defaultProps.onExpandChart).toHaveBeenCalledTimes(1);
+  });
+
+  it('calls onCloseSelection when close button clicked', async () => {
+    const user = userEvent.setup();
+    const onCloseSelection = jest.fn();
+    render(<GoalDetailHeader {...defaultProps} onCloseSelection={onCloseSelection} />);
+
+    await user.click(screen.getByLabelText('Close goal details'));
+
+    expect(onCloseSelection).toHaveBeenCalledTimes(1);
   });
 
   it('passes chartRange to picker', () => {

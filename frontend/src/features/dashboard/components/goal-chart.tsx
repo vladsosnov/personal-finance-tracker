@@ -24,6 +24,7 @@ type GoalChartProps = {
   height?: number;
   range: "all" | "7d" | "1m" | "6m" | "12m";
   showTrend?: boolean;
+  compact?: boolean;
 };
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -122,6 +123,7 @@ export const GoalChart = ({
   height = 320,
   range,
   showTrend = false,
+  compact = false,
 }: GoalChartProps) => {
   const currencySymbol = getCurrencySymbol(currency);
   const computedColorScheme = useComputedColorScheme("light", { getInitialValueInEffect: true });
@@ -211,7 +213,7 @@ export const GoalChart = ({
   const options = useMemo<Options>(
     () => ({
       title: {
-        text: "Progress over time",
+        text: compact ? undefined : "Progress over time",
         style: {
           color: isDark ? "#E7D8C6" : "#101417",
           fontWeight: "600",
@@ -222,6 +224,7 @@ export const GoalChart = ({
         lineColor: isDark ? "rgba(62, 92, 71, 0.35)" : "rgba(16, 20, 23, 0.18)",
         tickColor: isDark ? "rgba(62, 92, 71, 0.35)" : "rgba(16, 20, 23, 0.18)",
         labels: {
+          enabled: !compact,
           style: {
             color: isDark ? "#9a8e80" : "#475569",
           },
@@ -229,13 +232,14 @@ export const GoalChart = ({
       },
       yAxis: {
         title: {
-          text: `Amount (${currencySymbol})`,
+          text: compact ? undefined : `Amount (${currencySymbol})`,
           style: {
             color: isDark ? "#9a8e80" : "#475569",
           },
         },
         gridLineColor: isDark ? "rgba(62, 92, 71, 0.2)" : "rgba(16, 20, 23, 0.08)",
         labels: {
+          enabled: !compact,
           style: {
             color: isDark ? "#9a8e80" : "#475569",
           },
@@ -249,6 +253,7 @@ export const GoalChart = ({
       },
       series,
       legend: {
+        enabled: !compact,
         itemStyle: {
           color: isDark ? "#E7D8C6" : "#101417",
         },
@@ -273,9 +278,13 @@ export const GoalChart = ({
         style: {
           fontFamily: "inherit",
         },
+        spacingTop: compact ? 8 : 16,
+        spacingRight: compact ? 8 : 16,
+        spacingBottom: compact ? 8 : 16,
+        spacingLeft: compact ? 8 : 16,
       },
     }),
-    [height, isDark, targetAmount, series, currencySymbol]
+    [compact, height, isDark, targetAmount, series, currencySymbol]
   );
 
   return <HighchartsReact highcharts={Highcharts} options={options} />;

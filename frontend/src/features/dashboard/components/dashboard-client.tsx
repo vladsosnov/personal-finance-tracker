@@ -174,9 +174,13 @@ export const DashboardClient = () => {
 
   const goalDetailsPanelProps = {
     hasGoals: goals.length > 0,
+    activeGoals,
+    allGoals: goals,
     selectedGoal,
     isLoadingGoalDetails: shouldShowGoalDetailsSkeleton,
     goalDetailsErrorMessage: selectedGoal ? null : goalDetailsError?.message ?? null,
+    onSelectGoal: actions.handleSelectGoal,
+    onClearSelection: () => setSelectedGoalId(null),
     onCreateGoal: isMobile ? () => setIsCreateModalOpen(true) : undefined,
     goalCurrency: selectedGoal?.currency ?? userCurrency,
     operationActions: {

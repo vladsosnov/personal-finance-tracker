@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { IconMaximize, IconTrendingUp } from "@tabler/icons-react";
+import { IconMaximize, IconTrendingUp, IconX } from "@tabler/icons-react";
 import { Badge, Button, Checkbox, Group, Stack, Text, Title, Tooltip } from "@mantine/core";
 import { ChartRangePicker, type ChartRange } from "@/features/dashboard/components/ChartRangePicker";
 import type { GoalDetails } from "@/features/dashboard/types";
@@ -15,6 +15,7 @@ type GoalDetailHeaderProps = {
   onChangeRange: (value: ChartRange) => void;
   onToggleTrend: () => void;
   onExpandChart: () => void;
+  onCloseSelection?: () => void;
 };
 
 export const GoalDetailHeader = ({
@@ -26,6 +27,7 @@ export const GoalDetailHeader = ({
   onChangeRange,
   onToggleTrend,
   onExpandChart,
+  onCloseSelection,
 }: GoalDetailHeaderProps) => {
   const projectedDate = useMemo(
     () => getProjectedDate(goal.operations, goal.targetAmount, goal.currentAmount, goal.isCompleted),
@@ -55,11 +57,20 @@ export const GoalDetailHeader = ({
           </Group>
         ) : null}
       </Stack>
-      <Tooltip label="Expand chart" position="left">
-        <Button variant="subtle" px={10} aria-label="Expand chart" onClick={onExpandChart}>
-          <IconMaximize size={16} stroke={2} />
-        </Button>
-      </Tooltip>
+      <Group gap={4} wrap="nowrap">
+        {onCloseSelection && (
+          <Tooltip label="Back to previews" position="left">
+            <Button variant="subtle" px={10} aria-label="Close goal details" onClick={onCloseSelection}>
+              <IconX size={16} stroke={2} />
+            </Button>
+          </Tooltip>
+        )}
+        <Tooltip label="Expand chart" position="left">
+          <Button variant="subtle" px={10} aria-label="Expand chart" onClick={onExpandChart}>
+            <IconMaximize size={16} stroke={2} />
+          </Button>
+        </Tooltip>
+      </Group>
     </Group>
     <Group gap="xs" align="center">
       {chartRange === "all" && (

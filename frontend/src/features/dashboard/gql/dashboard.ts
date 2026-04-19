@@ -41,9 +41,13 @@ export const EXPORT_ALL_DATA = gql`
 
 export const GET_GOALS = gql`
   ${GOAL_FIELDS}
+  ${GOAL_OPERATION_FIELDS}
   query Goals {
     goals {
       ...GoalFields
+      operations {
+        ...GoalOperationFields
+      }
     }
   }
 `;

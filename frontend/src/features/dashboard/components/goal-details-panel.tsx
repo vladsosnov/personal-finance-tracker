@@ -1,13 +1,14 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import { IconChartLine, IconPlus, IconTarget } from "@tabler/icons-react";
 import { useMediaQuery } from "@mantine/hooks";
-import { Button, Card, Checkbox, Group, Modal, ScrollArea, Skeleton, Stack, Text, ThemeIcon, Title, Tooltip } from "@mantine/core";
+import { Button, Card, Checkbox, Group, Modal, ScrollArea, Skeleton, Stack, Tabs, Text, ThemeIcon, Title, Tooltip } from "@mantine/core";
 import { ChartRangePicker, type ChartRange } from "@/features/dashboard/components/ChartRangePicker";
 import { GoalDetailHeader } from "@/features/dashboard/components/GoalDetailHeader";
 import { GoalOperationsTable } from "@/features/dashboard/components/GoalOperationsTable";
+import { GoalPreviewCard } from "@/features/dashboard/components/GoalPreviewCard";
 import type { useOperationForm } from "@/features/dashboard/hooks/useOperationForm";
-import type { GoalDetails, GoalOperation } from "@/features/dashboard/types";
+import type { Goal, GoalDetails, GoalOperation } from "@/features/dashboard/types";
 import { StateMessage } from "@/shared/components/state-message";
 
 // Lazy load chart and modals to reduce initial bundle size
@@ -38,11 +39,15 @@ export type GoalOperationActions = {
 
 export type GoalDetailsPanelProps = {
   hasGoals: boolean;
+  activeGoals: Goal[];
+  allGoals: Goal[];
   selectedGoal: GoalDetails | null;
   isLoadingGoalDetails: boolean;
   goalDetailsErrorMessage?: string | null;
   goalCurrency: string;
   operationActions: GoalOperationActions;
+  onSelectGoal?: (goalId: string) => void;
+  onClearSelection?: () => void;
   onRetryGoalDetails?: () => void;
   onCreateGoal?: () => void;
   scrollHeight?: number;
@@ -50,11 +55,15 @@ export type GoalDetailsPanelProps = {
 
 export const GoalDetailsPanel = ({
   hasGoals,
+  activeGoals,
+  allGoals,
   selectedGoal,
   isLoadingGoalDetails,
   goalDetailsErrorMessage,
   goalCurrency,
   operationActions,
+  onSelectGoal,
+  onClearSelection,
   onRetryGoalDetails,
   onCreateGoal,
   scrollHeight,
@@ -67,9 +76,15 @@ export const GoalDetailsPanel = ({
   const [chartRange, setChartRange] = useState<ChartRange>("all");
   const [showTrend, setShowTrend] = useState(false);
   const [pendingDeleteOperation, setPendingDeleteOperation] = useState<GoalOperation | null>(null);
+  const [previewTab, setPreviewTab] = useState<"active" | "all">("active");
 
   const { form, deletingOperationId, isUpdatingProgress, isSubmitDisabled, onStartEdit, onDelete, onSubmit } =
     operationActions;
+  const previewScrollHeight = isMobile ? 360 : 520;
+  const previewGoals = useMemo(
+    () => (previewTab === "all" ? allGoals : activeGoals),
+    [allGoals, activeGoals, previewTab]
+  );
 
   const handleOpenAddOperation = () => {
     form.reset(goalCurrency);
@@ -114,24 +129,73 @@ export const GoalDetailsPanel = ({
           onAction={onRetryGoalDetails}
         />
       ) : !selectedGoal ? (
-        <Stack gap="md" align="center" justify="center" ta="center" py="xl">
-          <ThemeIcon size={56} radius="xl" variant="light" color="teal">
-            {hasGoals ? <IconChartLine size={28} /> : <IconTarget size={28} />}
-          </ThemeIcon>
-          <div>
-            <Title order={5}>{hasGoals ? "Select a goal" : "No goals yet"}</Title>
-            <Text c="dimmed" size="sm" mt={4}>
-              {hasGoals
-                ? "Pick a goal from the list to view its chart and operations."
-                : "Create your first goal to start tracking your progress."}
-            </Text>
-          </div>
-          {!hasGoals && onCreateGoal && (
-            <Button leftSection={<IconPlus size={16} />} variant="light" color="teal" size="sm" onClick={onCreateGoal}>
-              Create a goal
-            </Button>
-          )}
-        </Stack>
+        activeGoals.length > 0 && onSelectGoal ? (
+          <Stack gap="md">
+            <div>
+              <Title order={4}>Goal previews</Title>
+              <Text c="dimmed" size="sm" mt={4}>
+                Switch between active goals or all goals, then pick a preview to open its full chart and operations.
+              </Text>
+            </div>
+
+            <Tabs value={previewTab} onChange={(value) => setPreviewTab((value as "active" | "all") ?? "active")}>
+              <Tabs.List>
+                <Tabs.Tab value="active">Active</Tabs.Tab>
+                <Tabs.Tab value="all">All</Tabs.Tab>
+              </Tabs.List>
+            </Tabs>
+
+            <ScrollArea
+              h={previewScrollHeight}
+              offsetScrollbars={!isMobile}
+              scrollbarSize={8}
+              data-testid="goal-preview-scroll-area"
+            >
+              <Stack gap="sm" pr={isMobile ? 0 : 4}>
+                {previewGoals.map((goal) => (
+                  <GoalPreviewCard
+                    key={goal.id}
+                    goal={goal}
+                    onSelect={onSelectGoal}
+                    chart={
+                      <GoalChart
+                        operations={goal.operations ?? []}
+                        color={goal.color}
+                        currency={goal.currency}
+                        targetAmount={goal.targetAmount}
+                        initialAmount={goal.initialAmount}
+                        currentAmount={goal.currentAmount}
+                        isCompleted={goal.isCompleted}
+                        range="all"
+                        height={180}
+                        compact
+                      />
+                    }
+                  />
+                ))}
+              </Stack>
+            </ScrollArea>
+          </Stack>
+        ) : (
+          <Stack gap="md" align="center" justify="center" ta="center" py="xl">
+            <ThemeIcon size={56} radius="xl" variant="light" color="teal">
+              {hasGoals ? <IconChartLine size={28} /> : <IconTarget size={28} />}
+            </ThemeIcon>
+            <div>
+              <Title order={5}>{hasGoals ? "Select a goal" : "No goals yet"}</Title>
+              <Text c="dimmed" size="sm" mt={4}>
+                {hasGoals
+                  ? "Pick a goal from the list to view its chart and operations."
+                  : "Create your first goal to start tracking your progress."}
+              </Text>
+            </div>
+            {!hasGoals && onCreateGoal && (
+              <Button leftSection={<IconPlus size={16} />} variant="light" color="teal" size="sm" onClick={onCreateGoal}>
+                Create a goal
+              </Button>
+            )}
+          </Stack>
+        )
       ) : (
         <ScrollArea
           h={scrollHeight}
@@ -149,6 +213,7 @@ export const GoalDetailsPanel = ({
               onChangeRange={(value) => { setChartRange(value); setIsRangePickerOpen(false); }}
               onToggleTrend={() => setShowTrend((v) => !v)}
               onExpandChart={() => setIsChartModalOpen(true)}
+              onCloseSelection={onClearSelection}
             />
 
             <GoalChart

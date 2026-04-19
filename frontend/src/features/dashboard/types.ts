@@ -13,6 +13,7 @@ export type Goal = {
   currentAmount: number;
   progress: number;
   createdAt: string;
+  operations?: GoalOperation[];
 };
 
 export type GoalOperation = {

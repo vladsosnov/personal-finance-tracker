@@ -23,6 +23,8 @@ const basePanelProps: GoalDetailsPanelProps = {
   hasGoals: true,
   selectedGoal: mockGoalDetails,
   isLoadingGoalDetails: false,
+  activeGoals: [],
+  allGoals: [],
   goalDetailsErrorMessage: null,
   goalCurrency: 'USD',
   operationActions: {
@@ -92,28 +94,6 @@ describe('GoalDetailsDrawer', () => {
     render(<GoalDetailsDrawer {...defaultProps} />);
 
     expect(screen.getByText('Emergency Fund')).toBeInTheDocument();
-  });
-
-  it('renders the empty state when no goal is selected', () => {
-    render(
-      <GoalDetailsDrawer
-        {...defaultProps}
-        panelProps={{ ...basePanelProps, selectedGoal: null }}
-      />
-    );
-
-    expect(screen.getByText(/select a goal/i)).toBeInTheDocument();
-  });
-
-  it('renders the no-goals empty state when hasGoals is false', () => {
-    render(
-      <GoalDetailsDrawer
-        {...defaultProps}
-        panelProps={{ ...basePanelProps, hasGoals: false, selectedGoal: null }}
-      />
-    );
-
-    expect(screen.getByText(/no goals yet/i)).toBeInTheDocument();
   });
 
   it('renders the loading skeleton when isLoadingGoalDetails is true', () => {
