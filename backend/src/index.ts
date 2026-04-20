@@ -15,6 +15,7 @@ import { createCsrfProtection } from "./utils/csrf";
 import { parseCookies } from "./utils/parse-cookies";
 import { countQueryDepth } from "./utils/query-depth";
 import { createRateLimit } from "./utils/rate-limit";
+import { requestIdMiddleware } from "./utils/request-id";
 
 dotenv.config();
 
@@ -31,6 +32,19 @@ const frontendOrigin = process.env.FRONTEND_ORIGIN ?? "http://localhost:3000";
 app.use(
   helmet({
     crossOriginResourcePolicy: { policy: "cross-origin" },
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'", "'unsafe-inline'", "https://accounts.google.com"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        imgSrc: ["'self'", "data:", "https:"],
+        connectSrc: ["'self'", frontendOrigin],
+        frameSrc: ["'none'"],
+        objectSrc: ["'none'"],
+        baseUri: ["'self'"],
+      },
+    },
+    referrerPolicy: { policy: "strict-origin-when-cross-origin" },
   })
 );
 app.use(
@@ -46,6 +60,7 @@ app.use(
   })
 );
 app.use(express.json({ limit: "100kb" }));
+app.use(requestIdMiddleware);
 app.use(createCsrfProtection(frontendOrigin));
 
 // Request logging
@@ -53,7 +68,7 @@ app.use((req, res, next) => {
   const start = Date.now();
   res.on("finish", () => {
     const duration = Date.now() - start;
-    const log = `${req.method} ${req.path} ${res.statusCode} ${duration}ms`;
+    const log = `[${req.requestId}] ${req.method} ${req.path} ${res.statusCode} ${duration}ms`;
     if (res.statusCode >= 500) {
       console.error(log);
     } else if (res.statusCode >= 400) {

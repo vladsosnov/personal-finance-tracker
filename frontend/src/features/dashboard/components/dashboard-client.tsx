@@ -224,10 +224,9 @@ export const DashboardClient = () => {
   return (
     <PageContainer>
       <Stack gap="lg" className={anim.pageEnter}>
-        {/* Email verification banner hidden until email sending is configured
         {meData?.me && !meData.me.emailVerified && (
           <EmailVerificationBanner emailVerified={false} />
-        )} */}
+        )}
 
         <DashboardOverviewStats totalTarget={totalTarget} totalCurrent={totalCurrent} currency={userCurrency} />
 

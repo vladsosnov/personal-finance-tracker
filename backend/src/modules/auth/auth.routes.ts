@@ -14,6 +14,7 @@ import {
   verifyRefreshJwt,
 } from "./auth";
 import { sendPasswordResetEmail, sendVerificationEmail } from "./email";
+import { isAccountLocked, recordFailedAttempt, clearAttempts } from "./login-attempts";
 import { createRateLimit } from "../../utils/rate-limit";
 import { parseCookies } from "../../utils/parse-cookies";
 import { emailRegex } from "../../utils/validation";
@@ -199,12 +200,19 @@ export const createAuthRouter = (config: AuthRoutesConfig): Router => {
         return;
       }
 
+      if (isAccountLocked(email)) {
+        res.status(429).json({ error: "Too many failed attempts. Please try again in 15 minutes." });
+        return;
+      }
+
       const user = await findUserByEmail(email);
       if (!user || !user.passwordHash || !verifyPassword(password, user.passwordHash, user.passwordSalt)) {
+        recordFailedAttempt(email);
         res.status(401).json({ error: "Invalid credentials" });
         return;
       }
 
+      clearAttempts(email);
       setAuthCookies(res, user.id, user.tokenVersion);
       recordEvent("login_success", user.id).catch(() => {});
       res.json({ user: { id: user.id, email: user.email, subscription: user.subscription }, ...signAuthTokens(user.id, user.tokenVersion) });

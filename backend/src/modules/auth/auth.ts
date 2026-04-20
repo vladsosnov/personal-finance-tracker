@@ -9,11 +9,13 @@ type JwtPayload = {
 
 const JWT_SECRET = (() => {
   const secret = process.env.JWT_SECRET;
-  if (process.env.NODE_ENV === "production") {
-    if (!secret) throw new Error("JWT_SECRET is required in production");
-    if (secret.length < 32) throw new Error("JWT_SECRET must be at least 32 characters in production");
+  if (!secret) {
+    throw new Error("JWT_SECRET environment variable is required. Generate one with: openssl rand -base64 32");
   }
-  return secret ?? "local-dev-jwt-secret";
+  if (secret.length < 32) {
+    throw new Error("JWT_SECRET must be at least 32 characters");
+  }
+  return secret;
 })();
 const PASSWORD_ITERATIONS = 100_000;
 const ACCESS_TOKEN_TTL_SEC = 60 * 15;
