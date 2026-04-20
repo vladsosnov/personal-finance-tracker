@@ -141,6 +141,7 @@ export const useDashboardActions = ({
       setDeletingGoalId(null);
       setDeletingGoalTitle(null);
       operationForm.reset();
+      showToast("Goal deleted", "red");
     } finally {
       setIsDeletingGoal(false);
     }
