@@ -1,8 +1,8 @@
 import { useMemo, useState } from "react";
 import dynamic from "next/dynamic";
-import { IconChartLine, IconPlus, IconTarget } from "@tabler/icons-react";
+import { IconChartLine, IconLayoutGrid, IconList, IconPlus, IconTarget } from "@tabler/icons-react";
 import { useMediaQuery } from "@mantine/hooks";
-import { Button, Card, Checkbox, Group, Modal, ScrollArea, Skeleton, Stack, Tabs, Text, ThemeIcon, Title, Tooltip } from "@mantine/core";
+import { ActionIcon, Button, Card, Checkbox, Group, Modal, ScrollArea, Skeleton, Stack, Tabs, Text, ThemeIcon, Title, Tooltip } from "@mantine/core";
 import { ChartRangePicker, type ChartRange } from "@/features/dashboard/components/ChartRangePicker";
 import { GoalDetailHeader } from "@/features/dashboard/components/GoalDetailHeader";
 import { GoalOperationsTable } from "@/features/dashboard/components/GoalOperationsTable";
@@ -77,6 +77,7 @@ export const GoalDetailsPanel = ({
   const [showTrend, setShowTrend] = useState(false);
   const [pendingDeleteOperation, setPendingDeleteOperation] = useState<GoalOperation | null>(null);
   const [previewTab, setPreviewTab] = useState<"active" | "all">("active");
+  const [previewLayout, setPreviewLayout] = useState<"grid" | "list">("grid");
 
   const { form, deletingOperationId, isUpdatingProgress, isSubmitDisabled, onStartEdit, onDelete, onSubmit } =
     operationActions;
@@ -131,12 +132,38 @@ export const GoalDetailsPanel = ({
       ) : !selectedGoal ? (
         activeGoals.length > 0 && onSelectGoal ? (
           <Stack gap="md">
-            <div>
-              <Title order={4}>Goal previews</Title>
-              <Text c="dimmed" size="sm" mt={4}>
-                Switch between active goals or all goals, then pick a preview to open its full chart and operations.
-              </Text>
-            </div>
+            <Group justify="space-between" align="flex-start" wrap="nowrap">
+              <div>
+                <Title order={4}>Goal previews</Title>
+                <Text c="dimmed" size="sm" mt={4}>
+                  Switch between active goals or all goals, then pick a preview to open its full chart and operations.
+                </Text>
+              </div>
+              <Group gap={6} wrap="nowrap">
+                <Tooltip label="Card view">
+                  <ActionIcon
+                    variant={previewLayout === "grid" ? "filled" : "subtle"}
+                    color={previewLayout === "grid" ? "teal" : "gray"}
+                    aria-label="Card view"
+                    aria-pressed={previewLayout === "grid"}
+                    onClick={() => setPreviewLayout("grid")}
+                  >
+                    <IconLayoutGrid size={18} />
+                  </ActionIcon>
+                </Tooltip>
+                <Tooltip label="List view">
+                  <ActionIcon
+                    variant={previewLayout === "list" ? "filled" : "subtle"}
+                    color={previewLayout === "list" ? "teal" : "gray"}
+                    aria-label="List view"
+                    aria-pressed={previewLayout === "list"}
+                    onClick={() => setPreviewLayout("list")}
+                  >
+                    <IconList size={18} />
+                  </ActionIcon>
+                </Tooltip>
+              </Group>
+            </Group>
 
             <Tabs value={previewTab} onChange={(value) => setPreviewTab((value as "active" | "all") ?? "active")}>
               <Tabs.List>
@@ -156,7 +183,8 @@ export const GoalDetailsPanel = ({
                 style={{
                   display: "grid",
                   gap: "var(--mantine-spacing-sm)",
-                  gridTemplateColumns: isMobile ? "1fr" : "repeat(2, minmax(0, 1fr))",
+                  gridTemplateColumns:
+                    isMobile || previewLayout === "list" ? "1fr" : "repeat(2, minmax(0, 1fr))",
                   paddingRight: isMobile ? 0 : "calc(0.25rem * var(--mantine-scale))",
                 }}
               >

@@ -175,6 +175,8 @@ describe('GoalDetailsPanel', () => {
 
     expect(screen.getByRole('tab', { name: /active/i })).toHaveAttribute('aria-selected', 'true');
     expect(screen.getByRole('tab', { name: /all/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /card view/i })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: /list view/i })).toHaveAttribute('aria-pressed', 'false');
     expect(screen.getByRole('button', { name: /open emergency fund details/i })).toBeInTheDocument();
     expect(screen.getByTestId('goal-previews-grid')).toHaveStyle({ gridTemplateColumns: 'repeat(2, minmax(0, 1fr))' });
     expect(screen.queryByText('Select a goal')).not.toBeInTheDocument();
@@ -246,6 +248,27 @@ describe('GoalDetailsPanel', () => {
       />
     );
 
+    expect(screen.getByTestId('goal-previews-grid')).toHaveStyle({ gridTemplateColumns: '1fr' });
+  });
+
+  it('switches goal previews to list view from the header toggle', async () => {
+    const user = userEvent.setup();
+
+    render(
+      <GoalDetailsPanel
+        {...defaultProps}
+        hasGoals={true}
+        activeGoals={[mockGoal]}
+        allGoals={[mockGoal, mockCompletedGoal]}
+        selectedGoal={null}
+        onSelectGoal={jest.fn()}
+      />
+    );
+
+    await user.click(screen.getByRole('button', { name: /list view/i }));
+
+    expect(screen.getByRole('button', { name: /card view/i })).toHaveAttribute('aria-pressed', 'false');
+    expect(screen.getByRole('button', { name: /list view/i })).toHaveAttribute('aria-pressed', 'true');
     expect(screen.getByTestId('goal-previews-grid')).toHaveStyle({ gridTemplateColumns: '1fr' });
   });
 
