@@ -499,4 +499,61 @@ describe('useDataManagement', () => {
       });
     });
   });
+
+  describe('change password', () => {
+    it('changes password successfully', async () => {
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ ok: true }),
+      });
+
+      const mockList: MockedResponse[] = [
+        { request: { query: GET_ME }, result: { data: mockMeData } },
+        { request: { query: GET_GOALS }, result: { data: { goals: [] } } },
+      ];
+
+      const { result } = renderHook(() => useDataManagement(), {
+        wrapper: createWrapper(mockList),
+      });
+
+      await act(async () => {
+        await result.current.handleChangePassword('currentpass', 'newpassword123');
+      });
+
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringContaining('/auth/change-password'),
+        expect.objectContaining({
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ currentPassword: 'currentpass', newPassword: 'newpassword123' }),
+        })
+      );
+      expect(showToast).toHaveBeenCalledWith('Password updated.', 'teal');
+    });
+
+    it('shows an error toast when change password fails', async () => {
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: false,
+        json: async () => ({ error: 'Current password is incorrect' }),
+      });
+
+      const mockList: MockedResponse[] = [
+        { request: { query: GET_ME }, result: { data: mockMeData } },
+        { request: { query: GET_GOALS }, result: { data: { goals: [] } } },
+      ];
+
+      const { result } = renderHook(() => useDataManagement(), {
+        wrapper: createWrapper(mockList),
+      });
+
+      await act(async () => {
+        await result.current.handleChangePassword('wrongpass', 'newpassword123');
+      });
+
+      await waitFor(() => {
+        expect(showToast).toHaveBeenCalledWith('Current password is incorrect', 'red');
+      });
+    });
+  });
 });

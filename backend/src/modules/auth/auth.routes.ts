@@ -32,6 +32,7 @@ import {
   resetPassword,
   setEmailVerificationToken,
   setPasswordResetToken,
+  updatePasswordByUserId,
   verifyEmail,
 } from "./user.repository";
 
@@ -346,6 +347,55 @@ export const createAuthRouter = (config: AuthRoutesConfig): Router => {
       res.json({ ok: true });
     } catch {
       res.status(500).json({ error: "Password reset failed" });
+    }
+  });
+
+  router.post("/change-password", createRateLimit("auth-change-password", 10, 15 * 60 * 1000), async (req, res) => {
+    try {
+      const cookies = parseCookies(req.headers.cookie);
+      const authHeader = req.headers.authorization;
+      const bearerToken = authHeader?.startsWith("Bearer ") ? authHeader.slice("Bearer ".length) : undefined;
+      const tokenResult = verifyJwt(bearerToken ?? cookies[AUTH_ACCESS_COOKIE]);
+
+      if (!tokenResult) {
+        res.status(401).json({ error: "Unauthorized" });
+        return;
+      }
+
+      const user = await findUserById(tokenResult.userId);
+      if (!user || user.tokenVersion !== tokenResult.tokenVersion) {
+        res.status(401).json({ error: "Unauthorized" });
+        return;
+      }
+
+      const currentPassword = typeof req.body?.currentPassword === "string" ? req.body.currentPassword : "";
+      const newPassword = typeof req.body?.newPassword === "string" ? req.body.newPassword : "";
+
+      if (!currentPassword) {
+        res.status(400).json({ error: "Current password is required" });
+        return;
+      }
+
+      if (newPassword.length < 8 || newPassword.length > 128) {
+        res.status(400).json({ error: "Password must be between 8 and 128 characters" });
+        return;
+      }
+
+      if (!user.passwordHash || !verifyPassword(currentPassword, user.passwordHash, user.passwordSalt)) {
+        res.status(401).json({ error: "Current password is incorrect" });
+        return;
+      }
+
+      const { hash, salt } = hashPassword(newPassword);
+      const updated = await updatePasswordByUserId(user.id, hash, salt);
+      if (!updated) {
+        res.status(404).json({ error: "User not found" });
+        return;
+      }
+
+      res.json({ ok: true });
+    } catch {
+      res.status(500).json({ error: "Failed to update password" });
     }
   });
 

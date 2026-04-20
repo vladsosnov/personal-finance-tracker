@@ -40,6 +40,10 @@ jest.mock('@/features/profile/components/CustomColorsCard', () => ({
   CustomColorsCard: () => <div data-testid="custom-colors-card">Custom Colors</div>,
 }));
 
+jest.mock('@/features/profile/components/ChangePasswordCard', () => ({
+  ChangePasswordCard: () => <div data-testid="change-password-card">Change Password</div>,
+}));
+
 const meMock: MockedResponse = {
   request: { query: GET_ME },
   result: {
@@ -96,6 +100,12 @@ describe('ProfileClient', () => {
     render(<ProfileClient />, { mocks: [meMock, goalsMock] });
 
     expect(await screen.findByTestId('currency-card')).toBeInTheDocument();
+  });
+
+  it('renders change password card', async () => {
+    render(<ProfileClient />, { mocks: [meMock, goalsMock] });
+
+    expect(await screen.findByTestId('change-password-card')).toBeInTheDocument();
   });
 
   it('shows billing return feedback after checkout redirect', async () => {

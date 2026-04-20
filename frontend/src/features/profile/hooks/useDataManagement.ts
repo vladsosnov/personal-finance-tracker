@@ -31,6 +31,7 @@ export const useDataManagement = () => {
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
   const [isDeleteAccountModalOpen, setIsDeleteAccountModalOpen] = useState(false);
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [activeCheckoutPlan, setActiveCheckoutPlan] = useState<"PRO" | "LIFETIME" | null>(null);
 
   const { data: meData, loading: isLoadingMe, error: meError, refetch: refetchMe } =
@@ -93,6 +94,27 @@ export const useDataManagement = () => {
     }
   };
 
+  const handleChangePassword = async (currentPassword: string, newPassword: string) => {
+    setIsChangingPassword(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/change-password`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ currentPassword, newPassword }),
+      });
+      if (!response.ok) {
+        const payload = (await response.json().catch(() => null)) as { error?: string } | null;
+        throw new Error(payload?.error ?? "Failed to update password");
+      }
+      showToast("Password updated.", "teal");
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : "Failed to update password", "red");
+    } finally {
+      setIsChangingPassword(false);
+    }
+  };
+
   const handleStartCheckout = async (plan: "PRO" | "LIFETIME") => {
     trackEvent(plan === "PRO" ? "billing_checkout_pro" : "billing_checkout_lifetime");
     setActiveCheckoutPlan(plan);
@@ -145,6 +167,8 @@ export const useDataManagement = () => {
     activeCheckoutPlan,
     handleStartCheckout,
     handleManageBilling,
+    isChangingPassword,
+    handleChangePassword,
     // goals meta
     goalsData,
     isLoadingGoals,

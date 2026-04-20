@@ -279,3 +279,16 @@ export const updatePrimaryCurrency = async (userId: string, currency: string): P
   ).lean();
   return user ? toUser(user as unknown as UserDoc) : null;
 };
+
+export const updatePasswordByUserId = async (
+  userId: string,
+  passwordHash: string,
+  passwordSalt: string
+): Promise<User | null> => {
+  const user = await UserModel.findByIdAndUpdate(
+    userId,
+    { $set: { passwordHash, passwordSalt } },
+    { new: true }
+  ).lean();
+  return user ? toUser(user as unknown as UserDoc) : null;
+};

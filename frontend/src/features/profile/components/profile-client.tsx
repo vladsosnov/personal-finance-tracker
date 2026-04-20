@@ -12,6 +12,7 @@ import { SubscriptionCard } from "@/features/profile/components/SubscriptionCard
 import { ThemeCard } from "@/features/profile/components/ThemeCard";
 import { CurrencyCard } from "@/features/profile/components/CurrencyCard";
 import { CustomColorsCard } from "@/features/profile/components/CustomColorsCard";
+import { ChangePasswordCard } from "@/features/profile/components/ChangePasswordCard";
 import { DeleteAccountModal } from "@/features/profile/components/modals/DeleteAccountModal";
 import { ResetDataModal } from "@/features/profile/components/modals/ResetDataModal";
 import { useDataManagement } from "@/features/profile/hooks/useDataManagement";
@@ -93,6 +94,13 @@ export const ProfileClient = () => {
 
         <div className={anim.stagger5}>
           <CustomColorsCard />
+        </div>
+
+        <div className={anim.stagger6}>
+          <ChangePasswordCard
+            isLoading={dm.isChangingPassword}
+            onSubmit={dm.handleChangePassword}
+          />
         </div>
 
         <div className={anim.stagger6}>
