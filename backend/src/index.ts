@@ -1,5 +1,7 @@
-import cors from "cors";
 import dotenv from "dotenv";
+dotenv.config();
+
+import cors from "cors";
 import express from "express";
 import { logger } from "./utils/logger";
 import helmet from "helmet";
@@ -18,8 +20,6 @@ import { countQueryDepth } from "./utils/query-depth";
 import { createRateLimit } from "./utils/rate-limit";
 import { requestIdMiddleware } from "./utils/request-id";
 import { requestTimeoutMiddleware } from "./utils/request-timeout";
-
-dotenv.config();
 
 if (!process.env.NODE_ENV) {
   logger.warn("NODE_ENV is not set. Defaulting to development behavior.");
