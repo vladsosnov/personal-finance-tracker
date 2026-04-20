@@ -5,8 +5,16 @@ type RateBucket = {
   windowStart: number;
 };
 
-// NOTE: In-memory, single-process rate limiter. Resets on restart.
-// For multi-instance deployments, replace with Redis-backed solution.
+// LIMITATION: In-memory, single-process rate limiter.
+// - Resets on every deploy/restart (attacker gets fresh window)
+// - Not shared across instances (horizontal scaling bypasses limits)
+// - Acceptable for single-instance Render deployments
+//
+// Migration path for multi-instance:
+// 1. Add ioredis dependency
+// 2. Replace Map with Redis INCR + EXPIRE (sliding window)
+// 3. Key format stays the same: `${prefix}:${ip}`
+// 4. Consider rate-limit libraries: express-rate-limit + rate-limit-redis
 const rateBuckets = new Map<string, RateBucket>();
 
 const RATE_LIMIT_CLEANUP_INTERVAL_MS = 5 * 60 * 1000;

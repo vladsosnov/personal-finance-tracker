@@ -1,6 +1,7 @@
 import cors from "cors";
 import dotenv from "dotenv";
 import express from "express";
+import { logger } from "./utils/logger";
 import helmet from "helmet";
 import { createHandler } from "graphql-http/lib/use/express";
 import mongoose from "mongoose";
@@ -16,11 +17,12 @@ import { parseCookies } from "./utils/parse-cookies";
 import { countQueryDepth } from "./utils/query-depth";
 import { createRateLimit } from "./utils/rate-limit";
 import { requestIdMiddleware } from "./utils/request-id";
+import { requestTimeoutMiddleware } from "./utils/request-timeout";
 
 dotenv.config();
 
 if (!process.env.NODE_ENV) {
-  console.warn("WARNING: NODE_ENV is not set. Defaulting to development behavior (no Secure cookies, GraphQL playground exposed).");
+  logger.warn("NODE_ENV is not set. Defaulting to development behavior.");
 }
 
 const app = express();
@@ -61,6 +63,7 @@ app.use(
 );
 app.use(express.json({ limit: "100kb" }));
 app.use(requestIdMiddleware);
+app.use(requestTimeoutMiddleware());
 app.use(createCsrfProtection(frontendOrigin));
 
 // Request logging
@@ -68,11 +71,17 @@ app.use((req, res, next) => {
   const start = Date.now();
   res.on("finish", () => {
     const duration = Date.now() - start;
-    const log = `[${req.requestId}] ${req.method} ${req.path} ${res.statusCode} ${duration}ms`;
+    const logData = {
+      requestId: req.requestId,
+      method: req.method,
+      path: req.path,
+      status: res.statusCode,
+      duration,
+    };
     if (res.statusCode >= 500) {
-      console.error(log);
+      logger.error(logData, "request error");
     } else if (res.statusCode >= 400) {
-      console.warn(log);
+      logger.warn(logData, "client error");
     }
   });
   next();
@@ -227,18 +236,44 @@ app.post(
 );
 
 // Server startup
+const connectWithRetry = async (uri: string, maxRetries = 5) => {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      await mongoose.connect(uri);
+      return;
+    } catch (err) {
+      if (attempt === maxRetries) throw err;
+      const delay = Math.min(1000 * 2 ** attempt, 30_000);
+      logger.warn({ attempt, maxRetries, delay }, "MongoDB connection failed, retrying");
+      await new Promise((resolve) => setTimeout(resolve, delay));
+    }
+  }
+};
+
 const start = async () => {
   if (!mongoUri) {
     throw new Error("MONGODB_URI is required in environment");
   }
 
-  await mongoose.connect(mongoUri);
+  mongoose.connection.on("disconnected", () => {
+    logger.warn("MongoDB disconnected");
+  });
+  mongoose.connection.on("reconnected", () => {
+    logger.info("MongoDB reconnected");
+  });
+  mongoose.connection.on("error", (err) => {
+    logger.error({ err }, "MongoDB connection error");
+  });
+
+  await connectWithRetry(mongoUri);
+  logger.info("MongoDB connected");
+
   const server = app.listen(port, () => {
-    console.log(`Backend running on http://localhost:${port}`);
+    logger.info({ port }, "Backend started");
   });
 
   const shutdown = async () => {
-    console.log("Shutting down gracefully...");
+    logger.info("Shutting down gracefully");
     server.close();
     await mongoose.disconnect();
     process.exit(0);
@@ -249,16 +284,16 @@ const start = async () => {
 };
 
 process.on("unhandledRejection", (reason) => {
-  console.error("Unhandled rejection:", reason);
+  logger.fatal({ err: reason }, "Unhandled rejection");
   process.exit(1);
 });
 
 process.on("uncaughtException", (error) => {
-  console.error("Uncaught exception:", error);
+  logger.fatal({ err: error }, "Uncaught exception");
   process.exit(1);
 });
 
 start().catch((error: unknown) => {
-  console.error("Failed to start backend:", error);
+  logger.fatal({ err: error }, "Failed to start backend");
   process.exit(1);
 });
