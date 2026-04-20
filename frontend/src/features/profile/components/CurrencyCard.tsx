@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { useMutation, useQuery } from "@apollo/client/react";
-import { Alert, Button, Card, Group, Stack, Table, Text, Title } from "@mantine/core";
+import { Alert, Button, Card, Group, ScrollArea, Stack, Table, Text, Title } from "@mantine/core";
 import { IconInfoCircle, IconRefresh } from "@tabler/icons-react";
 import { CurrencySelect } from "@/shared/components/CurrencySelect";
 import { GET_ME, type MeQueryData } from "@/shared/gql/queries";
@@ -84,22 +84,24 @@ export const CurrencyCard = () => {
                 Refresh
               </Button>
             </Group>
-            <Table striped highlightOnHover aria-label="Exchange rates">
-              <Table.Thead>
-                <Table.Tr>
-                  <Table.Th>Currency</Table.Th>
-                  <Table.Th ta="right">{`1 ${primaryCurrency} =`}</Table.Th>
-                </Table.Tr>
-              </Table.Thead>
-              <Table.Tbody>
-                {topCurrencies.map((c) => (
-                  <Table.Tr key={c.code}>
-                    <Table.Td>{c.code} ({getCurrencySymbol(c.code)})</Table.Td>
-                    <Table.Td ta="right">{rates[c.code]?.toFixed(4)}</Table.Td>
+            <ScrollArea h={150} scrollbarSize={8} data-testid="exchange-rates-scroll-area">
+              <Table striped highlightOnHover aria-label="Exchange rates">
+                <Table.Thead>
+                  <Table.Tr>
+                    <Table.Th>Currency</Table.Th>
+                    <Table.Th ta="right">{`1 ${primaryCurrency} =`}</Table.Th>
                   </Table.Tr>
-                ))}
-              </Table.Tbody>
-            </Table>
+                </Table.Thead>
+                <Table.Tbody>
+                  {topCurrencies.map((c) => (
+                    <Table.Tr key={c.code}>
+                      <Table.Td>{c.code} ({getCurrencySymbol(c.code)})</Table.Td>
+                      <Table.Td ta="right">{rates[c.code]?.toFixed(4)}</Table.Td>
+                    </Table.Tr>
+                  ))}
+                </Table.Tbody>
+              </Table>
+            </ScrollArea>
             {ratesData?.exchangeRates?.fetchedAt && (
               <Text size="xs" c="dimmed">
                 Rates updated {formatDay(ratesData.exchangeRates.fetchedAt.slice(0, 10))} via ECB. Next update available after 24 hours.

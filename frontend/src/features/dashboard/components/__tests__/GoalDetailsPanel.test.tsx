@@ -175,6 +175,7 @@ describe('GoalDetailsPanel', () => {
 
     expect(screen.getByRole('tab', { name: /active/i })).toHaveAttribute('aria-selected', 'true');
     expect(screen.getByRole('tab', { name: /all/i })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: /completed/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /card view/i })).toHaveAttribute('aria-pressed', 'true');
     expect(screen.getByRole('button', { name: /list view/i })).toHaveAttribute('aria-pressed', 'false');
     expect(screen.getByRole('button', { name: /open emergency fund details/i })).toBeInTheDocument();
@@ -217,6 +218,90 @@ describe('GoalDetailsPanel', () => {
     expect(screen.getByText('Vacation Fund')).toBeInTheDocument();
   });
 
+  it('shows only completed goals after switching to completed tab', async () => {
+    const user = userEvent.setup();
+
+    render(
+      <GoalDetailsPanel
+        {...defaultProps}
+        hasGoals={true}
+        activeGoals={[mockGoal]}
+        allGoals={[mockGoal, mockCompletedGoal]}
+        selectedGoal={null}
+        onSelectGoal={jest.fn()}
+      />
+    );
+
+    await user.click(screen.getByRole('tab', { name: /completed/i }));
+
+    expect(screen.getByText('Vacation Fund')).toBeInTheDocument();
+    expect(screen.queryByText('Emergency Fund')).not.toBeInTheDocument();
+  });
+
+  it('shows an empty state when there are no active goals', () => {
+    render(
+      <GoalDetailsPanel
+        {...defaultProps}
+        hasGoals={true}
+        activeGoals={[]}
+        allGoals={[mockCompletedGoal]}
+        selectedGoal={null}
+        onSelectGoal={jest.fn()}
+      />
+    );
+
+    expect(screen.queryByTestId('goal-previews-grid')).not.toBeInTheDocument();
+    expect(screen.getByText('No active goals')).toBeInTheDocument();
+    expect(screen.getByText(/active goals will appear here/i)).toBeInTheDocument();
+  });
+
+  it('shows an empty state when there are no goals in the all tab', async () => {
+    const user = userEvent.setup();
+
+    render(
+      <GoalDetailsPanel
+        {...defaultProps}
+        hasGoals={true}
+        activeGoals={[mockGoal]}
+        allGoals={[]}
+        selectedGoal={null}
+        onSelectGoal={jest.fn()}
+      />
+    );
+
+    await user.click(screen.getByRole('tab', { name: /all/i }));
+
+    expect(screen.queryByTestId('goal-previews-grid')).not.toBeInTheDocument();
+    expect(screen.getByText('No goal previews available')).toBeInTheDocument();
+    expect(screen.getByText(/there are no goals to preview right now/i)).toBeInTheDocument();
+  });
+
+  it('shows an empty state when there are no completed goals', async () => {
+    const user = userEvent.setup();
+
+    render(
+      <GoalDetailsPanel
+        {...defaultProps}
+        hasGoals={true}
+        activeGoals={[mockGoal]}
+        allGoals={[mockGoal]}
+        selectedGoal={null}
+        onSelectGoal={jest.fn()}
+      />
+    );
+
+    await user.click(screen.getByRole('tab', { name: /completed/i }));
+
+    expect(screen.queryByTestId('goal-previews-grid')).not.toBeInTheDocument();
+    expect(screen.getByTestId('completed-goals-empty-state')).toHaveStyle({
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+    });
+    expect(screen.getByText('No completed goals')).toBeInTheDocument();
+    expect(screen.getByText(/completed goals will appear here/i)).toBeInTheDocument();
+  });
+
   it('matches the desktop preview height to the goals sidebar height', () => {
     render(
       <GoalDetailsPanel
@@ -230,7 +315,7 @@ describe('GoalDetailsPanel', () => {
     );
 
     expect(screen.getByTestId('goal-preview-scroll-area')).toHaveStyle({
-      height: 'calc(32.5rem * var(--mantine-scale))',
+      height: 'calc(30.75rem * var(--mantine-scale))',
     });
   });
 
@@ -248,6 +333,9 @@ describe('GoalDetailsPanel', () => {
       />
     );
 
+    expect(screen.getByTestId('goal-preview-scroll-area')).toHaveStyle({
+      height: 'calc(21.25rem * var(--mantine-scale))',
+    });
     expect(screen.getByTestId('goal-previews-grid')).toHaveStyle({ gridTemplateColumns: '1fr' });
   });
 
@@ -270,6 +358,27 @@ describe('GoalDetailsPanel', () => {
     expect(screen.getByRole('button', { name: /card view/i })).toHaveAttribute('aria-pressed', 'false');
     expect(screen.getByRole('button', { name: /list view/i })).toHaveAttribute('aria-pressed', 'true');
     expect(screen.getByTestId('goal-previews-grid')).toHaveStyle({ gridTemplateColumns: '1fr' });
+  });
+
+  it('keeps the selected view button state when an empty tab is shown', async () => {
+    const user = userEvent.setup();
+
+    render(
+      <GoalDetailsPanel
+        {...defaultProps}
+        hasGoals={true}
+        activeGoals={[mockGoal]}
+        allGoals={[mockGoal]}
+        selectedGoal={null}
+        onSelectGoal={jest.fn()}
+      />
+    );
+
+    await user.click(screen.getByRole('tab', { name: /completed/i }));
+
+    expect(screen.getByRole('button', { name: /card view/i })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: /list view/i })).toHaveAttribute('aria-pressed', 'false');
+    expect(screen.queryByTestId('goal-previews-grid')).not.toBeInTheDocument();
   });
 
   it('calls onSelectGoal when a preview card is clicked', async () => {

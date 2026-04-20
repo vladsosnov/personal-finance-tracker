@@ -76,16 +76,31 @@ export const GoalDetailsPanel = ({
   const [chartRange, setChartRange] = useState<ChartRange>("all");
   const [showTrend, setShowTrend] = useState(false);
   const [pendingDeleteOperation, setPendingDeleteOperation] = useState<GoalOperation | null>(null);
-  const [previewTab, setPreviewTab] = useState<"active" | "all">("active");
+  const [previewTab, setPreviewTab] = useState<"active" | "all" | "completed">("active");
   const [previewLayout, setPreviewLayout] = useState<"grid" | "list">("grid");
 
   const { form, deletingOperationId, isUpdatingProgress, isSubmitDisabled, onStartEdit, onDelete, onSubmit } =
     operationActions;
-  const previewScrollHeight = isMobile ? 360 : 520;
+  const previewScrollHeight = isMobile ? 340 : 492;
+  const completedGoals = useMemo(() => allGoals.filter((goal) => goal.isCompleted), [allGoals]);
   const previewGoals = useMemo(
-    () => (previewTab === "all" ? allGoals : activeGoals),
-    [allGoals, activeGoals, previewTab]
+    () => (previewTab === "all" ? allGoals : previewTab === "completed" ? completedGoals : activeGoals),
+    [allGoals, activeGoals, completedGoals, previewTab]
   );
+  const previewEmptyState = previewTab === "completed"
+    ? {
+        title: "No completed goals",
+        description: "Completed goals will appear here once you finish one of your savings targets.",
+      }
+    : previewTab === "all"
+      ? {
+          title: "No goal previews available",
+          description: "There are no goals to preview right now.",
+        }
+      : {
+          title: "No active goals",
+          description: "Active goals will appear here once you add or reopen one.",
+        };
 
   const handleOpenAddOperation = () => {
     form.reset(goalCurrency);
@@ -130,7 +145,7 @@ export const GoalDetailsPanel = ({
           onAction={onRetryGoalDetails}
         />
       ) : !selectedGoal ? (
-        activeGoals.length > 0 && onSelectGoal ? (
+        hasGoals && onSelectGoal ? (
           <Stack gap="md">
             <Group justify="space-between" align="flex-start" wrap="nowrap">
               <div>
@@ -165,10 +180,14 @@ export const GoalDetailsPanel = ({
               </Group>
             </Group>
 
-            <Tabs value={previewTab} onChange={(value) => setPreviewTab((value as "active" | "all") ?? "active")}>
+            <Tabs
+              value={previewTab}
+              onChange={(value) => setPreviewTab((value as "active" | "all" | "completed") ?? "active")}
+            >
               <Tabs.List>
                 <Tabs.Tab value="active">Active</Tabs.Tab>
                 <Tabs.Tab value="all">All</Tabs.Tab>
+                <Tabs.Tab value="completed">Completed</Tabs.Tab>
               </Tabs.List>
             </Tabs>
 
@@ -178,38 +197,63 @@ export const GoalDetailsPanel = ({
               scrollbarSize={8}
               data-testid="goal-preview-scroll-area"
             >
-              <div
-                data-testid="goal-previews-grid"
-                style={{
-                  display: "grid",
-                  gap: "var(--mantine-spacing-sm)",
-                  gridTemplateColumns:
-                    isMobile || previewLayout === "list" ? "1fr" : "repeat(2, minmax(0, 1fr))",
-                  paddingRight: isMobile ? 0 : "calc(0.25rem * var(--mantine-scale))",
-                }}
-              >
-                {previewGoals.map((goal) => (
-                  <GoalPreviewCard
-                    key={goal.id}
-                    goal={goal}
-                    onSelect={onSelectGoal}
-                    chart={
-                      <GoalChart
-                        operations={goal.operations ?? []}
-                        color={goal.color}
-                        currency={goal.currency}
-                        targetAmount={goal.targetAmount}
-                        initialAmount={goal.initialAmount}
-                        currentAmount={goal.currentAmount}
-                        isCompleted={goal.isCompleted}
-                        range="all"
-                        height={180}
-                        compact
-                      />
-                    }
+              {previewGoals.length === 0 ? (
+                previewTab === "completed" ? (
+                  <div
+                    data-testid="completed-goals-empty-state"
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      minHeight: previewScrollHeight,
+                      width: "100%",
+                    }}
+                  >
+                    <StateMessage
+                      title={previewEmptyState.title}
+                      description={previewEmptyState.description}
+                    />
+                  </div>
+                ) : (
+                  <StateMessage
+                    title={previewEmptyState.title}
+                    description={previewEmptyState.description}
                   />
-                ))}
-              </div>
+                )
+              ) : (
+                <div
+                  data-testid="goal-previews-grid"
+                  style={{
+                    display: "grid",
+                    gap: "var(--mantine-spacing-sm)",
+                    gridTemplateColumns:
+                      isMobile || previewLayout === "list" ? "1fr" : "repeat(2, minmax(0, 1fr))",
+                    paddingRight: isMobile ? 0 : "calc(0.25rem * var(--mantine-scale))",
+                  }}
+                >
+                  {previewGoals.map((goal) => (
+                    <GoalPreviewCard
+                      key={goal.id}
+                      goal={goal}
+                      onSelect={onSelectGoal}
+                      chart={
+                        <GoalChart
+                          operations={goal.operations ?? []}
+                          color={goal.color}
+                          currency={goal.currency}
+                          targetAmount={goal.targetAmount}
+                          initialAmount={goal.initialAmount}
+                          currentAmount={goal.currentAmount}
+                          isCompleted={goal.isCompleted}
+                          range="all"
+                          height={180}
+                          compact
+                        />
+                      }
+                    />
+                  ))}
+                </div>
+              )}
             </ScrollArea>
           </Stack>
         ) : (

@@ -60,7 +60,10 @@ describe('CurrencyCard', () => {
     render(<CurrencyCard />, { mocks: defaultMocks });
 
     const table = await screen.findByLabelText('Exchange rates');
+    const scrollArea = screen.getByTestId('exchange-rates-scroll-area');
+
     expect(table).toBeInTheDocument();
+    expect(scrollArea).toHaveStyle({ height: 'calc(9.375rem * var(--mantine-scale))' });
     expect(screen.getByText('1 USD =')).toBeInTheDocument();
     // Check rates by their numeric values (unique to the table)
     expect(screen.getByText('0.9200')).toBeInTheDocument();
