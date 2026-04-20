@@ -64,14 +64,9 @@ export const SubscriptionCard = ({
                     ))}
                   </Table.Tbody>
                 </Table>
-                {plan.name === "Pro" && !isCurrentPlan ? (
-                  <Button fullWidth variant="light" onClick={() => onCheckout("PRO")} loading={billingState === "checkout" && activeCheckoutPlan === "PRO"}>
-                    Get Pro
-                  </Button>
-                ) : null}
-                {plan.name === "Lifetime" && !isCurrentPlan ? (
-                  <Button fullWidth onClick={() => onCheckout("LIFETIME")} loading={billingState === "checkout" && activeCheckoutPlan === "LIFETIME"}>
-                    Get Lifetime
+                {(plan.name === "Pro" || plan.name === "Lifetime") && !isCurrentPlan ? (
+                  <Button fullWidth disabled variant={plan.name === "Pro" ? "light" : "filled"}>
+                    Comming soon
                   </Button>
                 ) : null}
                 {plan.name === "Pro" && isCurrentPlan && canManageBilling ? (

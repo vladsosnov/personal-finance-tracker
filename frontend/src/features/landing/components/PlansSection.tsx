@@ -43,14 +43,20 @@ export const PlansSection = () => (
                     <List.Item key={feature}>{feature}</List.Item>
                   ))}
                 </List>
-                <Button
-                  component={Link}
-                  href={plan.href}
-                  variant={plan.highlight ? "filled" : "light"}
-                  aria-label={`${plan.cta} with ${plan.name} plan`}
-                >
-                  {plan.cta}
-                </Button>
+                {plan.name === "Free" ? (
+                  <Button
+                    component={Link}
+                    href={plan.href}
+                    variant={plan.highlight ? "filled" : "light"}
+                    aria-label={`${plan.cta} with ${plan.name} plan`}
+                  >
+                    {plan.cta}
+                  </Button>
+                ) : (
+                  <Button disabled variant={plan.highlight ? "filled" : "light"}>
+                    Comming soon
+                  </Button>
+                )}
               </Stack>
             </Card>
           </AnimateOnScroll>

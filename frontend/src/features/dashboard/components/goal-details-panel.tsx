@@ -151,7 +151,15 @@ export const GoalDetailsPanel = ({
               scrollbarSize={8}
               data-testid="goal-preview-scroll-area"
             >
-              <Stack gap="sm" pr={isMobile ? 0 : 4}>
+              <div
+                data-testid="goal-previews-grid"
+                style={{
+                  display: "grid",
+                  gap: "var(--mantine-spacing-sm)",
+                  gridTemplateColumns: isMobile ? "1fr" : "repeat(2, minmax(0, 1fr))",
+                  paddingRight: isMobile ? 0 : "calc(0.25rem * var(--mantine-scale))",
+                }}
+              >
                 {previewGoals.map((goal) => (
                   <GoalPreviewCard
                     key={goal.id}
@@ -173,7 +181,7 @@ export const GoalDetailsPanel = ({
                     }
                   />
                 ))}
-              </Stack>
+              </div>
             </ScrollArea>
           </Stack>
         ) : (

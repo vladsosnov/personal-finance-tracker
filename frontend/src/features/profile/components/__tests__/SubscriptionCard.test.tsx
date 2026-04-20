@@ -55,7 +55,7 @@ describe('SubscriptionCard', () => {
     expect(screen.getByText('Current')).toBeInTheDocument();
   });
 
-  it('renders upgrade actions for paid plans when free is current', () => {
+  it('renders disabled coming soon actions for paid plans when free is current', () => {
     render(
       <SubscriptionCard
         currentSubscription="Free"
@@ -65,8 +65,9 @@ describe('SubscriptionCard', () => {
       />
     );
 
-    expect(screen.getByRole('button', { name: /get pro/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /get lifetime/i })).toBeInTheDocument();
+    const comingSoonButtons = screen.getAllByRole('button', { name: /comming soon/i });
+    expect(comingSoonButtons).toHaveLength(2);
+    comingSoonButtons.forEach((button) => expect(button).toBeDisabled());
   });
 
   it('marks free plan as Available when not current', () => {
@@ -173,9 +174,7 @@ describe('SubscriptionCard', () => {
     });
   });
 
-  it('starts pro checkout when the user clicks upgrade', async () => {
-    const user = userEvent.setup();
-
+  it('does not expose checkout actions when subscriptions are coming soon', () => {
     render(
       <SubscriptionCard
         currentSubscription="Free"
@@ -185,9 +184,9 @@ describe('SubscriptionCard', () => {
       />
     );
 
-    await user.click(screen.getByRole('button', { name: /get pro/i }));
-
-    expect(onCheckout).toHaveBeenCalledWith('PRO');
+    expect(screen.queryByRole('button', { name: /get pro/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /get lifetime/i })).not.toBeInTheDocument();
+    expect(onCheckout).not.toHaveBeenCalled();
   });
 
   it('marks lifetime as popular with a teal border', () => {
@@ -218,18 +217,18 @@ describe('SubscriptionCard', () => {
     expect(screen.getByRole('button', { name: /manage billing/i })).toBeInTheDocument();
   });
 
-  it('shows loading only for the active checkout plan', () => {
+  it('keeps manage billing for active pro users', () => {
     render(
       <SubscriptionCard
-        currentSubscription="Free"
-        billingState="checkout"
-        activeCheckoutPlan="PRO"
+        currentSubscription="Pro"
+        billingState="portal"
+        canManageBilling
         onCheckout={onCheckout}
         onManageBilling={onManageBilling}
       />
     );
 
-    expect(screen.getByRole('button', { name: /get pro/i })).toHaveAttribute('data-loading');
-    expect(screen.getByRole('button', { name: /get lifetime/i })).not.toHaveAttribute('data-loading');
+    expect(screen.getByRole('button', { name: /manage billing/i })).toHaveAttribute('data-loading');
+    expect(screen.getByRole('button', { name: /comming soon/i })).toBeDisabled();
   });
 });

@@ -176,6 +176,7 @@ describe('GoalDetailsPanel', () => {
     expect(screen.getByRole('tab', { name: /active/i })).toHaveAttribute('aria-selected', 'true');
     expect(screen.getByRole('tab', { name: /all/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /open emergency fund details/i })).toBeInTheDocument();
+    expect(screen.getByTestId('goal-previews-grid')).toHaveStyle({ gridTemplateColumns: 'repeat(2, minmax(0, 1fr))' });
     expect(screen.queryByText('Select a goal')).not.toBeInTheDocument();
   });
 
@@ -229,6 +230,23 @@ describe('GoalDetailsPanel', () => {
     expect(screen.getByTestId('goal-preview-scroll-area')).toHaveStyle({
       height: 'calc(32.5rem * var(--mantine-scale))',
     });
+  });
+
+  it('renders a single preview column on mobile', () => {
+    mockUseMediaQuery.mockReturnValue(true);
+
+    render(
+      <GoalDetailsPanel
+        {...defaultProps}
+        hasGoals={true}
+        activeGoals={[mockGoal]}
+        allGoals={[mockGoal, mockCompletedGoal]}
+        selectedGoal={null}
+        onSelectGoal={jest.fn()}
+      />
+    );
+
+    expect(screen.getByTestId('goal-previews-grid')).toHaveStyle({ gridTemplateColumns: '1fr' });
   });
 
   it('calls onSelectGoal when a preview card is clicked', async () => {
