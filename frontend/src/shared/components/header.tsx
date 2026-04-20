@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useApolloClient, useQuery } from "@apollo/client/react";
-import { IconDownload } from "@tabler/icons-react";
-import { Badge, Box, Burger, Button, Container, Drawer, Group, Stack, Text } from "@mantine/core";
+import { IconDownload, IconMoon, IconSun } from "@tabler/icons-react";
+import { ActionIcon, Badge, Box, Burger, Button, Container, Drawer, Group, Stack, Text, Tooltip, useComputedColorScheme, useMantineColorScheme } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { GET_ME, type MeQueryData } from "@/shared/gql/queries";
 import { API_BASE_URL } from "@/shared/constants/auth";
@@ -22,10 +22,16 @@ export const Header = () => {
   const { data: meData } = useQuery<MeQueryData>(GET_ME, {
     fetchPolicy: "cache-and-network",
   });
+  const { setColorScheme } = useMantineColorScheme();
+  const computedColorScheme = useComputedColorScheme("light", { getInitialValueInEffect: true });
   const isAuthed = Boolean(meData?.me);
   const isAdmin = meData?.me?.role === "admin";
   const subscription = meData?.me?.subscription ?? "Free";
   const showSubBadge = isAuthed && subscription.toLowerCase() !== "free";
+
+  const toggleColorScheme = () => {
+    setColorScheme(computedColorScheme === "dark" ? "light" : "dark");
+  };
 
   const handleLogout = async () => {
     closeMenu();
@@ -45,7 +51,6 @@ export const Header = () => {
   const publicLinks: ReadonlyArray<{ href: string; label: string; exact?: boolean }> = [
     { href: APP_ROUTES.home, label: "Home", exact: true },
     { href: APP_ROUTES.dashboard, label: "Goals" },
-    { href: APP_ROUTES.expenses, label: "Expenses" },
     { href: APP_ROUTES.feedback, label: "Feedback" },
   ];
 
@@ -116,6 +121,15 @@ export const Header = () => {
               <nav aria-label="Main navigation">
                 <Group gap="xs">{navLinks}</Group>
               </nav>
+              <Tooltip label={computedColorScheme === "dark" ? "Light mode" : "Dark mode"}>
+                <ActionIcon
+                  variant="subtle"
+                  onClick={toggleColorScheme}
+                  aria-label="Toggle color scheme"
+                >
+                  {computedColorScheme === "dark" ? <IconSun size={18} /> : <IconMoon size={18} />}
+                </ActionIcon>
+              </Tooltip>
               {canInstall && (
                 <Button
                   variant="light"
@@ -153,6 +167,13 @@ export const Header = () => {
         <nav aria-label="Mobile navigation" className="mobile-nav">
           <Stack gap="xs">
             {navLinks}
+            <Button
+              variant="default"
+              leftSection={computedColorScheme === "dark" ? <IconSun size={16} /> : <IconMoon size={16} />}
+              onClick={() => { toggleColorScheme(); closeMenu(); }}
+            >
+              {computedColorScheme === "dark" ? "Light mode" : "Dark mode"}
+            </Button>
             {canInstall && (
               <Button
                 variant="light"

@@ -25,6 +25,7 @@ import { GET_ME, type MeQueryData } from "@/shared/gql/queries";
 import { getPlanByName } from "@/shared/constants/plans";
 import { GET_EXCHANGE_RATES } from "@/features/profile/gql/currency";
 import { StateMessage } from "@/shared/components/state-message";
+import { OnboardingCard } from "@/features/dashboard/components/onboarding-card";
 import { APP_ROUTES } from "@/shared/constants/routes";
 import { tokenStorage } from "@/shared/lib/token-storage";
 import anim from "@/shared/styles/page-animations.module.css";
@@ -39,6 +40,7 @@ export const DashboardClient = () => {
   const [isManageMode, setIsManageMode] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isDetailsDrawerOpen, setIsDetailsDrawerOpen] = useState(false);
+  const [isCreatingExample, setIsCreatingExample] = useState(false);
 
   const isMobile = useMediaQuery("(max-width: 768px)");
 
@@ -172,6 +174,21 @@ export const DashboardClient = () => {
     },
   };
 
+  const handleCreateExampleGoal = async () => {
+    setIsCreatingExample(true);
+    try {
+      await actions.handleCreateGoal({
+        title: "Emergency Fund",
+        targetAmount: 1000,
+        initialAmount: 0,
+        color: "#0F766E",
+        currency: userCurrency,
+      });
+    } finally {
+      setIsCreatingExample(false);
+    }
+  };
+
   const goalDetailsPanelProps = {
     hasGoals: goals.length > 0,
     activeGoals,
@@ -249,9 +266,11 @@ export const DashboardClient = () => {
             <StateMessage title="Couldn't load goals" description={goalsError.message} actionLabel="Try again" onAction={() => goalsApi.refetchGoals()} icon={<IconAlertTriangle size={24} />} iconColor="red" />
           </Card>
         ) : !shouldShowGoalsSkeleton && !goals.length ? (
-          <Card withBorder radius="md" p="xl">
-            <StateMessage title="No goals yet" description="Create your first goal to start tracking progress." icon={<IconTarget size={24} />} />
-          </Card>
+          <OnboardingCard
+            onCreateExample={handleCreateExampleGoal}
+            onCreateCustom={() => setIsCreateModalOpen(true)}
+            isCreating={isCreatingExample}
+          />
         ) : isMobile ? (
           <div className={anim.slideLeft}>
             <GoalsSection {...goalsSectionProps} />

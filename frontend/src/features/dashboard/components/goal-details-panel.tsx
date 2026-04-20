@@ -262,10 +262,10 @@ export const GoalDetailsPanel = ({
               {hasGoals ? <IconChartLine size={28} /> : <IconTarget size={28} />}
             </ThemeIcon>
             <div>
-              <Title order={5}>{hasGoals ? "Select a goal" : "No goals yet"}</Title>
-              <Text c="dimmed" size="sm" mt={4}>
+              <Title order={5}>{hasGoals ? "Tap a goal to dive in" : "No goals yet"}</Title>
+              <Text c="dimmed" size="sm" mt={4} maw={280}>
                 {hasGoals
-                  ? "Pick a goal from the list to view its chart and operations."
+                  ? "See your progress chart, add operations, and track trends over time."
                   : "Create your first goal to start tracking your progress."}
               </Text>
             </div>
