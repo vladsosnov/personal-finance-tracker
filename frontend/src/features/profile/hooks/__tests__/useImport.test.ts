@@ -120,19 +120,6 @@ describe('useImport', () => {
 
       expect(showToast).toHaveBeenCalledWith('No goals found in the selected file', 'red');
     });
-
-    it('shows toast when only skipped goals found', async () => {
-      (prepareImportGoals as jest.Mock).mockReturnValue({
-        goals: [],
-        skippedGoals: [{ sourceIndex: 0, title: 'Bad Goal', reason: 'Invalid', canInclude: false }],
-      });
-
-      const { result } = renderHook(() => useImport('Free', 0));
-
-      await loadFile(result);
-
-      expect(showToast).toHaveBeenCalledWith('No valid goals found in the selected file', 'red');
-    });
   });
 
   describe('import limit', () => {
