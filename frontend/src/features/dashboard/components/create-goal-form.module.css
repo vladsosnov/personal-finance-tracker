@@ -1,0 +1,40 @@
+.desktopTitleColumn,
+.desktopTargetColumn,
+.desktopInitialColumn,
+.desktopCurrencyColumn,
+.desktopColorColumn,
+.desktopSubmitColumn {
+  min-width: 0;
+}
+
+@media (min-width: 62em) {
+  .desktopTitleColumn {
+    flex-basis: 30%;
+    max-width: 30%;
+  }
+
+  .desktopTargetColumn {
+    flex-basis: 17%;
+    max-width: 17%;
+  }
+
+  .desktopInitialColumn {
+    flex-basis: 17%;
+    max-width: 17%;
+  }
+
+  .desktopCurrencyColumn {
+    flex-basis: 14%;
+    max-width: 14%;
+  }
+
+  .desktopColorColumn {
+    flex-basis: 10%;
+    max-width: 10%;
+  }
+
+  .desktopSubmitColumn {
+    flex-basis: 12%;
+    max-width: 12%;
+  }
+}
