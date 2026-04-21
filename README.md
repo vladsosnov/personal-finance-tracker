@@ -2,15 +2,16 @@
 
 A production-grade SaaS for tracking savings goals with multi-currency support, real-time charts, and Stripe billing — built as a full-stack TypeScript monorepo.
 
-<!-- TODO: Add hero screenshot (light + dark side-by-side, ~1200px wide) -->
-<!-- ![Financial Goals Tracker](docs/assets/hero-screenshot.png) -->
+<p align="center">
+  <img src="docs/assets/hero-screenshot.png" alt="Financial Goals Tracker — Light and Dark mode" width="1200" />
+</p>
 
-[![Tests](https://img.shields.io/badge/tests-1%2C005_passing-brightgreen)]()
+[![Tests](https://img.shields.io/badge/tests-1%2C007_passing-brightgreen)]()
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-blue)]()
 [![Coverage](https://img.shields.io/badge/coverage-85%25%2B-green)]()
 [![CI/CD](https://img.shields.io/badge/CI%2FCD-GitHub_Actions-orange)]()
 
-**Live:** [financial-goals-tracker.vercel.app](https://financial-goals-tracker.vercel.app) | **API:** [Render](https://personal-finance-tracker-7r75.onrender.com/health)
+**Live:** [personal-finance-tracker.vercel.app](https://personal-finance-tracker-xyz.vercel.app) | **API:** [Render](https://personal-finance-tracker-7r75.onrender.com/health)
 
 ---
 
@@ -19,7 +20,7 @@ A production-grade SaaS for tracking savings goals with multi-currency support, 
 | | What | How |
 |---|---|---|
 | **Full-stack TypeScript** | Strict mode end-to-end | Next.js 14 + Express 5 + GraphQL |
-| **1,005 automated tests** | Unit, integration, E2E | Jest + React Testing Library + Cypress |
+| **1,007 automated tests** | Unit, integration, E2E | Jest + React Testing Library + Cypress |
 | **Production security** | CSP, CSRF, account lockout, JWT rotation | Custom auth with token versioning |
 | **Multi-currency** | 20+ currencies with live ECB rates | Frankfurter API with 24h MongoDB cache |
 | **SaaS billing** | Free/Pro/Lifetime plans | Stripe Checkout + webhooks |
@@ -96,15 +97,23 @@ graph TB
 
 ## Screenshots
 
-<!-- TODO: Add 2-3 screenshots showing different states:
-     1. Dashboard with goals and chart (light mode)
-     2. Dashboard (dark mode)
-     3. Mobile view / PWA
-     Place images in docs/assets/ directory -->
+### Landing Page
 
-| Light Mode | Dark Mode | Mobile |
-|:---:|:---:|:---:|
-| <!-- ![Light](docs/assets/light.png) --> | <!-- ![Dark](docs/assets/dark.png) --> | <!-- ![Mobile](docs/assets/mobile.png) --> |
+| Light Mode | Dark Mode |
+|:---:|:---:|
+| <img src="docs/assets/hero-light.png" alt="Landing page — Light" width="560" /> | <img src="docs/assets/hero-dark.png" alt="Landing page — Dark" width="560" /> |
+
+### Authentication
+
+| Light Mode | Dark Mode |
+|:---:|:---:|
+| <img src="docs/assets/auth-light.png" alt="Auth page — Light" width="560" /> | <img src="docs/assets/auth-dark.png" alt="Auth page — Dark" width="560" /> |
+
+### Mobile
+
+<p align="center">
+  <img src="docs/assets/mobile-composite.png" alt="Mobile — Light and Dark" width="500" />
+</p>
 
 ---
 

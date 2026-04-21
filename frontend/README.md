@@ -2,7 +2,7 @@
 
 Next.js app for the Financial Goals Tracker.
 
-**Deployed at:** [financial-goals-tracker.vercel.app](https://financial-goals-tracker.vercel.app)
+**Deployed at:** [personal-finance-tracker.vercel.app](https://personal-finance-tracker-xyz.vercel.app)
 
 ## Stack
 
