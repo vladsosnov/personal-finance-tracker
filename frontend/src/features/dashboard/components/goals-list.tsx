@@ -96,7 +96,7 @@ export const GoalsList = ({
           onKeyDown={handleListKeyDown}
           data-testid="goals-list-scroll-area"
         >
-          <Stack gap="sm">
+          <Stack gap="sm" pr={isMobile ? 0 : 6}>
             {isLoadingGoals ? (
               <GoalsLoadingSkeleton />
             ) : errorMessage ? (

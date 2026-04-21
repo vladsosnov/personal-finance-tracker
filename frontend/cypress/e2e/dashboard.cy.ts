@@ -108,13 +108,13 @@ describe("Dashboard", { testIsolation: false }, () => {
   });
 
   it("disables add goal button when form is empty", () => {
-    cy.contains("button", "Add goal").should("be.disabled");
+    cy.contains("button", "Add").should("be.disabled");
   });
 
   it("creates a new goal via the form", () => {
     cy.get("input[placeholder='Buy a house']").clear().type("Vacation Fund");
     cy.get("input[placeholder='25000']").clear().type("8000");
-    cy.contains("button", "Add goal").click();
+    cy.contains("button", "Add").click();
     cy.wait("@graphql");
     // Clear inputs for next test
     cy.get("input[placeholder='Buy a house']").clear();

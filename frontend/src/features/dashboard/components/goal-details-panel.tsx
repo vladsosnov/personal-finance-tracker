@@ -286,7 +286,7 @@ export const GoalDetailsPanel = ({
                     gap: "var(--mantine-spacing-sm)",
                     gridTemplateColumns:
                       isMobile || previewLayout === "list" ? "1fr" : "repeat(2, minmax(0, 1fr))",
-                    paddingRight: isMobile ? 0 : "calc(0.25rem * var(--mantine-scale))",
+                    paddingRight: isMobile ? 0 : "calc(0.375rem * var(--mantine-scale))",
                   }}
                 >
                   {previewGoals.map((goal) => (
@@ -341,7 +341,7 @@ export const GoalDetailsPanel = ({
           scrollbarSize={8}
           data-testid="goal-details-scroll-area"
         >
-          <Stack gap="md" pr={isMobile ? 0 : 4}>
+          <Stack gap="md" pr={isMobile ? 0 : 6}>
             <GoalDetailHeader
               goal={selectedGoal}
               chartRange={chartRange}

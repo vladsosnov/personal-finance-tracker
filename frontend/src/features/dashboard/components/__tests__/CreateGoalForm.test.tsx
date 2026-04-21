@@ -29,7 +29,7 @@ describe('CreateGoalFormFields', () => {
     render(<CreateGoalFormFields {...defaultProps} />);
 
     expect(screen.getByLabelText(/title/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /add goal/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /add/i })).toBeInTheDocument();
   });
 
   it('renders the form with correct aria label', () => {
@@ -41,25 +41,25 @@ describe('CreateGoalFormFields', () => {
   it('disables submit button when isAddDisabled is true', () => {
     render(<CreateGoalFormFields {...defaultProps} isAddDisabled={true} />);
 
-    expect(screen.getByRole('button', { name: /add goal/i })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /add/i })).toBeDisabled();
   });
 
   it('enables submit button when isAddDisabled is false', () => {
     render(<CreateGoalFormFields {...defaultProps} isAddDisabled={false} />);
 
-    expect(screen.getByRole('button', { name: /add goal/i })).not.toBeDisabled();
+    expect(screen.getByRole('button', { name: /add/i })).not.toBeDisabled();
   });
 
   it('disables submit button when limitMessage is present', () => {
     render(<CreateGoalFormFields {...defaultProps} isAddDisabled={false} limitMessage="Upgrade to add more." />);
 
-    expect(screen.getByRole('button', { name: /add goal/i })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /add/i })).toBeDisabled();
   });
 
   it('shows loading state when isCreatingGoal is true', () => {
     render(<CreateGoalFormFields {...defaultProps} isCreatingGoal={true} />);
 
-    const button = screen.getByRole('button', { name: /add goal/i });
+    const button = screen.getByRole('button', { name: /add/i });
     expect(button).toHaveAttribute('data-loading', 'true');
   });
 
@@ -76,7 +76,7 @@ describe('CreateGoalFormFields', () => {
     const user = userEvent.setup();
     render(<CreateGoalFormFields {...defaultProps} isAddDisabled={false} goalTitle="Test" goalTarget={1000} />);
 
-    await user.click(screen.getByRole('button', { name: /add goal/i }));
+    await user.click(screen.getByRole('button', { name: /add/i }));
 
     expect(defaultProps.onCreateGoal).toHaveBeenCalledTimes(1);
   });

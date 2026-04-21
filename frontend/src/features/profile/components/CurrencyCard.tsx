@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { useMutation, useQuery } from "@apollo/client/react";
-import { Alert, Button, Card, Group, ScrollArea, Stack, Table, Text, Title } from "@mantine/core";
+import { Alert, Box, Button, Card, Group, ScrollArea, Stack, Table, Text, Title } from "@mantine/core";
 import { IconInfoCircle, IconRefresh } from "@tabler/icons-react";
 import { CurrencySelect } from "@/shared/components/CurrencySelect";
 import { GET_ME, type MeQueryData } from "@/shared/gql/queries";
@@ -85,22 +85,24 @@ export const CurrencyCard = () => {
               </Button>
             </Group>
             <ScrollArea h={150} scrollbarSize={8} data-testid="exchange-rates-scroll-area">
-              <Table striped highlightOnHover aria-label="Exchange rates">
-                <Table.Thead>
-                  <Table.Tr>
-                    <Table.Th>Currency</Table.Th>
-                    <Table.Th ta="right">{`1 ${primaryCurrency} =`}</Table.Th>
-                  </Table.Tr>
-                </Table.Thead>
-                <Table.Tbody>
-                  {topCurrencies.map((c) => (
-                    <Table.Tr key={c.code}>
-                      <Table.Td>{c.code} ({getCurrencySymbol(c.code)})</Table.Td>
-                      <Table.Td ta="right">{rates[c.code]?.toFixed(4)}</Table.Td>
+              <Box pr={6}>
+                <Table striped highlightOnHover aria-label="Exchange rates">
+                  <Table.Thead>
+                    <Table.Tr>
+                      <Table.Th>Currency</Table.Th>
+                      <Table.Th ta="right">{`1 ${primaryCurrency} =`}</Table.Th>
                     </Table.Tr>
-                  ))}
-                </Table.Tbody>
-              </Table>
+                  </Table.Thead>
+                  <Table.Tbody>
+                    {topCurrencies.map((c) => (
+                      <Table.Tr key={c.code}>
+                        <Table.Td>{c.code} ({getCurrencySymbol(c.code)})</Table.Td>
+                        <Table.Td ta="right">{rates[c.code]?.toFixed(4)}</Table.Td>
+                      </Table.Tr>
+                    ))}
+                  </Table.Tbody>
+                </Table>
+              </Box>
             </ScrollArea>
             {ratesData?.exchangeRates?.fetchedAt && (
               <Text size="xs" c="dimmed">

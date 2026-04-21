@@ -1,8 +1,14 @@
+import type { CSSProperties } from "react";
 import { Button, Card, Grid, Group, Modal, NumberInput, Stack, Text, TextInput, Title } from "@mantine/core";
 import { GoalColorPicker } from "@/features/dashboard/components/goal-color-picker";
 import { CurrencySelect } from "@/shared/components/CurrencySelect";
 import { MONEY_INPUT_PROPS, numberOrZero } from "@/shared/utils/number";
 import styles from "@/shared/styles/page-animations.module.css";
+
+const desktopColumnStyle = (flexBasis: string): CSSProperties => ({
+  flexBasis,
+  maxWidth: flexBasis,
+});
 
 type CreateGoalFormFieldsProps = {
   goalTitle: string;
@@ -46,7 +52,7 @@ export const CreateGoalFormFields = ({
   >
     <Stack gap="sm">
       <Grid align="flex-end">
-        <Grid.Col span={{ base: 12, md: 3 }}>
+        <Grid.Col span={{ base: 12, md: 3 }} style={desktopColumnStyle("30%")}>
           <TextInput
             label="Title"
             placeholder="Buy a house"
@@ -57,7 +63,7 @@ export const CreateGoalFormFields = ({
             onChange={(event) => setGoalTitle(event.currentTarget.value)}
           />
         </Grid.Col>
-        <Grid.Col span={{ base: 12, md: 2 }}>
+        <Grid.Col span={{ base: 12, md: 2 }} style={desktopColumnStyle("17%")}>
           <NumberInput
             label="Target amount"
             placeholder="25000"
@@ -67,7 +73,7 @@ export const CreateGoalFormFields = ({
             onChange={(value) => setGoalTarget(numberOrZero(value))}
           />
         </Grid.Col>
-        <Grid.Col span={{ base: 12, md: 2 }}>
+        <Grid.Col span={{ base: 12, md: 2 }} style={desktopColumnStyle("17%")}>
           <NumberInput
             label="Starting amount"
             placeholder="5000"
@@ -77,19 +83,20 @@ export const CreateGoalFormFields = ({
             onChange={(value) => setGoalInitialAmount(numberOrZero(value))}
           />
         </Grid.Col>
-        <Grid.Col span={{ base: 12, md: 2 }}>
+        <Grid.Col span={{ base: 12, md: 2 }} style={desktopColumnStyle("14%")}>
           <CurrencySelect value={goalCurrency} onChange={setGoalCurrency} />
         </Grid.Col>
-        <Grid.Col span={{ base: 6, md: "auto" }}>
+        <Grid.Col span={{ base: 6, md: "auto" }} style={desktopColumnStyle("10%")}>
           <GoalColorPicker label="Color" value={goalColor} onChange={setGoalColor} />
         </Grid.Col>
-        <Grid.Col span={{ base: 6, md: "auto" }}>
+        <Grid.Col span={{ base: 6, md: "auto" }} style={desktopColumnStyle("12%")}>
           <Button
             type="submit"
             loading={isCreatingGoal}
             disabled={isAddDisabled || Boolean(limitMessage)}
+            fullWidth
           >
-            Add goal
+            Add
           </Button>
         </Grid.Col>
       </Grid>
