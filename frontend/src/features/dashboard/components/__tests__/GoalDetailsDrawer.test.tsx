@@ -45,10 +45,11 @@ const basePanelProps: GoalDetailsPanelProps = {
     },
     deletingOperationId: null,
     isUpdatingProgress: false,
-    isSubmitDisabled: true,
+    isEditSubmitDisabled: true,
     onStartEdit: jest.fn(),
     onDelete: jest.fn(),
-    onSubmit: jest.fn(),
+    onSubmitEdit: jest.fn(),
+    onSubmitAdd: jest.fn(),
   },
 };
 

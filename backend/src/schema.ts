@@ -37,6 +37,14 @@ export const schema = buildSchema(`
     operationDate: String!
   }
 
+  input GoalOperationInput {
+    type: OperationType!
+    amount: Float!
+    currency: String
+    note: String
+    operationDate: String!
+  }
+
   input ImportGoalInput {
     title: String!
     targetAmount: Float!
@@ -168,6 +176,7 @@ export const schema = buildSchema(`
     importGoals(goals: [ImportGoalInput!]!): ImportGoalsPayload!
     resetAllData: ResetAllDataPayload!
     completeGoal(goalId: ID!): Goal!
+    addGoalOperations(goalId: ID!, operations: [GoalOperationInput!]!): Goal!
     updateGoalProgress(goalId: ID!, type: OperationType!, amount: Float!, currency: String, note: String, operationDate: String): Goal!
     editGoalOperation(operationId: ID!, type: OperationType!, amount: Float!, currency: String, note: String, operationDate: String): Goal!
     deleteGoalOperation(operationId: ID!): Goal!

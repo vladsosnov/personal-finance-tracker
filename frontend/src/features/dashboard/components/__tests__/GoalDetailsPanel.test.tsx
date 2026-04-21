@@ -31,6 +31,44 @@ jest.mock('next/dynamic', () => {
         {typeof props.onConfirm === 'function' && (
           <button data-testid={`${name}-confirm`} onClick={props.onConfirm as () => void}>Confirm</button>
         )}
+        {typeof props.onAddOperation === 'function' && (
+          <button data-testid={`${name}-add-row`} onClick={props.onAddOperation as () => void}>Add Row</button>
+        )}
+        {typeof props.onRemoveOperation === 'function' && (
+          <button data-testid={`${name}-remove-row`} onClick={() => (props.onRemoveOperation as (index: number) => void)(0)}>Remove Row</button>
+        )}
+        {typeof props.onChangeOperationType === 'function' && (
+          <button
+            data-testid={`${name}-change-type`}
+            onClick={() => (props.onChangeOperationType as (index: number, value: 'DECREASE') => void)(0, 'DECREASE')}
+          >
+            Change Type
+          </button>
+        )}
+        {typeof props.onChangeOperationAmount === 'function' && (
+          <button
+            data-testid={`${name}-change-amount`}
+            onClick={() => (props.onChangeOperationAmount as (index: number, value: number) => void)(0, 250)}
+          >
+            Change Amount
+          </button>
+        )}
+        {typeof props.onChangeOperationNote === 'function' && (
+          <button
+            data-testid={`${name}-change-note`}
+            onClick={() => (props.onChangeOperationNote as (index: number, value: string) => void)(0, 'Bonus')}
+          >
+            Change Note
+          </button>
+        )}
+        {typeof props.onChangeOperationDate === 'function' && (
+          <button
+            data-testid={`${name}-change-date`}
+            onClick={() => (props.onChangeOperationDate as (index: number, value: string) => void)(0, '2024-02-01')}
+          >
+            Change Date
+          </button>
+        )}
       </div>
     );
     DynamicComponent.displayName = name;
@@ -43,14 +81,23 @@ jest.mock('@/features/dashboard/components/GoalDetailHeader', () => ({
     goal,
     onExpandChart,
     onCloseSelection,
+    onToggleRangePicker,
+    onChangeRange,
+    onToggleTrend,
   }: {
     goal: { title: string };
     onExpandChart: () => void;
     onCloseSelection?: () => void;
+    onToggleRangePicker: () => void;
+    onChangeRange: (value: '7d') => void;
+    onToggleTrend: () => void;
   }) => (
     <div data-testid="goal-detail-header">
       {goal.title}
       <button data-testid="expand-chart" onClick={onExpandChart}>Expand</button>
+      <button data-testid="toggle-range-picker" onClick={onToggleRangePicker}>Toggle Range</button>
+      <button data-testid="change-range" onClick={() => onChangeRange('7d')}>Change Range</button>
+      <button data-testid="toggle-trend" onClick={onToggleTrend}>Toggle Trend</button>
       {onCloseSelection && <button data-testid="close-goal-details" onClick={onCloseSelection}>Close</button>}
     </div>
   ),
@@ -118,10 +165,11 @@ const makeOperationActions = (overrides: Partial<GoalOperationActions> = {}): Go
   },
   deletingOperationId: null,
   isUpdatingProgress: false,
-  isSubmitDisabled: true,
+  isEditSubmitDisabled: true,
   onStartEdit: jest.fn(),
   onDelete: jest.fn().mockResolvedValue(undefined),
-  onSubmit: jest.fn().mockResolvedValue(undefined),
+  onSubmitEdit: jest.fn().mockResolvedValue(undefined),
+  onSubmitAdd: jest.fn().mockResolvedValue(undefined),
   ...overrides,
 });
 
@@ -548,7 +596,61 @@ describe('GoalDetailsPanel', () => {
 
       await user.click(screen.getByTestId('OperationModal-submit'));
 
-      expect(actions.onSubmit).toHaveBeenCalled();
+      expect(actions.onSubmitAdd).toHaveBeenCalledWith([
+        {
+          type: 'INCREASE',
+          amount: 0,
+          currency: 'USD',
+          note: undefined,
+          operationDate: expect.any(String),
+        },
+      ]);
+    });
+
+    it('updates add-mode draft operations before submit', async () => {
+      const user = userEvent.setup();
+      const actions = makeOperationActions();
+      render(
+        <GoalDetailsPanel {...defaultProps} selectedGoal={mockGoalDetails} operationActions={actions} />
+      );
+
+      await user.click(screen.getByTestId('OperationModal-change-type'));
+      await user.click(screen.getByTestId('OperationModal-change-amount'));
+      await user.click(screen.getByTestId('OperationModal-change-note'));
+      await user.click(screen.getByTestId('OperationModal-change-date'));
+      await user.click(screen.getByTestId('OperationModal-submit'));
+
+      expect(actions.onSubmitAdd).toHaveBeenCalledWith([
+        {
+          type: 'DECREASE',
+          amount: 250,
+          currency: 'USD',
+          note: 'Bonus',
+          operationDate: '2024-02-01',
+        },
+      ]);
+    });
+
+    it('adds and removes draft operation rows through modal callbacks', async () => {
+      const user = userEvent.setup();
+      const actions = makeOperationActions();
+      render(
+        <GoalDetailsPanel {...defaultProps} selectedGoal={mockGoalDetails} operationActions={actions} />
+      );
+
+      await user.click(screen.getByTestId('OperationModal-add-row'));
+      await user.click(screen.getByTestId('OperationModal-remove-row'));
+      await user.click(screen.getByTestId('OperationModal-submit'));
+
+      expect(actions.onSubmitAdd).toHaveBeenCalledWith([
+        {
+          type: 'INCREASE',
+          amount: 0,
+          currency: 'USD',
+          note: undefined,
+          operationDate: expect.any(String),
+        },
+      ]);
     });
   });
 
@@ -599,6 +701,19 @@ describe('GoalDetailsPanel', () => {
       await waitFor(() => {
         expect(screen.getAllByTestId('dynamic-GoalChart')).toHaveLength(2);
       });
+    });
+
+    it('updates range and trend controls from the goal header', async () => {
+      const user = userEvent.setup();
+      render(
+        <GoalDetailsPanel {...defaultProps} selectedGoal={mockGoalDetails} />
+      );
+
+      await user.click(screen.getByTestId('toggle-range-picker'));
+      await user.click(screen.getByTestId('change-range'));
+      await user.click(screen.getByTestId('toggle-trend'));
+
+      expect(screen.getByTestId('goal-detail-header')).toBeInTheDocument();
     });
   });
 });

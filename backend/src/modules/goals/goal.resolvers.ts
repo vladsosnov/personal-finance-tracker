@@ -58,6 +58,19 @@ type GoalOperationArgs = {
   operationDate?: string;
 };
 
+type GoalOperationInput = {
+  type: OperationType;
+  amount: number;
+  currency?: string;
+  note?: string;
+  operationDate: string;
+};
+
+type AddGoalOperationsArgs = {
+  goalId: string;
+  operations: GoalOperationInput[];
+};
+
 type EditGoalOperationArgs = {
   operationId: string;
   type: OperationType;
@@ -142,6 +155,16 @@ const applyCompletionState = async (userId: string, goalView: GoalView) => {
 const buildGoalViewWithCompletionState = async (userId: string, goal: Goal) => {
   const goalView = await buildGoalView(userId, goal);
   return applyCompletionState(userId, goalView);
+};
+
+const assertValidOperationInput = (operation: GoalOperationInput) => {
+  if (!Number.isFinite(operation.amount) || operation.amount <= 0) {
+    throw new Error("Amount should be greater than 0");
+  }
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(operation.operationDate)) {
+    throw new Error("Operation date must be in YYYY-MM-DD format");
+  }
+  assertValidNote(operation.note);
 };
 
 export const goalResolvers = {
@@ -420,16 +443,48 @@ export const goalResolvers = {
 
     return buildGoalViewWithCompletionState(userId, completedGoal);
   },
+  addGoalOperations: async ({ goalId, operations }: AddGoalOperationsArgs, context: Context) => {
+    const userId = ensureAuthed(context);
+    assertValidObjectId(goalId, "goal ID");
+
+    if (!operations.length) {
+      throw new Error("At least one operation is required");
+    }
+
+    const goal = await getGoalById(userId, goalId);
+    if (!goal) {
+      throw new Error("Goal not found");
+    }
+
+    const preparedOperations = operations.map((operation) => {
+      assertValidOperationInput(operation);
+      const opCurrency = operation.currency ?? goal.currency;
+      assertValidCurrency(opCurrency);
+
+      return {
+        userId,
+        goalId,
+        type: operation.type,
+        amount: operation.amount,
+        currency: opCurrency,
+        note: operation.note?.trim() || undefined,
+        operationDate: operation.operationDate,
+      };
+    });
+
+    await bulkCreateGoalOperations(preparedOperations);
+    return buildGoalViewWithCompletionState(userId, goal);
+  },
   updateGoalProgress: async ({ goalId, type, amount, currency, note, operationDate }: GoalOperationArgs, context: Context) => {
     const userId = ensureAuthed(context);
     assertValidObjectId(goalId, "goal ID");
-    if (!Number.isFinite(amount) || amount <= 0) {
-      throw new Error("Amount should be greater than 0");
-    }
-    if (operationDate && !/^\d{4}-\d{2}-\d{2}$/.test(operationDate)) {
-      throw new Error("Operation date must be in YYYY-MM-DD format");
-    }
-    assertValidNote(note);
+    assertValidOperationInput({
+      type,
+      amount,
+      currency,
+      note,
+      operationDate: operationDate ?? new Date().toISOString().slice(0, 10),
+    });
 
     const goal = await getGoalById(userId, goalId);
     if (!goal) {
@@ -445,13 +500,13 @@ export const goalResolvers = {
   editGoalOperation: async ({ operationId, type, amount, currency, note, operationDate }: EditGoalOperationArgs, context: Context) => {
     const userId = ensureAuthed(context);
     assertValidObjectId(operationId, "operation ID");
-    if (!Number.isFinite(amount) || amount <= 0) {
-      throw new Error("Amount should be greater than 0");
-    }
-    if (operationDate && !/^\d{4}-\d{2}-\d{2}$/.test(operationDate)) {
-      throw new Error("Operation date must be in YYYY-MM-DD format");
-    }
-    assertValidNote(note);
+    assertValidOperationInput({
+      type,
+      amount,
+      currency,
+      note,
+      operationDate: operationDate ?? new Date().toISOString().slice(0, 10),
+    });
 
     const operation = await getGoalOperationById(userId, operationId);
     if (!operation) {

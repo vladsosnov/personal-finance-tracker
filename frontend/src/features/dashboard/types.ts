@@ -27,6 +27,19 @@ export type GoalOperation = {
   createdAt: string;
 };
 
+export type NewGoalOperationInput = {
+  type: OperationType;
+  amount: number;
+  currency: string;
+  note?: string;
+  operationDate: string;
+};
+
+export type GoalOperationDraft = Omit<NewGoalOperationInput, "amount"> & {
+  id: string;
+  amount: number | "";
+};
+
 export type GoalDetails = Goal & {
   operations: GoalOperation[];
 };

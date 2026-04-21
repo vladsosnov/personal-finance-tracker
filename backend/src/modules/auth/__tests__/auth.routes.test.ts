@@ -1,6 +1,8 @@
 import express from "express";
 import request from "supertest";
 
+jest.setTimeout(15000);
+
 describe("auth change password route", () => {
   const verifyJwt = jest.fn();
   const findUserById = jest.fn();

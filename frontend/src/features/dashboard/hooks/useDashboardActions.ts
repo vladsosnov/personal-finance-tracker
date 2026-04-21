@@ -3,7 +3,7 @@ import { buildGoalFromDetails } from "@/features/dashboard/utils/goalUtils";
 import { trackEvent } from "@/shared/lib/analytics";
 import { fireConfetti } from "@/shared/lib/confetti";
 import { showToast } from "@/shared/lib/toast-store";
-import type { Goal, GoalDetails } from "@/features/dashboard/types";
+import type { Goal, GoalDetails, NewGoalOperationInput } from "@/features/dashboard/types";
 import type { useGoals } from "@/features/dashboard/hooks/useGoals";
 import type { useGoalDetails } from "@/features/dashboard/hooks/useGoalDetails";
 import type { useGoalForm } from "@/features/dashboard/hooks/useGoalForm";
@@ -17,7 +17,7 @@ type Deps = {
   setIsDetailsDrawerOpen: (open: boolean) => void;
   isMobile: boolean | undefined;
   goalsApi: Pick<ReturnType<typeof useGoals>, "createGoal" | "editGoal" | "deleteGoal" | "completeGoal" | "refetchGoals">;
-  detailsApi: Pick<ReturnType<typeof useGoalDetails>, "selectedGoal" | "addOperation" | "editOperation" | "deleteOperation" | "refetchGoalDetails">;
+  detailsApi: Pick<ReturnType<typeof useGoalDetails>, "selectedGoal" | "addOperations" | "editOperation" | "deleteOperation" | "refetchGoalDetails">;
   editGoalForm: ReturnType<typeof useGoalForm>;
   operationForm: ReturnType<typeof useOperationForm>;
 };
@@ -63,9 +63,8 @@ export const useDashboardActions = ({
     }
   };
 
-  const handleUpdateProgress = async () => {
-    if (!operationForm.operationAmount || Number(operationForm.operationAmount) <= 0) return;
-
+  const handleUpdateProgress = async (operations?: NewGoalOperationInput[]) => {
+    const isEdit = Boolean(operationForm.editingOperationId);
     const sharedInput = {
       type: operationForm.operationType,
       amount: Number(operationForm.operationAmount),
@@ -74,21 +73,27 @@ export const useDashboardActions = ({
       operationDate: operationForm.operationDate,
     };
 
-    const isEdit = Boolean(operationForm.editingOperationId);
-
     try {
       let updatedGoal: GoalDetails | null = null;
 
       if (operationForm.editingOperationId) {
+        if (!operationForm.operationAmount || Number(operationForm.operationAmount) <= 0) return;
         updatedGoal = await detailsApi.editOperation({ operationId: operationForm.editingOperationId, ...sharedInput });
       } else {
-        if (!selectedGoalId) return;
+        if (!selectedGoalId || !operations?.length) return;
         trackEvent("operation_added");
-        updatedGoal = await detailsApi.addOperation({ goalId: selectedGoalId, ...sharedInput });
+        updatedGoal = await detailsApi.addOperations({ goalId: selectedGoalId, operations });
       }
 
       operationForm.reset();
-      showToast(isEdit ? "Operation updated" : "Operation added", "teal");
+      showToast(
+        isEdit
+          ? "Operation updated"
+          : operations && operations.length > 1
+            ? `${operations.length} operations added`
+            : "Operation added",
+        "teal"
+      );
       goalsApi.refetchGoals().then(() => {
         maybePromptCompletion(updatedGoal);
       });

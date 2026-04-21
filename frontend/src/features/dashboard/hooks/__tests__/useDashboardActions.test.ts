@@ -19,7 +19,7 @@ const makeGoalsApi = (overrides = {}) => ({
 
 const makeDetailsApi = (overrides = {}) => ({
   selectedGoal: null,
-  addOperation: jest.fn().mockResolvedValue(null),
+  addOperations: jest.fn().mockResolvedValue(null),
   editOperation: jest.fn().mockResolvedValue(null),
   deleteOperation: jest.fn().mockResolvedValue(undefined),
   refetchGoalDetails: jest.fn().mockResolvedValue(undefined),
@@ -238,16 +238,35 @@ describe('useDashboardActions', () => {
       const operationForm = makeOperationForm({ operationAmount: "" as number | "" });
       const { result } = renderHook(() => useDashboardActions(makeDefaultDeps({ detailsApi, operationForm })));
       await act(async () => { await result.current.handleUpdateProgress(); });
-      expect(detailsApi.addOperation).not.toHaveBeenCalled();
+      expect(detailsApi.addOperations).not.toHaveBeenCalled();
     });
 
-    it('calls addOperation when no editingOperationId', async () => {
+    it('calls addOperations when not editing', async () => {
       const detailsApi = makeDetailsApi();
       const { result } = renderHook(() =>
         useDashboardActions(makeDefaultDeps({ detailsApi, selectedGoalId: mockGoal.id }))
       );
-      await act(async () => { await result.current.handleUpdateProgress(); });
-      expect(detailsApi.addOperation).toHaveBeenCalled();
+      await act(async () => {
+        await result.current.handleUpdateProgress([
+          {
+            type: 'INCREASE',
+            amount: 500,
+            currency: 'USD',
+            operationDate: '2024-01-01',
+          },
+        ]);
+      });
+      expect(detailsApi.addOperations).toHaveBeenCalledWith({
+        goalId: mockGoal.id,
+        operations: [
+          {
+            type: 'INCREASE',
+            amount: 500,
+            currency: 'USD',
+            operationDate: '2024-01-01',
+          },
+        ],
+      });
     });
 
     it('calls editOperation when editingOperationId present', async () => {
@@ -258,7 +277,7 @@ describe('useDashboardActions', () => {
       );
       await act(async () => { await result.current.handleUpdateProgress(); });
       expect(detailsApi.editOperation).toHaveBeenCalled();
-      expect(detailsApi.addOperation).not.toHaveBeenCalled();
+      expect(detailsApi.addOperations).not.toHaveBeenCalled();
     });
   });
 

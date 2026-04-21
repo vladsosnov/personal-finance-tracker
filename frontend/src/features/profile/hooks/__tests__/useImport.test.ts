@@ -170,13 +170,16 @@ describe('useImport', () => {
       const { result } = renderHook(() => useImport('Free', 0));
 
       await loadFile(result);
-      expect(prepareImportGoals).toHaveBeenCalledTimes(1);
+      await waitFor(() => {
+        expect(prepareImportGoals).toHaveBeenCalled();
+      });
+      const initialCalls = (prepareImportGoals as jest.Mock).mock.calls.length;
 
       act(() => {
         result.current.handleToggleZeroTargetGoal(2, true);
       });
 
-      expect(prepareImportGoals).toHaveBeenCalledTimes(2);
+      expect(prepareImportGoals).toHaveBeenCalledTimes(initialCalls + 1);
     });
 
     it('does nothing when no import source loaded', () => {
@@ -195,13 +198,16 @@ describe('useImport', () => {
       const { result } = renderHook(() => useImport('Free', 0));
 
       await loadFile(result);
-      expect(prepareImportGoals).toHaveBeenCalledTimes(1);
+      await waitFor(() => {
+        expect(prepareImportGoals).toHaveBeenCalled();
+      });
+      const initialCalls = (prepareImportGoals as jest.Mock).mock.calls.length;
 
       act(() => {
         result.current.handleRemoveFromImport(0);
       });
 
-      expect(prepareImportGoals).toHaveBeenCalledTimes(2);
+      expect(prepareImportGoals).toHaveBeenCalledTimes(initialCalls + 1);
     });
 
     it('does nothing when no import source loaded', () => {

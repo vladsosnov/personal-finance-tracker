@@ -259,4 +259,114 @@ describe("goal.service", () => {
       });
     });
   });
+
+  describe("batch operations mutation", () => {
+    it("creates multiple operations in one mutation", async () => {
+      const goalId = "507f1f77bcf86cd799439011";
+      const bulkCreateGoalOperations = jest.fn().mockResolvedValue([]);
+      const getGoalById = jest.fn().mockResolvedValue(
+        makeGoal({ id: goalId, userId: "user-1", currency: "USD", targetAmount: 10000, initialAmount: 1000 })
+      );
+      const buildGoalView = jest.fn().mockResolvedValue({
+        ...makeGoal({ id: goalId, userId: "user-1", currency: "USD", targetAmount: 10000, initialAmount: 1000 }),
+        currentAmount: 1300,
+        progress: 13,
+        operations: [],
+      });
+
+      jest.resetModules();
+      await jest.isolateModulesAsync(async () => {
+        jest.doMock("../../auth/user.repository", () => ({
+          findUserById: jest.fn(),
+          updatePrimaryCurrency: jest.fn(),
+        }));
+
+        jest.doMock("../goal.repository", () => ({
+          bulkCreateGoals: jest.fn(),
+          countGoalsByUser: jest.fn(),
+          createGoal: jest.fn(),
+          deleteAllGoalsByUser: jest.fn(),
+          deleteGoal: jest.fn(),
+          getGoalById,
+          listGoalsByUser: jest.fn(),
+          reorderGoals: jest.fn(),
+          updateGoal: jest.fn(),
+          updateGoalColor: jest.fn(),
+          updateGoalCompletion: jest.fn(),
+        }));
+
+        jest.doMock("../operation.repository", () => ({
+          bulkCreateGoalOperations,
+          createGoalOperation: jest.fn(),
+          deleteAllOperationsByUser: jest.fn(),
+          deleteGoalOperation: jest.fn(),
+          deleteOperationsByGoal: jest.fn(),
+          getGoalOperationById: jest.fn(),
+          updateGoalOperation: jest.fn(),
+        }));
+
+        jest.doMock("../goal.service", () => ({
+          buildGoalView,
+          buildGoalViews: jest.fn(),
+        }));
+
+        const { graphql } = await import("graphql");
+        const { schema, rootValue } = await import("../../../schema.js");
+        const response = await graphql({
+          schema,
+          source: `
+            mutation AddGoalOperations($goalId: ID!, $operations: [GoalOperationInput!]!) {
+              addGoalOperations(goalId: $goalId, operations: $operations) {
+                id
+                currentAmount
+              }
+            }
+          `,
+          rootValue,
+          variableValues: {
+            goalId,
+            operations: [
+              { type: "INCREASE", amount: 200, currency: "USD", operationDate: "2024-02-01", note: "Salary" },
+              { type: "DECREASE", amount: 50, currency: "USD", operationDate: "2024-02-02", note: "Fee" },
+            ],
+          },
+          contextValue: {
+            userId: "user-1",
+            userRole: "user",
+            tokenVersion: 0,
+            clientIp: "127.0.0.1",
+          },
+        });
+
+        expect(response.errors).toBeUndefined();
+        expect(response.data).toEqual({
+          addGoalOperations: {
+            id: goalId,
+            currentAmount: 1300,
+          },
+        });
+        expect(getGoalById).toHaveBeenCalledWith("user-1", goalId);
+        expect(bulkCreateGoalOperations).toHaveBeenCalledWith([
+          {
+            userId: "user-1",
+            goalId,
+            type: "INCREASE",
+            amount: 200,
+            currency: "USD",
+            note: "Salary",
+            operationDate: "2024-02-01",
+          },
+          {
+            userId: "user-1",
+            goalId,
+            type: "DECREASE",
+            amount: 50,
+            currency: "USD",
+            note: "Fee",
+            operationDate: "2024-02-02",
+          },
+        ]);
+      });
+    });
+  });
 });

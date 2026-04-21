@@ -1,12 +1,12 @@
 import { useQuery, useMutation } from "@apollo/client/react";
 import {
+  ADD_GOAL_OPERATIONS,
   DELETE_GOAL_OPERATION,
   EDIT_GOAL_OPERATION,
   GET_GOAL_DETAILS,
   GET_GOALS,
-  UPDATE_GOAL_PROGRESS,
 } from "@/features/dashboard/gql/dashboard";
-import type { Goal, GoalDetails } from "@/features/dashboard/types";
+import type { Goal, GoalDetails, NewGoalOperationInput } from "@/features/dashboard/types";
 import type { OperationType } from "@/shared/gql/__generated__/schema-types";
 import { showToast } from "@/shared/lib/toast-store";
 
@@ -29,26 +29,22 @@ export const useGoalDetails = (selectedGoalId: string | null) => {
         ? previousGoalDetailsData.goal
         : null;
 
-  const [updateGoalProgressMutation] =
-    useMutation(UPDATE_GOAL_PROGRESS);
+  const [addGoalOperationsMutation] =
+    useMutation(ADD_GOAL_OPERATIONS);
   const [editGoalOperationMutation] =
     useMutation(EDIT_GOAL_OPERATION);
   const [deleteGoalOperationMutation] = useMutation(DELETE_GOAL_OPERATION);
 
-  const addOperation = async (input: {
+  const addOperations = async (input: {
     goalId: string;
-    type: OperationType;
-    amount: number;
-    currency?: string;
-    note?: string;
-    operationDate: string;
+    operations: NewGoalOperationInput[];
   }): Promise<GoalDetails | null> => {
     try {
-      const result = await updateGoalProgressMutation({ variables: input });
+      const result = await addGoalOperationsMutation({ variables: input });
       refetchGoalDetails();
       return (
-        (result.data as { updateGoalProgress?: GoalDetails } | undefined)
-          ?.updateGoalProgress ?? null
+        (result.data as { addGoalOperations?: GoalDetails } | undefined)
+          ?.addGoalOperations ?? null
       );
     } catch (error) {
       showToast(error instanceof Error ? error.message : "Failed to save operation", "red");
@@ -132,7 +128,7 @@ export const useGoalDetails = (selectedGoalId: string | null) => {
     isLoadingGoalDetails,
     goalDetailsError,
     refetchGoalDetails,
-    addOperation,
+    addOperations,
     editOperation,
     deleteOperation,
   };

@@ -116,6 +116,19 @@ export const UPDATE_GOAL_PROGRESS = gql`
   }
 `;
 
+export const ADD_GOAL_OPERATIONS = gql`
+  ${GOAL_FIELDS}
+  ${GOAL_OPERATION_FIELDS}
+  mutation AddGoalOperations($goalId: ID!, $operations: [GoalOperationInput!]!) {
+    addGoalOperations(goalId: $goalId, operations: $operations) {
+      ...GoalFields
+      operations {
+        ...GoalOperationFields
+      }
+    }
+  }
+`;
+
 export const EDIT_GOAL_OPERATION = gql`
   ${GOAL_FIELDS}
   ${GOAL_OPERATION_FIELDS}

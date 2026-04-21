@@ -1,8 +1,8 @@
 import { renderHook, act, waitFor } from '@/__tests__/test-utils';
 import { useGoalDetails } from '../useGoalDetails';
 import {
+  ADD_GOAL_OPERATIONS,
   GET_GOAL_DETAILS,
-  UPDATE_GOAL_PROGRESS,
   EDIT_GOAL_OPERATION,
   DELETE_GOAL_OPERATION,
 } from '@/features/dashboard/gql/dashboard';
@@ -87,21 +87,25 @@ describe('useGoalDetails', () => {
     expect(result.current.selectedGoal).toBeNull();
   });
 
-  describe('addOperation', () => {
+  describe('addOperations', () => {
     it('calls mutation and returns updated goal', async () => {
       const updatedGoal = { ...mockGoalDetails, currentAmount: 5500, progress: 55 };
       const addMock: MockedResponse = {
         request: {
-          query: UPDATE_GOAL_PROGRESS,
+          query: ADD_GOAL_OPERATIONS,
           variables: {
             goalId: '1',
-            type: 'INCREASE',
-            amount: 500,
-            currency: 'USD',
-            operationDate: '2024-02-01',
+            operations: [
+              {
+                type: 'INCREASE',
+                amount: 500,
+                currency: 'USD',
+                operationDate: '2024-02-01',
+              },
+            ],
           },
         },
-        result: { data: { updateGoalProgress: updatedGoal } },
+        result: { data: { addGoalOperations: updatedGoal } },
       };
 
       const { result } = renderHook(() => useGoalDetails('1'), {
@@ -114,12 +118,16 @@ describe('useGoalDetails', () => {
 
       let addResult: GoalDetails | null | undefined;
       await act(async () => {
-        addResult = await result.current.addOperation({
+        addResult = await result.current.addOperations({
           goalId: '1',
-          type: 'INCREASE',
-          amount: 500,
-          currency: 'USD',
-          operationDate: '2024-02-01',
+          operations: [
+            {
+              type: 'INCREASE',
+              amount: 500,
+              currency: 'USD',
+              operationDate: '2024-02-01',
+            },
+          ],
         });
       });
 

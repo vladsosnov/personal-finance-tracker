@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { IconChartLine, IconLayoutGrid, IconList, IconPlus, IconTarget } from "@tabler/icons-react";
 import { useMediaQuery } from "@mantine/hooks";
@@ -8,8 +8,9 @@ import { GoalDetailHeader } from "@/features/dashboard/components/GoalDetailHead
 import { GoalOperationsTable } from "@/features/dashboard/components/GoalOperationsTable";
 import { GoalPreviewCard } from "@/features/dashboard/components/GoalPreviewCard";
 import type { useOperationForm } from "@/features/dashboard/hooks/useOperationForm";
-import type { Goal, GoalDetails, GoalOperation } from "@/features/dashboard/types";
+import type { Goal, GoalDetails, GoalOperation, GoalOperationDraft, NewGoalOperationInput } from "@/features/dashboard/types";
 import { StateMessage } from "@/shared/components/state-message";
+import { getTodayDateValue } from "@/shared/utils/date";
 
 // Lazy load chart and modals to reduce initial bundle size
 const GoalChart = dynamic(
@@ -31,10 +32,11 @@ export type GoalOperationActions = {
   form: ReturnType<typeof useOperationForm>;
   deletingOperationId: string | null;
   isUpdatingProgress: boolean;
-  isSubmitDisabled: boolean;
+  isEditSubmitDisabled: boolean;
   onStartEdit: (operationId: string) => void;
   onDelete: (operationId: string) => Promise<void>;
-  onSubmit: () => Promise<void>;
+  onSubmitEdit: () => Promise<void>;
+  onSubmitAdd: (operations: NewGoalOperationInput[]) => Promise<void>;
 };
 
 export type GoalDetailsPanelProps = {
@@ -78,8 +80,18 @@ export const GoalDetailsPanel = ({
   const [pendingDeleteOperation, setPendingDeleteOperation] = useState<GoalOperation | null>(null);
   const [previewTab, setPreviewTab] = useState<"active" | "all" | "completed">("active");
   const [previewLayout, setPreviewLayout] = useState<"grid" | "list">("grid");
+  const nextDraftOperationId = useRef(1);
+  const createOperationDraft = (currency: string): GoalOperationDraft => ({
+    id: `draft-operation-${nextDraftOperationId.current++}`,
+    type: "INCREASE",
+    amount: "",
+    currency,
+    note: "",
+    operationDate: getTodayDateValue(),
+  });
+  const [draftOperations, setDraftOperations] = useState<GoalOperationDraft[]>([createOperationDraft(goalCurrency)]);
 
-  const { form, deletingOperationId, isUpdatingProgress, isSubmitDisabled, onStartEdit, onDelete, onSubmit } =
+  const { form, deletingOperationId, isUpdatingProgress, isEditSubmitDisabled, onStartEdit, onDelete, onSubmitEdit, onSubmitAdd } =
     operationActions;
   const previewScrollHeight = isMobile ? 340 : 492;
   const completedGoals = useMemo(() => allGoals.filter((goal) => goal.isCompleted), [allGoals]);
@@ -104,12 +116,14 @@ export const GoalDetailsPanel = ({
 
   const handleOpenAddOperation = () => {
     form.reset(goalCurrency);
+    setDraftOperations([createOperationDraft(goalCurrency)]);
     setIsOperationModalOpen(true);
   };
 
   const handleCloseOperationModal = () => {
     if (!isUpdatingProgress) {
       form.reset();
+      setDraftOperations([createOperationDraft(goalCurrency)]);
       setIsOperationModalOpen(false);
     }
   };
@@ -119,8 +133,52 @@ export const GoalDetailsPanel = ({
     setIsOperationModalOpen(true);
   };
 
+  const handleAddDraftOperation = () => {
+    setDraftOperations((current) =>
+      current.length >= 10 ? current : [...current, createOperationDraft(goalCurrency)]
+    );
+  };
+
+  const handleRemoveDraftOperation = (index: number) => {
+    setDraftOperations((current) => (current.length === 1 ? current : current.filter((_, currentIndex) => currentIndex !== index)));
+  };
+
+  const handleChangeDraftOperation = <K extends keyof GoalOperationDraft>(
+    index: number,
+    field: K,
+    value: GoalOperationDraft[K]
+  ) => {
+    setDraftOperations((current) =>
+      current.map((operation, currentIndex) =>
+        currentIndex === index ? { ...operation, [field]: value } : operation
+      )
+    );
+  };
+
+  const isAddSubmitDisabled = draftOperations.some(
+    (operation) =>
+      !operation.amount ||
+      Number(operation.amount) <= 0 ||
+      !operation.operationDate ||
+      !operation.currency
+  );
+
   const handleSubmitOperation = async () => {
-    await onSubmit();
+    if (form.editingOperationId) {
+      await onSubmitEdit();
+    } else {
+      await onSubmitAdd(
+        draftOperations.map((operation) => ({
+          type: operation.type,
+          amount: Number(operation.amount),
+          currency: operation.currency,
+          note: operation.note?.trim() || undefined,
+          operationDate: operation.operationDate,
+        }))
+      );
+    }
+    form.reset(goalCurrency);
+    setDraftOperations([createOperationDraft(goalCurrency)]);
     setIsOperationModalOpen(false);
   };
 
@@ -329,17 +387,25 @@ export const GoalDetailsPanel = ({
               opened={isOperationModalOpen}
               isEditing={Boolean(form.editingOperationId)}
               isLoading={isUpdatingProgress}
-              isSubmitDisabled={isSubmitDisabled}
+              isSubmitDisabled={form.editingOperationId ? isEditSubmitDisabled : isAddSubmitDisabled}
               operationType={form.operationType}
               operationAmount={form.operationAmount}
               operationCurrency={form.operationCurrency}
               operationNote={form.operationNote}
               operationDate={form.operationDate}
+              operations={draftOperations}
               onChangeType={form.setOperationType}
               onChangeAmount={form.setOperationAmount}
               onChangeCurrency={form.setOperationCurrency}
               onChangeNote={form.setOperationNote}
               onChangeDate={form.setOperationDate}
+              onAddOperation={handleAddDraftOperation}
+              onRemoveOperation={handleRemoveDraftOperation}
+              onChangeOperationType={(index, value) => handleChangeDraftOperation(index, "type", value)}
+              onChangeOperationAmount={(index, value) => handleChangeDraftOperation(index, "amount", value)}
+              onChangeOperationCurrency={(index, value) => handleChangeDraftOperation(index, "currency", value)}
+              onChangeOperationNote={(index, value) => handleChangeDraftOperation(index, "note", value)}
+              onChangeOperationDate={(index, value) => handleChangeDraftOperation(index, "operationDate", value)}
               onSubmit={handleSubmitOperation}
               onClose={handleCloseOperationModal}
             />

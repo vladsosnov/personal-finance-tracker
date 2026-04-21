@@ -204,13 +204,14 @@ export const DashboardClient = () => {
       form: operationForm,
       deletingOperationId: actions.deletingOperationId,
       isUpdatingProgress: false,
-      isSubmitDisabled: isOperationSubmitDisabled,
+      isEditSubmitDisabled: isOperationSubmitDisabled,
       onStartEdit: (operationId: string) => {
         const op = selectedGoal?.operations.find((o) => o.id === operationId);
         if (op) operationForm.startEdit(op);
       },
       onDelete: actions.handleDeleteOperation,
-      onSubmit: actions.handleUpdateProgress,
+      onSubmitEdit: () => actions.handleUpdateProgress(),
+      onSubmitAdd: actions.handleUpdateProgress,
     },
     onRetryGoalDetails: detailsApi.refetchGoalDetails,
   };
