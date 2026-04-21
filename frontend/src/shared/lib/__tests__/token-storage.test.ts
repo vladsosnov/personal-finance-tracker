@@ -10,37 +10,34 @@ describe('tokenStorage', () => {
     expect(tokenStorage.getAccess()).toBeNull();
   });
 
-  it('returns null when no refresh token is stored', () => {
-    expect(tokenStorage.getRefresh()).toBeNull();
-  });
-
-  it('stores and retrieves access and refresh tokens', () => {
+  it('stores and retrieves access token (refresh token is not stored)', () => {
     tokenStorage.set('access-abc', 'refresh-xyz');
 
     expect(tokenStorage.getAccess()).toBe('access-abc');
-    expect(tokenStorage.getRefresh()).toBe('refresh-xyz');
+    // Refresh token should NOT be stored in localStorage
+    expect(localStorage.getItem('fgt_refresh')).toBeNull();
   });
 
-  it('overwrites existing tokens on set', () => {
-    tokenStorage.set('old-access', 'old-refresh');
-    tokenStorage.set('new-access', 'new-refresh');
+  it('overwrites existing access token on set', () => {
+    tokenStorage.set('old-access');
+    tokenStorage.set('new-access');
 
     expect(tokenStorage.getAccess()).toBe('new-access');
-    expect(tokenStorage.getRefresh()).toBe('new-refresh');
   });
 
-  it('clears both tokens', () => {
-    tokenStorage.set('access-abc', 'refresh-xyz');
+  it('clears access token and legacy refresh token', () => {
+    tokenStorage.set('access-abc');
+    // Simulate legacy refresh token from older version
+    localStorage.setItem('fgt_refresh', 'legacy-refresh');
     tokenStorage.clear();
 
     expect(tokenStorage.getAccess()).toBeNull();
-    expect(tokenStorage.getRefresh()).toBeNull();
+    expect(localStorage.getItem('fgt_refresh')).toBeNull();
   });
 
   it('clear is a no-op when nothing is stored', () => {
     expect(() => tokenStorage.clear()).not.toThrow();
     expect(tokenStorage.getAccess()).toBeNull();
-    expect(tokenStorage.getRefresh()).toBeNull();
   });
 
   it('returns null instead of throwing when localStorage reads fail', () => {
@@ -49,7 +46,6 @@ describe('tokenStorage', () => {
     });
 
     expect(tokenStorage.getAccess()).toBeNull();
-    expect(tokenStorage.getRefresh()).toBeNull();
   });
 
   it('does not throw when localStorage writes fail', () => {
@@ -57,7 +53,7 @@ describe('tokenStorage', () => {
       throw new Error('storage unavailable');
     });
 
-    expect(() => tokenStorage.set('access-abc', 'refresh-xyz')).not.toThrow();
+    expect(() => tokenStorage.set('access-abc')).not.toThrow();
   });
 
   it('does not throw when localStorage removals fail', () => {

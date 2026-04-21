@@ -218,7 +218,9 @@ app.post(
       const forwarded = typeof req.headers.get === "function"
         ? req.headers.get("x-forwarded-for") ?? undefined
         : ((req.headers as { "x-forwarded-for"?: string })["x-forwarded-for"] ?? undefined);
-      const clientIp = forwarded?.split(",")[0]?.trim() || "unknown";
+      const forwardedParts = forwarded?.split(",").map((s) => s.trim()).filter(Boolean);
+      // With trust proxy: 1, the last entry is the one added by the trusted reverse proxy
+      const clientIp = forwardedParts?.length ? forwardedParts[forwardedParts.length - 1] : "unknown";
 
       const tokenResult = verifyJwt(token);
       let userId: string | null = null;

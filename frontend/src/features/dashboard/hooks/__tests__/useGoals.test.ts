@@ -241,9 +241,9 @@ describe('useGoals', () => {
       const reorderMock: MockedResponse = {
         request: {
           query: REORDER_GOALS,
-          variables: { goalIds: ['3', '1', '2'] },
+          variables: { goalIds: ['3', '1'] },
         },
-        result: { data: { reorderGoals: [{ id: '3' }, { id: '1' }, { id: '2' }] } },
+        result: { data: { reorderGoals: [{ id: '3' }, { id: '1' }] } },
       };
 
       const { result } = renderHook(() => useGoals(), {

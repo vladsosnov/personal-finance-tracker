@@ -9,7 +9,7 @@ export const formatMoney = (value: number, currencyCode?: string) => {
 };
 
 export const MONEY_INPUT_PROPS = {
-  min: 1,
+  min: 0.01,
   decimalScale: 2,
   thousandSeparator: " ",
   hideControls: true,
@@ -22,5 +22,5 @@ export const getProgressPercentage = (currentAmount: number, targetAmount: numbe
     return 0;
   }
 
-  return (currentAmount / targetAmount) * 100;
+  return Math.min((currentAmount / targetAmount) * 100, 100);
 };

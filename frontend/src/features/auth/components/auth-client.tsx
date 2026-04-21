@@ -36,10 +36,10 @@ export const AuthClient = () => {
       setEmailError("Enter a valid email address");
       valid = false;
     }
-    if (!password.trim()) {
+    if (!password) {
       setPasswordError("Password is required");
       valid = false;
-    } else if (authMode === "register" && password.trim().length < 8) {
+    } else if (authMode === "register" && password.length < 8) {
       setPasswordError("Password must be at least 8 characters");
       valid = false;
     }
@@ -59,7 +59,7 @@ export const AuthClient = () => {
         credentials: "include",
         body: JSON.stringify({
           email: email.trim(),
-          password: password.trim(),
+          password,
         }),
       });
 

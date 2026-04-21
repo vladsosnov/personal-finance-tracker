@@ -70,7 +70,7 @@ export const DashboardOverviewStats = ({ totalTarget, totalCurrent, currency }: 
   const animatedCurrent = useDashboardCounter(totalCurrent ?? 0);
   const progress = getProgressPercentage(totalCurrent ?? 0, totalTarget ?? 0);
   const animatedProgress = useDashboardCounter(Math.round(progress * 10) / 10, 900);
-  const isMobile = useMediaQuery("(max-width: 768px)");
+  const isMobile = useMediaQuery("(max-width: 768px)", false);
 
   if (isMobile) {
     return (

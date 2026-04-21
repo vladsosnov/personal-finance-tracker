@@ -19,6 +19,7 @@ import { createRateLimit } from "../../utils/rate-limit";
 import { parseCookies } from "../../utils/parse-cookies";
 import { emailRegex } from "../../utils/validation";
 import { recordEvent } from "../analytics/analytics.repository";
+import { cancelStripeSubscription } from "../billing/billing.service";
 import { deleteAllGoalsByUser } from "../goals/goal.repository";
 import { deleteAllOperationsByUser } from "../goals/operation.repository";
 import { deleteAnalyticsByUser } from "../analytics/analytics.repository";
@@ -133,6 +134,10 @@ export const createAuthRouter = (config: AuthRoutesConfig): Router => {
       if (!user) {
         const existing = await findUserByEmail(email);
         if (existing) {
+          if (!existing.emailVerified) {
+            res.redirect(`${frontendAuthUrl}?error=google_link_unverified`);
+            return;
+          }
           await linkGoogleId(existing.id, googleId);
           user = { ...existing, googleId };
         } else {
@@ -401,7 +406,9 @@ export const createAuthRouter = (config: AuthRoutesConfig): Router => {
         return;
       }
 
-      res.json({ ok: true });
+      // Re-issue tokens with the new tokenVersion so the current session stays valid
+      setAuthCookies(res, updated.id, updated.tokenVersion);
+      res.json({ ok: true, ...signAuthTokens(updated.id, updated.tokenVersion) });
     } catch {
       res.status(500).json({ error: "Failed to update password" });
     }
@@ -423,6 +430,15 @@ export const createAuthRouter = (config: AuthRoutesConfig): Router => {
       if (!user || user.tokenVersion !== tokenResult.tokenVersion) {
         res.status(401).json({ error: "Unauthorized" });
         return;
+      }
+
+      // Cancel active Stripe subscription before deleting data
+      if (user.stripeSubscriptionId) {
+        try {
+          await cancelStripeSubscription(user.stripeSubscriptionId);
+        } catch {
+          // Proceed with deletion even if Stripe cancel fails
+        }
       }
 
       await Promise.all([

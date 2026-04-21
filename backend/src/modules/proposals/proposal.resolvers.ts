@@ -1,5 +1,5 @@
 import { createProposal, deleteProposal, listProposals, voteProposal, updateProposalStatus } from "./proposal.repository";
-import { ensureAdmin } from "../../utils/validation";
+import { ensureAdmin, ensureAuthed } from "../../utils/validation";
 import { assertValidObjectId } from "../../utils/object-id";
 
 type Context = {
@@ -27,6 +27,7 @@ export const proposalResolvers = {
     { category, title, description, contactEmail }: { category: string; title: string; description: string; contactEmail?: string },
     context: Context
   ) => {
+    ensureAuthed(context);
     const trimmedTitle = title.trim();
     const trimmedDescription = description.trim();
 
@@ -72,6 +73,7 @@ export const proposalResolvers = {
     };
   },
   voteProposal: async ({ proposalId }: { proposalId: string }, context: Context) => {
+    ensureAuthed(context);
     assertValidObjectId(proposalId, "proposal ID");
     const proposal = await voteProposal(proposalId, context.clientIp);
     if (!proposal) return null;

@@ -44,7 +44,7 @@ export const GoalCard = ({
   onTouchMove,
   onTouchEnd,
 }: GoalCardProps) => {
-  const isMobile = useMediaQuery("(max-width: 768px)");
+  const isMobile = useMediaQuery("(max-width: 768px)", false);
   const goalProgress = getProgressPercentage(goal.currentAmount, goal.targetAmount);
   const remaining = goal.targetAmount - goal.currentAmount;
   const [animatedProgress, setAnimatedProgress] = useState(0);

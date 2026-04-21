@@ -1,5 +1,4 @@
 const ACCESS_KEY = "fgt_access";
-const REFRESH_KEY = "fgt_refresh";
 
 const getStorage = () => (typeof window !== "undefined" ? window.localStorage : null);
 
@@ -29,13 +28,12 @@ const safeRemove = (key: string) => {
 
 export const tokenStorage = {
   getAccess: () => safeGet(ACCESS_KEY),
-  getRefresh: () => safeGet(REFRESH_KEY),
-  set: (accessToken: string, refreshToken: string) => {
+  set: (accessToken: string, _refreshToken?: string) => {
     safeSet(ACCESS_KEY, accessToken);
-    safeSet(REFRESH_KEY, refreshToken);
   },
   clear: () => {
     safeRemove(ACCESS_KEY);
-    safeRemove(REFRESH_KEY);
+    // Clean up legacy refresh token if present from older versions
+    safeRemove("fgt_refresh");
   },
 };

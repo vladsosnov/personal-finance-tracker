@@ -206,7 +206,7 @@ export const goalResolvers = {
       }> = [];
 
       for (const operation of sortedOperations) {
-        runningValue += operation.type === "INCREASE" ? operation.amount : -operation.amount;
+        runningValue += operation.type === "INCREASE" ? operation.convertedAmount : -operation.convertedAmount;
         history.push({
           date: `${operation.operationDate}T00:00:00.000Z`,
           note: operation.note,
@@ -320,13 +320,16 @@ export const goalResolvers = {
       throw new Error("Goal not found");
     }
 
-    await deleteOperationsByGoal(userId, goalId);
+    // Build the view before deletion so we return meaningful data
+    const goalView = await buildGoalView(userId, goal);
     const deletedGoal = await deleteGoal(userId, goalId);
     if (!deletedGoal) {
       throw new Error("Goal not found");
     }
+    // Delete operations after the goal to avoid orphaned goals (operations are harmless orphans)
+    await deleteOperationsByGoal(userId, goalId);
 
-    return buildGoalViewWithCompletionState(userId, goal);
+    return goalView;
   },
   reorderGoals: async ({ goalIds }: ReorderGoalsArgs, context: Context) => {
     const userId = ensureAuthed(context);
@@ -415,8 +418,8 @@ export const goalResolvers = {
   },
   resetAllData: async (_args: unknown, context: Context) => {
     const userId = ensureAuthed(context);
-    const deletedOperationsCount = await deleteAllOperationsByUser(userId);
     const deletedGoalsCount = await deleteAllGoalsByUser(userId);
+    const deletedOperationsCount = await deleteAllOperationsByUser(userId);
 
     return {
       deletedGoalsCount,

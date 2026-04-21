@@ -48,7 +48,7 @@ export const GoalsList = ({
   onSelectGoal,
   onRetry,
 }: GoalsListProps) => {
-  const isMobile = useMediaQuery("(max-width: 768px)");
+  const isMobile = useMediaQuery("(max-width: 768px)", false);
   const emptyTitle = emptyState?.title ?? "No goals yet";
   const emptyDescription = emptyState?.description ?? "Create your first goal to start tracking progress.";
   const isDraggable = allowDrag && !manageMode.isActive && !isMobile;

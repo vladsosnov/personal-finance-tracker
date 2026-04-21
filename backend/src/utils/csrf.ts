@@ -7,11 +7,6 @@ export const createCsrfProtection = (frontendOrigin: string) => {
       return;
     }
 
-    if (!req.path.startsWith("/auth/") && !req.path.startsWith("/analytics/")) {
-      next();
-      return;
-    }
-
     const origin = req.headers.origin;
     const referer = req.headers.referer;
     const secFetchSite = req.headers["sec-fetch-site"];

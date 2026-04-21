@@ -267,8 +267,13 @@ export const createGoogleUser = async (email: string, googleId: string): Promise
   return toUser(user.toObject() as unknown as UserDoc);
 };
 
-export const linkGoogleId = async (userId: string, googleId: string): Promise<void> => {
-  await UserModel.updateOne({ _id: userId }, { $set: { googleId, emailVerified: true } });
+export const linkGoogleId = async (userId: string, googleId: string, requireVerifiedEmail = true): Promise<boolean> => {
+  const filter: Record<string, unknown> = { _id: userId };
+  if (requireVerifiedEmail) {
+    filter.emailVerified = true;
+  }
+  const result = await UserModel.updateOne(filter, { $set: { googleId } });
+  return result.modifiedCount === 1;
 };
 
 export const updatePrimaryCurrency = async (userId: string, currency: string): Promise<User | null> => {
@@ -287,7 +292,7 @@ export const updatePasswordByUserId = async (
 ): Promise<User | null> => {
   const user = await UserModel.findByIdAndUpdate(
     userId,
-    { $set: { passwordHash, passwordSalt } },
+    { $set: { passwordHash, passwordSalt }, $inc: { tokenVersion: 1 } },
     { new: true }
   ).lean();
   return user ? toUser(user as unknown as UserDoc) : null;

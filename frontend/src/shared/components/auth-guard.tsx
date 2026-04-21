@@ -9,6 +9,9 @@ const PROTECTED_PATHS = ["/goals", "/profile", "/expenses", "/admin"];
 const AUTH_ONLY_PATHS = ["/auth"];
 const AUTH_BYPASS_PATHS = ["/auth/verify-email", "/auth/forgot-password", "/auth/reset-password"];
 
+const isSafeRedirect = (target: string | null): target is string =>
+  typeof target === "string" && target.startsWith("/") && !target.startsWith("//");
+
 export const AuthGuard = ({ children }: { children: React.ReactNode }) => {
   const pathname = usePathname();
   const router = useRouter();
@@ -16,13 +19,14 @@ export const AuthGuard = ({ children }: { children: React.ReactNode }) => {
     fetchPolicy: "cache-and-network",
   });
 
+  const isAuthed = Boolean(data?.me);
+  const isProtected = PROTECTED_PATHS.some(
+    (p) => pathname === p || pathname.startsWith(`${p}/`)
+  );
+
   useEffect(() => {
     if (loading) return;
 
-    const isAuthed = Boolean(data?.me);
-    const isProtected = PROTECTED_PATHS.some(
-      (p) => pathname === p || pathname.startsWith(`${p}/`)
-    );
     const isBypass = AUTH_BYPASS_PATHS.some((p) => pathname === p);
     const isAuthOnly =
       !isBypass && AUTH_ONLY_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`));
@@ -34,9 +38,14 @@ export const AuthGuard = ({ children }: { children: React.ReactNode }) => {
     if (isProtected && !isAuthed) {
       router.replace(`/auth?next=${encodeURIComponent(currentUrl)}`);
     } else if (isAuthOnly && isAuthed) {
-      router.replace(nextTarget || "/goals");
+      router.replace(isSafeRedirect(nextTarget) ? nextTarget : "/goals");
     }
-  }, [pathname, router, data, loading]);
+  }, [pathname, router, data, loading, isAuthed, isProtected]);
+
+  // Don't flash protected content while auth state is loading
+  if (isProtected && loading && !data) {
+    return null;
+  }
 
   return <>{children}</>;
 };

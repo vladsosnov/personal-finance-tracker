@@ -82,7 +82,7 @@ export const GoalOperationsTable = ({
   onEdit,
   onDelete,
 }: GoalOperationsTableProps) => {
-  const isMobile = useMediaQuery("(max-width: 768px)");
+  const isMobile = useMediaQuery("(max-width: 768px)", false);
   const [page, setPage] = useState(1);
 
   const totalPages = Math.max(1, Math.ceil(operations.length / OPERATIONS_PER_PAGE));

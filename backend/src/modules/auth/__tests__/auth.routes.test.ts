@@ -19,11 +19,11 @@ describe("auth change password route", () => {
     jest.doMock("../auth", () => ({
       AUTH_ACCESS_COOKIE: "fgt_access",
       AUTH_REFRESH_COOKIE: "fgt_refresh",
-      authCookieHeaders: jest.fn(),
+      authCookieHeaders: jest.fn(() => []),
       buildExpiredCookie: jest.fn(),
       generateSecureToken: jest.fn(),
       hashPassword,
-      signAuthTokens: jest.fn(),
+      signAuthTokens: jest.fn(() => ({ accessToken: "new-access-token", refreshToken: "new-refresh-token" })),
       verifyJwt,
       verifyPassword,
       verifyRefreshJwt: jest.fn(),
@@ -100,7 +100,7 @@ describe("auth change password route", () => {
       .send({ currentPassword: "oldpassword", newPassword: "newpassword123" });
 
     expect(response.status).toBe(200);
-    expect(response.body).toEqual({ ok: true });
+    expect(response.body).toEqual({ ok: true, accessToken: "new-access-token", refreshToken: "new-refresh-token" });
     expect(verifyPassword).toHaveBeenCalledWith("oldpassword", "stored-hash", "stored-salt");
     expect(updatePasswordByUserId).toHaveBeenCalledWith("user-1", "new-hash", "new-salt");
   });

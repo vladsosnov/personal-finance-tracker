@@ -42,7 +42,7 @@ export const DashboardClient = () => {
   const [isDetailsDrawerOpen, setIsDetailsDrawerOpen] = useState(false);
   const [isCreatingExample, setIsCreatingExample] = useState(false);
 
-  const isMobile = useMediaQuery("(max-width: 768px)");
+  const isMobile = useMediaQuery("(max-width: 768px)", false);
 
   const { data: meData } = useQuery<MeQueryData>(GET_ME);
 

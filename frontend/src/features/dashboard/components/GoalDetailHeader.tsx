@@ -30,8 +30,8 @@ export const GoalDetailHeader = ({
   onCloseSelection,
 }: GoalDetailHeaderProps) => {
   const projectedDate = useMemo(
-    () => getProjectedDate(goal.operations, goal.targetAmount, goal.currentAmount, goal.isCompleted),
-    [goal.operations, goal.targetAmount, goal.currentAmount, goal.isCompleted],
+    () => getProjectedDate(goal.operations, goal.targetAmount, goal.currentAmount, goal.isCompleted, goal.initialAmount),
+    [goal.operations, goal.targetAmount, goal.currentAmount, goal.isCompleted, goal.initialAmount],
   );
 
   return (
@@ -89,7 +89,6 @@ export const GoalDetailHeader = ({
         onToggle={onToggleRangePicker}
         onChange={(value) => {
           onChangeRange(value);
-          onToggleRangePicker();
         }}
       />
     </Group>

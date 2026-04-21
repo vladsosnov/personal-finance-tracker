@@ -76,6 +76,12 @@ export const useImport = (subscription: string, existingGoalCount: number) => {
 
     setIsPreparingImport(true);
     try {
+      const MAX_IMPORT_FILE_SIZE = 100 * 1024; // 100 KB — matches backend limit
+      if (nextFile.size > MAX_IMPORT_FILE_SIZE) {
+        showToast(`File is too large (${(nextFile.size / 1024).toFixed(0)} KB). Maximum size is 100 KB.`, "red");
+        setIsPreparingImport(false);
+        return;
+      }
       const source = await nextFile.text();
       setImportSource(source);
       applyPreparedImport(source, [], []);

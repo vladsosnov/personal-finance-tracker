@@ -128,7 +128,7 @@ describe('GoalDetailHeader', () => {
     expect(defaultProps.onToggleRangePicker).toHaveBeenCalledTimes(1);
   });
 
-  it('calls onChangeRange and onToggleRangePicker when range changed', async () => {
+  it('calls onChangeRange when range changed', async () => {
     const user = userEvent.setup();
     render(<GoalDetailHeader {...defaultProps} isRangePickerOpen={true} />);
 
@@ -136,6 +136,6 @@ describe('GoalDetailHeader', () => {
     await user.click(option);
 
     expect(defaultProps.onChangeRange).toHaveBeenCalledWith('7d');
-    expect(defaultProps.onToggleRangePicker).toHaveBeenCalledTimes(1);
+    expect(defaultProps.onToggleRangePicker).not.toHaveBeenCalled();
   });
 });

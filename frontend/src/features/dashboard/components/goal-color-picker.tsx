@@ -39,7 +39,7 @@ export const GoalColorPicker = ({ label, value, onChange, disabled = false }: Go
       comboboxProps={{
         withinPortal: true,
         width: 220,
-        position: "bottom-start",
+        position: "bottom-end",
       }}
       leftSection={<ColorSwatch color={selectedColorValue} size={16} />}
       renderOption={({ option }) => (

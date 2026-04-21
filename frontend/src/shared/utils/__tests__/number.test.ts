@@ -51,8 +51,8 @@ describe('getProgressPercentage', () => {
     expect(getProgressPercentage(5000, -10000)).toBe(0);
   });
 
-  it('handles current amount exceeding target', () => {
-    expect(getProgressPercentage(15000, 10000)).toBe(150);
+  it('caps at 100 when current amount exceeds target', () => {
+    expect(getProgressPercentage(15000, 10000)).toBe(100);
   });
 
   it('handles zero current amount', () => {

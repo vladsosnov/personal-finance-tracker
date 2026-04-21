@@ -28,6 +28,7 @@ export const getProjectedDate = (
   targetAmount: number,
   currentAmount: number,
   isCompleted: boolean,
+  initialAmount = 0,
 ): string | null => {
   if (isCompleted || targetAmount <= 0 || currentAmount >= targetAmount) return null;
 
@@ -35,8 +36,8 @@ export const getProjectedDate = (
     a.operationDate.localeCompare(b.operationDate) || a.createdAt.localeCompare(b.createdAt),
   );
 
-  // Build cumulative series
-  let total = 0;
+  // Build cumulative series starting from initialAmount
+  let total = initialAmount;
   const data: Array<[number, number]> = sorted.map((op) => {
     total += op.type === "INCREASE" ? op.convertedAmount : -op.convertedAmount;
     return [dateStringToUtcTimestamp(op.operationDate), total];

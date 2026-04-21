@@ -70,7 +70,7 @@ export const GoalDetailsPanel = ({
   onCreateGoal,
   scrollHeight,
 }: GoalDetailsPanelProps) => {
-  const isMobile = useMediaQuery("(max-width: 768px)");
+  const isMobile = useMediaQuery("(max-width: 768px)", false);
   const [isOperationModalOpen, setIsOperationModalOpen] = useState(false);
   const [isChartModalOpen, setIsChartModalOpen] = useState(false);
   const [isRangePickerOpen, setIsRangePickerOpen] = useState(false);

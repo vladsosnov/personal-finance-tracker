@@ -407,6 +407,10 @@ export const createCheckoutForUser = async (
   return { url: session.url };
 };
 
+export const cancelStripeSubscription = async (subscriptionId: string): Promise<void> => {
+  await getStripeClient().subscriptions.cancel(subscriptionId);
+};
+
 export const createPortalForUser = async (userId: string): Promise<BillingPortalPayload> => {
   const user = await findUserById(userId);
   if (!user) {

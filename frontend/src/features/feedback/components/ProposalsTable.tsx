@@ -21,6 +21,12 @@ const formatDate = (iso: string) => {
 export const ProposalsTable = ({ proposals, onVote, onUpdateStatus, onDelete }: ProposalsTableProps) => {
   const [page, setPage] = useState(1);
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
+  const [prevLength, setPrevLength] = useState(proposals.length);
+
+  if (proposals.length !== prevLength) {
+    setPrevLength(proposals.length);
+    setPage(1);
+  }
 
   const totalPages = Math.max(1, Math.ceil(proposals.length / ITEMS_PER_PAGE));
 

@@ -127,13 +127,13 @@ export const useGoals = () => {
     const reorderedActive = nextGoals.map((g, i) => ({ ...g, sortOrder: i }));
     const reorderedAll = [
       ...reorderedActive,
-      ...completedGoals.map((g, i) => ({ ...g, sortOrder: reorderedActive.length + i })),
+      ...completedGoals,
     ];
 
     setOptimisticGoals(reorderedAll);
 
     try {
-      await reorderGoalsMutation({ variables: { goalIds: reorderedAll.map((g) => g.id) } });
+      await reorderGoalsMutation({ variables: { goalIds: reorderedActive.map((g) => g.id) } });
       await refetchGoals();
     } catch (error) {
       setOptimisticGoals(null);

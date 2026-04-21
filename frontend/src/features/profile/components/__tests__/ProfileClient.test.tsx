@@ -12,7 +12,6 @@ jest.mock('@/shared/lib/token-storage', () => ({
     set: jest.fn(),
     clear: jest.fn(),
     getAccess: jest.fn(() => null),
-    getRefresh: jest.fn(() => null),
   },
 }));
 

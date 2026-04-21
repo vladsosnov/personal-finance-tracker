@@ -1,4 +1,4 @@
-import { useQuery, useMutation } from "@apollo/client/react";
+import { useApolloClient, useQuery, useMutation } from "@apollo/client/react";
 import {
   ADD_GOAL_OPERATIONS,
   DELETE_GOAL_OPERATION,
@@ -11,6 +11,7 @@ import type { OperationType } from "@/shared/gql/__generated__/schema-types";
 import { showToast } from "@/shared/lib/toast-store";
 
 export const useGoalDetails = (selectedGoalId: string | null) => {
+  const client = useApolloClient();
   const {
     data: goalDetailsData,
     previousData: previousGoalDetailsData,
@@ -35,17 +36,38 @@ export const useGoalDetails = (selectedGoalId: string | null) => {
     useMutation(EDIT_GOAL_OPERATION);
   const [deleteGoalOperationMutation] = useMutation(DELETE_GOAL_OPERATION);
 
+  const updateGoalsCache = (updatedGoal: GoalDetails) => {
+    const existing = client.readQuery<{ goals: Goal[] }>({ query: GET_GOALS });
+    if (existing?.goals) {
+      client.writeQuery({
+        query: GET_GOALS,
+        data: {
+          goals: existing.goals.map((g) =>
+            g.id === updatedGoal.id
+              ? {
+                  ...g,
+                  currentAmount: updatedGoal.currentAmount,
+                  progress: updatedGoal.progress,
+                  isCompleted: updatedGoal.isCompleted,
+                  completedAt: updatedGoal.completedAt,
+                }
+              : g
+          ),
+        },
+      });
+    }
+  };
+
   const addOperations = async (input: {
     goalId: string;
     operations: NewGoalOperationInput[];
   }): Promise<GoalDetails | null> => {
     try {
       const result = await addGoalOperationsMutation({ variables: input });
+      const updatedGoal = (result.data as { addGoalOperations?: GoalDetails } | undefined)?.addGoalOperations ?? null;
+      if (updatedGoal) updateGoalsCache(updatedGoal);
       refetchGoalDetails();
-      return (
-        (result.data as { addGoalOperations?: GoalDetails } | undefined)
-          ?.addGoalOperations ?? null
-      );
+      return updatedGoal;
     } catch (error) {
       showToast(error instanceof Error ? error.message : "Failed to save operation", "red");
       throw error;
@@ -62,11 +84,10 @@ export const useGoalDetails = (selectedGoalId: string | null) => {
   }): Promise<GoalDetails | null> => {
     try {
       const result = await editGoalOperationMutation({ variables: input });
+      const updatedGoal = (result.data as { editGoalOperation?: GoalDetails } | undefined)?.editGoalOperation ?? null;
+      if (updatedGoal) updateGoalsCache(updatedGoal);
       refetchGoalDetails();
-      return (
-        (result.data as { editGoalOperation?: GoalDetails } | undefined)
-          ?.editGoalOperation ?? null
-      );
+      return updatedGoal;
     } catch (error) {
       showToast(error instanceof Error ? error.message : "Failed to save operation", "red");
       throw error;

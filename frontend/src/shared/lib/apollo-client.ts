@@ -30,14 +30,9 @@ const clearFallbackTokens = () => {
 };
 
 const refreshSession = async () => {
-  const refreshToken = tokenStorage.getRefresh();
-  const headers: Record<string, string> = {};
-  if (refreshToken) headers["authorization"] = `Bearer ${refreshToken}`;
-
   const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
     method: "POST",
     credentials: "include",
-    headers,
   });
 
   if (!response.ok) {
@@ -46,13 +41,22 @@ const refreshSession = async () => {
   }
 
   const data = (await response.json().catch(() => null)) as { accessToken?: string; refreshToken?: string } | null;
-  if (data?.accessToken && data?.refreshToken) {
-    tokenStorage.set(data.accessToken, data.refreshToken);
+  if (data?.accessToken) {
+    tokenStorage.set(data.accessToken);
     return;
   }
 
   clearFallbackTokens();
   throw new Error("Session refresh failed");
+};
+
+let inflightRefresh: Promise<void> | null = null;
+
+const deduplicatedRefresh = () => {
+  if (!inflightRefresh) {
+    inflightRefresh = refreshSession().finally(() => { inflightRefresh = null; });
+  }
+  return inflightRefresh;
 };
 
 // eslint-disable-next-line prefer-const
@@ -79,7 +83,7 @@ const errorLink = new ErrorLink(({ error, operation, forward }) => {
   }
 
   return new Observable((observer) => {
-    refreshSession()
+    deduplicatedRefresh()
       .then(() => {
         operation.setContext({ ...operation.getContext(), retried: true });
         const subscription = forward(operation).subscribe(observer);

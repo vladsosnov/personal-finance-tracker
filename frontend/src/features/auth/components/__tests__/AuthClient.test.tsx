@@ -37,7 +37,6 @@ jest.mock('@/shared/lib/token-storage', () => ({
     set: jest.fn(),
     clear: jest.fn(),
     getAccess: jest.fn(() => null),
-    getRefresh: jest.fn(() => null),
   },
 }));
 
@@ -363,7 +362,7 @@ describe('AuthClient', () => {
         expect.objectContaining({
           body: JSON.stringify({
             email: 'test@example.com',
-            password: 'password123',
+            password: '  password123  ',
           }),
         })
       );

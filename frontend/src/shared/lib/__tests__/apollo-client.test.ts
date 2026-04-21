@@ -3,7 +3,6 @@ import { tokenStorage } from '@/shared/lib/token-storage';
 jest.mock('@/shared/lib/token-storage', () => ({
   tokenStorage: {
     getAccess: jest.fn(() => null),
-    getRefresh: jest.fn(() => 'refresh-xyz'),
     set: jest.fn(),
     clear: jest.fn(),
   },
@@ -14,7 +13,6 @@ const mockTokenStorage = tokenStorage as jest.Mocked<typeof tokenStorage>;
 describe('apollo-client refreshSession', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockTokenStorage.getRefresh.mockReturnValue('refresh-xyz');
   });
 
   it('clears fallback tokens after refresh failure', async () => {
