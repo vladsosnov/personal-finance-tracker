@@ -1,4 +1,4 @@
-import { waitFor } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import { render } from '@/__tests__/test-utils';
 import { AuthGuard } from '../auth-guard';
 import { GET_ME } from '@/shared/gql/queries';
@@ -78,10 +78,11 @@ describe('AuthGuard', () => {
     await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/auth?next=%2Fprofile'));
   });
 
-  it('redirects unauthenticated user from /expenses to /auth', async () => {
+  it('allows unauthenticated user to view /expenses', async () => {
     mockUsePathname.mockReturnValue('/expenses');
-    render(<AuthGuard><div>content</div></AuthGuard>, { mocks: [unauthedMock] });
-    await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/auth?next=%2Fexpenses'));
+    render(<AuthGuard><div>expenses content</div></AuthGuard>, { mocks: [unauthedMock] });
+    await waitFor(() => expect(screen.getByText('expenses content')).toBeInTheDocument());
+    expect(mockReplace).not.toHaveBeenCalled();
   });
 
   it('preserves query params when redirecting protected upgrade routes to auth', async () => {

@@ -54,7 +54,7 @@ export const PlansSection = () => (
                   </Button>
                 ) : (
                   <Button disabled variant={plan.highlight ? "filled" : "light"}>
-                    Comming soon
+                    Coming soon
                   </Button>
                 )}
               </Stack>

@@ -148,6 +148,13 @@ html[data-mantine-color-scheme="dark"] .app-header {
   .app-main {
     padding-top: 52px;
   }
+
+  /* Prevent iOS Safari auto-zoom on input focus (triggers when font-size < 16px) */
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
 }
 
 .app-footer {

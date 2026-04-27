@@ -35,35 +35,10 @@ describe('ProductPreviewSection', () => {
     expect(screen.getByRole('link', { name: /view profile/i })).toBeInTheDocument();
   });
 
-  it('renders dashboard snapshot card', () => {
+  it('renders the dashboard preview image', () => {
     render(<ProductPreviewSection />);
 
-    expect(screen.getByText('Dashboard snapshot')).toBeInTheDocument();
-    expect(screen.getByLabelText('Dashboard preview example')).toBeInTheDocument();
-  });
-
-  it('renders snapshot stat labels', () => {
-    render(<ProductPreviewSection />);
-
-    expect(screen.getByText('Active goals')).toBeInTheDocument();
-    expect(screen.getByText('Completed')).toBeInTheDocument();
-  });
-
-  it('renders emergency fund progress bar', () => {
-    render(<ProductPreviewSection />);
-
-    expect(screen.getByText('Emergency fund')).toBeInTheDocument();
-    expect(screen.getByText('68.0%')).toBeInTheDocument();
-    expect(screen.getByRole('progressbar', { name: /emergency fund progress/i })).toBeInTheDocument();
-  });
-
-  it('renders recent activity items', () => {
-    render(<ProductPreviewSection />);
-
-    expect(screen.getByText('Salary transfer')).toBeInTheDocument();
-    expect(screen.getByText('+$500')).toBeInTheDocument();
-    expect(screen.getByText('Unexpected expense')).toBeInTheDocument();
-    expect(screen.getByText('-$80')).toBeInTheDocument();
+    expect(screen.getByAltText(/dashboard demo/i)).toBeInTheDocument();
   });
 
   it('has proper accessibility with labelledby', () => {
