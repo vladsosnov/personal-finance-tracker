@@ -50,7 +50,7 @@ describe('PlansSection', () => {
   it('renders disabled coming soon actions for paid plans', () => {
     render(<PlansSection />);
 
-    const comingSoonButtons = screen.getAllByRole('button', { name: /comming soon/i });
+    const comingSoonButtons = screen.getAllByRole('button', { name: /coming soon/i });
     expect(comingSoonButtons).toHaveLength(2);
     comingSoonButtons.forEach((button) => expect(button).toBeDisabled());
     expect(screen.queryByRole('link', { name: /get pro with pro plan/i })).not.toBeInTheDocument();
